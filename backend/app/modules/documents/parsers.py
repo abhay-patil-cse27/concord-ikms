@@ -23,14 +23,44 @@ class BaseDocumentParser(ABC):
 
 
 class PDFParser(BaseDocumentParser):
-    """Extracts text from PDF documents page by page using pypdf."""
+    """Extracts text from PDF documents page by page using pypdf, falling back to OCR on scanned pages."""
 
     def extract_pages(self, file_bytes: bytes) -> List[ExtractedPage]:
+        from app.modules.documents.ocr import get_ocr_provider
+        ocr_provider = get_ocr_provider()
+
         pages = []
         reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+        total = len(reader.pages)
+
         for idx, page in enumerate(reader.pages, start=1):
-            text = page.extract_text() or ""
-            pages.append(ExtractedPage(text=text.strip(), page_number=idx, metadata={"total_pages": len(reader.pages)}))
+            text = (page.extract_text() or "").strip()
+            is_ocr = False
+
+            # If page text is very sparse (e.g. scanned image with no embedded font stream)
+            if len(text) < 30:
+                # Check for raster image objects on this page
+                image_bytes_list = []
+                try:
+                    for img in getattr(page, "images", []):
+                        if hasattr(img, "data") and img.data:
+                            image_bytes_list.append(img.data)
+                except Exception:
+                    pass
+
+                # If images were found or page text is completely empty, trigger OCR adapter
+                if image_bytes_list or len(text) == 0:
+                    ocr_result = ocr_provider.extract_text_from_images(image_bytes_list)
+                    if ocr_result:
+                        text = f"{text}\n\n{ocr_result}".strip() if text else ocr_result
+                        is_ocr = True
+
+            meta = {
+                "total_pages": total,
+                "is_ocr": is_ocr,
+                "engine": "ocr" if is_ocr else "native_pdf"
+            }
+            pages.append(ExtractedPage(text=text.strip(), page_number=idx, metadata=meta))
         return pages
 
 

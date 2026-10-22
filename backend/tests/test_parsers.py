@@ -43,6 +43,35 @@ def test_pdf_parser():
     pages = parser.extract_pages(f_bytes.getvalue())
     assert len(pages) == 1
     assert pages[0].page_number == 1
+    # Empty page triggers OCR fallback
+    assert pages[0].metadata.get("is_ocr") is True
+    assert "OCR extracted" in pages[0].text or len(pages[0].text) > 0
+
+
+def test_ocr_provider_contract_and_mock():
+    from app.modules.documents.ocr import BaseOCRProvider, set_ocr_provider, get_ocr_provider
+
+    class MockTestOCR(BaseOCRProvider):
+        def is_available(self) -> bool:
+            return True
+        def extract_text_from_images(self, image_bytes_list):
+            return "MOCK_OCR_SCANNED_CONTENT_VERIFIED"
+
+    original_provider = get_ocr_provider()
+    try:
+        set_ocr_provider(MockTestOCR())
+        writer = pypdf.PdfWriter()
+        writer.add_blank_page(width=200, height=200)
+        f_bytes = io.BytesIO()
+        writer.write(f_bytes)
+
+        parser = PDFParser()
+        pages = parser.extract_pages(f_bytes.getvalue())
+        assert len(pages) == 1
+        assert "MOCK_OCR_SCANNED_CONTENT_VERIFIED" in pages[0].text
+        assert pages[0].metadata["is_ocr"] is True
+    finally:
+        set_ocr_provider(original_provider)
 
 
 def test_chunker_sliding_window():

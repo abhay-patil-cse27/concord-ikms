@@ -40,6 +40,7 @@
   - [x] Word document (`.docx`) extractor with `python-docx`.
   - [x] Excel spreadsheet extractor (`.xlsx`, `.xls`) with `openpyxl` multi-sheet parsing.
   - [x] Plain text, markdown, CSV, and code file extraction.
+  - [x] Optical Character Recognition (OCR) adapter (`BaseOCRProvider`, `PytesseractOCRProvider`, `GracefulFallbackOCRProvider`) with automatic fallback on scanned pages.
 - [x] **Format-Aware Chunking Strategies:**
   - [x] `TabularChunker`: Row-aware batching for Excel/CSV preserving column header context across all chunks.
   - [x] `SemanticParagraphChunker`: Paragraph and heading hierarchy boundary splitting for DOCX/Markdown.

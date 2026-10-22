@@ -76,12 +76,24 @@ export default function ChunkInspectorModal({ inspectDoc, onClose }) {
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
+                      alignItems: 'center',
                       marginBottom: '0.5rem',
                       fontSize: '0.75rem',
                       color: 'var(--text-dim)',
                     }}
                   >
-                    <span className="badge badge-info">Chunk #{chunk.chunk_index}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="badge badge-info">Chunk #{chunk.chunk_index}</span>
+                      {chunk.metadata_?.is_ocr ? (
+                        <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          ⚡ OCR Extracted
+                        </span>
+                      ) : (
+                        <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                          📄 Native
+                        </span>
+                      )}
+                    </div>
                     <span>
                       {chunk.char_count} chars • Page {chunk.metadata_?.page_number || 1}
                     </span>
