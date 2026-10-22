@@ -69,15 +69,17 @@ export function useRAG() {
           });
         }
       }
-      setHistory(threadTurns.reverse());
+      // Keep chronological order: oldest queries at the top, newest at the bottom
+      setHistory(threadTurns);
       if (threadTurns.length > 0) {
+        const latest = threadTurns[threadTurns.length - 1];
         setResponse({
-          query: threadTurns[0].query,
-          answer: threadTurns[0].answer,
-          citations: threadTurns[0].citations,
-          confidence: threadTurns[0].confidence,
-          model_used: threadTurns[0].model_used,
-          latency_ms: threadTurns[0].latency_ms,
+          query: latest.query,
+          answer: latest.answer,
+          citations: latest.citations,
+          confidence: latest.confidence,
+          model_used: latest.model_used,
+          latency_ms: latest.latency_ms,
         });
       }
     } catch (err) {
@@ -133,6 +135,7 @@ export function useRAG() {
 
       setResponse(data);
       setHistory((prev) => [
+        ...prev,
         {
           id: Date.now().toString(),
           query: q.trim(),
@@ -144,7 +147,6 @@ export function useRAG() {
           latency_ms: data.latency_ms,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
-        ...prev,
       ]);
       return data;
     } catch (err) {

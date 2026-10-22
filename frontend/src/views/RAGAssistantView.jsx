@@ -231,12 +231,14 @@ export default function RAGAssistantView() {
 
   const handleAsk = (e) => {
     if (e) e.preventDefault();
-    if (!query.trim() || loading) return;
-    ask();
+    const queryToAsk = query.trim();
+    if (!queryToAsk || loading) return;
+    setQuery('');
+    ask(queryToAsk);
   };
 
   const handlePromptClick = (sample) => {
-    setQuery(sample);
+    setQuery('');
     ask(sample);
   };
 
