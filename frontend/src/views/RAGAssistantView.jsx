@@ -76,7 +76,7 @@ export default function RAGAssistantView() {
             }
           }}
         >
-          {normalized}
+          {cleaned}
         </ReactMarkdown>
       </div>
     );
