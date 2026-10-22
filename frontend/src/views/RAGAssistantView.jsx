@@ -28,6 +28,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useRAG } from '../hooks/useRAG';
+import ThreadSidebar from '../components/ui/ThreadSidebar';
 
 export default function RAGAssistantView() {
   const { 
@@ -338,93 +339,18 @@ export default function RAGAssistantView() {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', gap: '1.5rem', minHeight: 'calc(100vh - 120px)' }}>
-      {/* Collapsible Session Threads Sidebar */}
+      {/* Collapsible Reusable ChatGPT-style ThreadSidebar */}
       {showSessionsSidebar && (
-        <aside 
-          className="glass-panel animate-scale-up"
-          style={{
-            width: '270px',
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '1.25rem',
-            gap: '1rem',
-            height: 'fit-content',
-            maxHeight: 'calc(100vh - 140px)',
-            position: 'sticky',
-            top: '1rem'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-              <MessageSquare size={16} color="var(--primary)" />
-              <span>Chat Threads</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowSessionsSidebar(false)}
-              className="btn btn-ghost"
-              style={{ padding: '4px', borderRadius: '4px' }}
-              title="Hide threads"
-            >
-              <PanelLeftClose size={16} />
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={createNewSession}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '0.6rem 0.85rem', fontSize: '0.82rem', gap: '0.4rem', justifyContent: 'center' }}
-          >
-            <Plus size={15} />
-            New Inquiry
-          </button>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', overflowY: 'auto', flex: 1, paddingRight: '0.2rem' }}>
-            {conversations.length === 0 ? (
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', textAlign: 'center', padding: '1.5rem 0.5rem' }}>
-                No saved chat threads yet. Your inquiries will automatically persist here.
-              </div>
-            ) : (
-              conversations.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => selectConversation(c.id)}
-                  className={`chat-session-item ${activeConversationId === c.id ? 'active' : ''}`}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {c.title}
-                    </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                      {new Date(c.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {c.messages_count || 1} turns
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSession(c.id);
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-dim)',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      opacity: 0.6
-                    }}
-                    title="Delete thread"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </aside>
+        <ThreadSidebar
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onSelectConversation={selectConversation}
+          onCreateNewSession={createNewSession}
+          onDeleteSession={deleteSession}
+          onCloseSidebar={() => setShowSessionsSidebar(false)}
+          userName="Faculty Auditor"
+          userRole="CONCORD Evaluator"
+        />
       )}
 
       {/* Main Conversation & Question Answering Area (ChatGPT layout) */}

@@ -484,6 +484,48 @@ table tbody tr:hover {
   font-weight: 600;
 }
 
+/* ==============================================================================
+   CHATGPT-STYLE SIDEBAR & THREAD LIST
+   ============================================================================== */
+.chatgpt-sidebar {
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chatgpt-new-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.chatgpt-thread-row:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f1f5f9 !important;
+}
+
+.chatgpt-thread-row .chatgpt-thread-delete {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.chatgpt-thread-row:hover .chatgpt-thread-delete {
+  opacity: 0.8;
+}
+
+.chatgpt-thread-delete:hover {
+  opacity: 1 !important;
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+}
+
+.chatgpt-scrollable-threads::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chatgpt-scrollable-threads::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+
 .chat-container-layout {
   display: flex;
   height: calc(100vh - 120px);
