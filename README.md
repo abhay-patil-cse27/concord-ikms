@@ -121,16 +121,29 @@ Run the complete backend test suite:
 ```bash
 .\.venv\Scripts\pytest -v backend/tests
 ```
-**Test Coverage Includes:**
-- `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
-- Password login verification and invalid credential 401 rejections.
-- Demo role authentication.
-- Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.
+- **Test Coverage Includes:**
+  - `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
+  - Password login verification and invalid credential 401 rejections.
+  - Demo role authentication and session management.
+  - Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.
+  - Document ingestion lifecycle: multipart file upload, SHA-256 deduplication, sliding-window chunking, raw file download, and document deletion.
+  - Document format parsers: text, markdown, PDF (`pypdf`), and DOCX (`python-docx`).
 
 ---
 
 ## 6. Milestone Acceptance Status
 
 - **Milestone 0 (Discovery & Baseline):** Completed (Audited repository, ADR-0001 through ADR-0004, system architecture, relational data model, risk register, prioritized backlog).
-- **Milestone 1 First Slice (Platform Foundation):** Completed (Frontend & backend startup, config management, DB migrations, health probes, structured logging, error envelopes, and RBAC security foundation).
-- **Next Milestone (Milestone 2):** Document ingestion pipeline, OCR extraction, private object storage, chunking, and background worker queues.
+- **Milestone 1 (Platform Foundation):** Completed (Frontend & backend startup, config management, DB migrations, health probes, structured logging, error envelopes, and RBAC security foundation).
+- **Milestone 2 (Document Ingestion, Parsing & Chunking Engine):** Completed (Storage provider abstraction, PDF/DOCX/TXT parsers, sliding-window chunker, cryptographic provenance, document upload/preview/chunk inspection UI, and full test suite).
+- **Next Milestone (Milestone 3):** Hybrid Search & Retrieval Engine (Full-text keyword matching + vector similarity, Reciprocal Rank Fusion, token-bounded candidate reranking, and department-scoped access filtering).
+
+---
+
+## 7. Engineering & Architectural Standards
+
+All ongoing and upcoming developments adhere to industry-standard patterns:
+- **Modular Monolith & Clean Boundaries:** Modules (`identity`, `organizations`, `documents`, `audit`, `retrieval`) retain strict encapsulation with isolated models, schemas, and services.
+- **Provider Strategy Pattern:** Swappable interfaces for storage, embeddings, and vector stores allowing seamless offline development (SQLite / local embeddings) and scalable production deployment (PostgreSQL + `pgvector` / MinIO).
+- **Reusable Frontend Design System:** Modular React UI components and custom hooks avoiding inline redundancies and enforcing consistent institutional styling tokens.
+- **Security & Integrity First:** Cryptographic verification (SHA-256 content hashing), OWASP ASVS 4.1 compliant RBAC dependency guards, and comprehensive audit trail logging.

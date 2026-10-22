@@ -57,11 +57,31 @@
   - [x] Parser unit tests (`tests/test_parsers.py`).
   - [x] Document lifecycle and RBAC rejection integration tests (`tests/test_documents.py`).
 
-## Future Milestones (Deferred per specification)
-- **M3 (Search & Retrieval):** Hybrid full-text + pgvector semantic retrieval.
-- **M4 (Grounded RAG):** Evidence citation validation, grounded prompt execution.
-- **M5 (Trust & Institutional Memory):** Versioning, conflict detection, freshness badges.
+## Milestone 3: Hybrid Search & Retrieval Engine (Next Target Slice)
+- [ ] **Architecture & Component Reusability Standards:**
+  - [ ] Implement `BaseEmbeddingProvider` strategy pattern (`LocalHashEmbedding` for offline testing, `SentenceTransformerEmbedding` / `OpenAIEmbedding` for production).
+  - [ ] Implement swappable `BaseVectorStore` adapter (`SqliteVectorStore` / in-memory cosine fallback for local dev, `PgVectorStore` for production).
+  - [ ] Build reusable query pipeline: preprocessing, department-scoped RBAC filter application, and candidate fusion.
+- [ ] **Hybrid Retrieval & Fusion Engine:**
+  - [ ] Multi-stage retrieval combining full-text keyword search and vector cosine similarity.
+  - [ ] Reciprocal Rank Fusion (RRF) to merge keyword and semantic hit scores without score distortion.
+  - [ ] Token-bounded context selection and evidence ranking.
+- [ ] **Search API & Access Enforcement:**
+  - [ ] Versioned endpoint: `POST /api/v1/search/query`.
+  - [ ] Automatic department scope injection from authenticated user context (students/faculty restricted to their own department + global docs).
+  - [ ] Standardized search response envelopes with full source citations, chunk IDs, and similarity metrics.
+- [ ] **Frontend Reusable UI Components:**
+  - [ ] Dedicated Search & Query View (`frontend/src/views/SearchView.jsx`).
+  - [ ] Reusable UI component primitives: `SearchBar`, `FilterPills`, `EvidenceCitationCard`, `ScoreBadge`, and `LoadingSkeleton`.
+  - [ ] Custom hook `useSearch` to encapsulate debounce, error handling, and query caching.
+- [ ] **Verification & Benchmarking:**
+  - [ ] Unit tests for RRF algorithm, embedding providers, and search query filters.
+  - [ ] RBAC integration tests ensuring cross-department document leakage is impossible.
+
+## Future Milestones
+- **M4 (Grounded RAG & Verifiable Answers):** Evidence citation validation, grounded prompt execution, hallucination prevention.
+- **M5 (Trust & Institutional Memory):** Versioning, conflict detection, freshness badges, superseded notice flags.
 - **M6 (Agent Workflows):** Human-in-the-loop approval workflows with LangGraph.
-- **M7 (Evaluation & Hardening):** Retrieval benchmarks, security verification (ASVS).
-- **M8 (Deployment & Demonstration):** End-to-end multi-department institutional scenario.
+- **M7 (Evaluation & Hardening):** Retrieval benchmarks (Hit Rate, MRR), security verification (OWASP ASVS).
+- **M8 (Deployment & Demonstration):** End-to-end multi-department institutional scenario demonstration.
 
