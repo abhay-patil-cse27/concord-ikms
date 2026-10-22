@@ -63,7 +63,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       style={{
         width: 'var(--sidebar-width)',
         borderRight: '1px solid var(--border-light)',
-        background: 'rgba(15, 23, 42, 0.4)',
+        background: 'var(--bg-card)',
         padding: '1.5rem 1rem',
         display: 'flex',
         flexDirection: 'column',

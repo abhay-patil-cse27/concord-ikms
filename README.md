@@ -11,10 +11,11 @@ CONCORD is built as a high-integrity institutional knowledge platform designed t
 
 ### Core Architecture (Modular Monolith)
 
-- **Presentation Layer:** React (Vite) + Vanilla CSS bespoke institutional design system with Inter & Outfit typography, live health monitoring, and demo role quick-switcher.
-- **Application & API Layer:** Python 3.12 + FastAPI with versioned routes (`/api/v1`), Pydantic Settings, structured JSON logging, correlation IDs (`X-Request-ID`), and standardized error envelopes.
+- **Presentation Layer:** React (Vite) + Vanilla CSS bespoke institutional design system with Inter & Outfit typography, primary Light Theme with seamless Dark Theme toggle, live health monitoring, and evaluator demo role quick-switcher.
+- **Application & API Layer:** Python 3.11/3.12 + FastAPI with versioned routes (`/api/v1`), Pydantic Settings, structured JSON logging, correlation IDs (`X-Request-ID`), and standardized error envelopes.
 - **Security & RBAC:** Native Bcrypt password hashing, stateless HMAC-SHA256 JWT tokens, and server-enforced role and permission dependency injection guards adhering to **OWASP ASVS 4.1**.
 - **Data & Migration Layer:** SQLAlchemy 2.0 Async engine with Alembic schema migrations, supporting PostgreSQL 16 + pgvector for production/Docker Compose and lightweight SQLite for local/offline unit test isolation.
+- **Dynamic Ingestion & Search:** Multi-format parser factory (PDF, DOCX, XLSX/XLS, TXT, MD, CSV) with sliding-window chunking, SHA-256 provenance, and hybrid Reciprocal Rank Fusion (RRF) search.
 
 ---
 

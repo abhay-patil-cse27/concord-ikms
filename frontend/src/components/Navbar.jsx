@@ -1,6 +1,31 @@
 import React from 'react';
-import { Shield, UserCircle, LogOut, RefreshCw } from 'lucide-react';
+import { Shield, UserCircle, LogOut, RefreshCw, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0.45rem',
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--bg-subtle)',
+        border: '1px solid var(--border-light)',
+        color: 'var(--text-main)',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+      }}
+    >
+      {theme === 'light' ? <Moon size={16} color="var(--primary)" /> : <Sun size={16} color="var(--primary)" />}
+    </button>
+  );
+}
 
 export default function Navbar() {
   const { user, logout, demoLogin } = useAuth();
@@ -14,7 +39,7 @@ export default function Navbar() {
       style={{
         height: 'var(--navbar-height)',
         borderBottom: '1px solid var(--border-light)',
-        background: 'rgba(10, 13, 20, 0.85)',
+        background: 'var(--bg-glass)',
         backdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
@@ -39,11 +64,11 @@ export default function Navbar() {
             boxShadow: '0 0 15px rgba(56, 189, 248, 0.4)',
           }}
         >
-          <Shield size={22} color="#041226" />
+          <Shield size={22} color="#ffffff" />
         </div>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#fff' }}>
+            <span style={{ fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
               CONCORD
             </span>
             <span className="badge badge-info" style={{ fontSize: '0.65rem', padding: '0.15rem 0.45rem' }}>
@@ -79,19 +104,21 @@ export default function Navbar() {
             { code: 'faculty', label: 'Faculty' },
             { code: 'student', label: 'Student' },
           ].map((r) => {
-            const isActive = user?.roles?.some((role) => role.code === r.code);
+            // Check primary role (first role or exact match)
+            const isActive = user?.roles?.[0]?.code === r.code;
             return (
               <button
                 key={r.code}
                 onClick={() => handleRoleSwitch(r.code)}
                 style={{
                   fontSize: '0.72rem',
-                  padding: '0.2rem 0.5rem',
+                  padding: '0.2rem 0.55rem',
                   borderRadius: 'var(--radius-sm)',
                   background: isActive ? 'var(--primary)' : 'transparent',
-                  color: isActive ? '#041226' : 'var(--text-muted)',
+                  color: isActive ? '#ffffff' : 'var(--text-muted)',
                   fontWeight: isActive ? 600 : 400,
                   transition: 'all 0.15s ease',
+                  border: isActive ? '1px solid var(--primary)' : '1px solid transparent',
                 }}
               >
                 {r.label}
@@ -99,6 +126,9 @@ export default function Navbar() {
             );
           })}
         </div>
+
+        {/* Theme Switcher */}
+        <ThemeToggle />
 
         {/* User Card */}
         {user && (
