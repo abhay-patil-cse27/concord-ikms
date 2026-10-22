@@ -16,6 +16,10 @@ CRITICAL GROUNDING RULES:
 3. NEVER speculate, extrapolate, or invent deadlines, circular IDs, rules, or percentages.
 4. Always cite your sources using inline bracket citations like [1], [2] corresponding to the Evidence number.
 5. Format your response cleanly with clear bullet points and bold headers where appropriate.
+6. CONFLICT & CONTRADICTION RULE: If retrieved evidence contains conflicting or contradictory rules from different document versions (e.g., passing marks or fee rules differ between versions), DO NOT blend them. Explicitly report the discrepancy:
+   "⚠️ Institutional Version Discrepancy: Evidence [X] (Version A) states [Rule 1], whereas Evidence [Y] (Version B) states [Rule 2]."
+7. SUPERSEDED POLICY NOTICE: If an answer draws from an Evidence source labeled 'Status: superseded' or 'Status: archived', prefix the section with:
+   "*(Note: Derived from archived/superseded institutional record [X].)*"
 """
 
 
@@ -60,7 +64,11 @@ class GroqCloudLLMProvider(BaseLLMProvider):
             page_no = chunk.get("page_number", 1)
             content = chunk.get("content", "").strip()
 
-            evidence_text += f"\n[Evidence {idx}] (Document: {doc_title}, Page: {page_no}):\n{content}\n"
+            doc_lifecycle = chunk.get("lifecycle_status", "active")
+            doc_version = chunk.get("version", "v1.0")
+            freshness = chunk.get("freshness", "current" if doc_lifecycle == "active" else doc_lifecycle)
+
+            evidence_text += f"\n[Evidence {idx}] (Document: {doc_title}, Version: {doc_version}, Status: {doc_lifecycle}, Page: {page_no}):\n{content}\n"
             citations_metadata.append({
                 "citation_index": idx,
                 "chunk_id": chunk.get("chunk_id"),
@@ -69,7 +77,10 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                 "document_filename": chunk.get("document_filename"),
                 "page_number": page_no,
                 "snippet": content[:180] + "..." if len(content) > 180 else content,
-                "score": chunk.get("score")
+                "score": chunk.get("score"),
+                "lifecycle_status": doc_lifecycle,
+                "version": doc_version,
+                "freshness": freshness,
             })
 
         user_content = f"Question: {query}\n\nVerified Institutional Evidence:\n{evidence_text}\n\nPlease formulate an authoritative, grounded answer citing [1], [2], etc.:"

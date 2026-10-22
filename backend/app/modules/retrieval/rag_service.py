@@ -36,13 +36,17 @@ class RAGService:
         start_time = time.perf_counter()
 
         # Step 1: Execute authorized hybrid search to get verified evidence
+        # By default (include_superseded=False), search only active current-policy documents.
+        lifecycle_filter = "all" if request.include_superseded else "active"
+
         search_res = await self.retrieval_service.search(
             db=db,
             query=request.query,
             current_user=current_user,
             top_k=request.top_k,
             target_department_id=request.department_id,
-            mode="hybrid"
+            mode="hybrid",
+            lifecycle_status=lifecycle_filter
         )
 
         evidence_chunks = [item.model_dump() for item in search_res.results]

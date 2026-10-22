@@ -35,7 +35,8 @@ class RetrievalService:
         current_user: User,
         top_k: int = 5,
         target_department_id: Optional[str] = None,
-        mode: str = "hybrid"
+        mode: str = "hybrid",
+        lifecycle_status: Optional[str] = "active"
     ) -> SearchQueryResponse:
         start_time = time.perf_counter()
 
@@ -67,6 +68,10 @@ class RetrievalService:
         if allowed_dept_id:
             stmt = stmt.where(Document.department_id == allowed_dept_id)
 
+        # Milestone 5: Filter by lifecycle status (default 'active')
+        if lifecycle_status and lifecycle_status != "all":
+            stmt = stmt.where(Document.lifecycle_status == lifecycle_status)
+
         result = await db.execute(stmt)
         chunks: List[DocumentChunk] = result.scalars().all()
 
@@ -87,6 +92,10 @@ class RetrievalService:
             meta = chunk.metadata_ or {}
             page_no = meta.get("page_number", 1)
 
+            doc_lifecycle = getattr(doc, "lifecycle_status", "active")
+            doc_version = getattr(doc, "version", "v1.0")
+            freshness = "current" if doc_lifecycle == "active" else doc_lifecycle
+
             base_item = {
                 "chunk_id": chunk.id,
                 "document_id": doc.id,
@@ -97,6 +106,9 @@ class RetrievalService:
                 "content": chunk.content,
                 "page_number": page_no,
                 "char_count": chunk.char_count,
+                "lifecycle_status": doc_lifecycle,
+                "version": doc_version,
+                "freshness": freshness,
                 "metadata": meta
             }
 

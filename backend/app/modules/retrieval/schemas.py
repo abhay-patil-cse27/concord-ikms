@@ -8,6 +8,7 @@ class SearchQueryRequest(BaseModel):
     department_id: Optional[str] = Field(None, description="Optional target department filter")
     top_k: int = Field(5, ge=1, le=25, description="Maximum number of evidence chunks to retrieve")
     mode: str = Field("hybrid", description="Retrieval mode: 'hybrid', 'vector', or 'lexical'")
+    lifecycle_status: Optional[str] = Field("active", description="Filter by lifecycle status: 'active', 'superseded', 'archived', or 'all'")
 
 
 class SearchEvidenceItem(BaseModel):
@@ -22,6 +23,9 @@ class SearchEvidenceItem(BaseModel):
     char_count: int
     score: float
     rank: int
+    lifecycle_status: str = "active"
+    version: str = "v1.0"
+    freshness: str = "current"  # current, superseded, archived
     lexical_rank: Optional[int] = None
     vector_rank: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
@@ -43,6 +47,7 @@ class RAGAskRequest(BaseModel):
     query: str = Field(..., min_length=2, max_length=500, description="Natural language question")
     department_id: Optional[str] = Field(None, description="Optional target department scope")
     top_k: int = Field(5, ge=1, le=10, description="Maximum number of evidence sources to ground against")
+    include_superseded: bool = Field(False, description="Whether to include superseded/archived records for historical auditing")
 
 
 class CitationItem(BaseModel):
@@ -54,6 +59,9 @@ class CitationItem(BaseModel):
     page_number: Optional[int] = 1
     snippet: str
     score: Optional[float] = None
+    lifecycle_status: str = "active"
+    version: str = "v1.0"
+    freshness: str = "current"
 
 
 class RAGAskResponse(BaseModel):

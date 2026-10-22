@@ -111,3 +111,54 @@ def test_flashrank_cross_encoder_reranking():
     # The relevant DevOps document chunk must be elevated to Rank 1 over the weather text
     assert reranked[0]["chunk_id"] == "c2"
 
+
+@pytest.mark.asyncio
+async def test_search_lifecycle_filtering(client: AsyncClient):
+    login_res = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = login_res.json()["access_token"]
+    user_dept_id = login_res.json()["user"]["primary_department_id"]
+
+    # 1. Upload an active doc
+    files_active = {"file": ("attendance_policy_2026.txt", b"Mandatory 75% attendance for exam eligibility.", "text/plain")}
+    data_active = {"department_id": user_dept_id, "title": "Attendance Policy 2026"}
+    res_active = await client.post("/api/v1/documents/upload", files=files_active, data=data_active, headers={"Authorization": f"Bearer {admin_token}"})
+    doc_id_active = res_active.json()["document"]["id"]
+
+    # 2. Upload an older doc and mark as superseded
+    files_old = {"file": ("attendance_policy_2022.txt", b"Mandatory 60% attendance for exam eligibility.", "text/plain")}
+    data_old = {"department_id": user_dept_id, "title": "Attendance Policy 2022"}
+    res_old = await client.post("/api/v1/documents/upload", files=files_old, data=data_old, headers={"Authorization": f"Bearer {admin_token}"})
+    doc_id_old = res_old.json()["document"]["id"]
+    await client.patch(
+        f"/api/v1/documents/{doc_id_old}/lifecycle",
+        json={"lifecycle_status": "superseded", "version": "v2022.0"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+
+    # 3. Search with default lifecycle_status="active" -> only active document returned
+    search_active = await client.post(
+        "/api/v1/search/query",
+        json={"query": "attendance percentage", "lifecycle_status": "active"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert search_active.status_code == 200
+    results_active = search_active.json()["results"]
+    doc_ids_active = [r["document_id"] for r in results_active]
+    assert doc_id_active in doc_ids_active
+    assert doc_id_old not in doc_ids_active  # Superseded doc must be excluded
+
+    # 4. Search with lifecycle_status="all" -> both returned
+    search_all = await client.post(
+        "/api/v1/search/query",
+        json={"query": "attendance percentage", "lifecycle_status": "all"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert search_all.status_code == 200
+    doc_ids_all = [r["document_id"] for r in search_all.json()["results"]]
+    assert doc_id_old in doc_ids_all
+
+    # Cleanup
+    await client.delete(f"/api/v1/documents/{doc_id_active}", headers={"Authorization": f"Bearer {admin_token}"})
+    await client.delete(f"/api/v1/documents/{doc_id_old}", headers={"Authorization": f"Bearer {admin_token}"})
+
+

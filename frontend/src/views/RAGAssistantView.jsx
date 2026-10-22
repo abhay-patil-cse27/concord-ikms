@@ -345,8 +345,17 @@ export default function RAGAssistantView() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-panel animate-scale-up" style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto', padding: '1.75rem', background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <span className="badge badge-primary">Citation [{activeCitation.citation_index}]</span>
+                {activeCitation.lifecycle_status === 'superseded' ? (
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                    🔴 SUPERSEDED ({activeCitation.version || 'Older Version'})
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                    🟢 CURRENT ({activeCitation.version || 'v1.0'})
+                  </span>
+                )}
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Chunk ID: {activeCitation.chunk_id?.slice(0, 8)}...</span>
               </div>
               <button

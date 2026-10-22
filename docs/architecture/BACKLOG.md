@@ -133,21 +133,25 @@
   - [x] Add unit tests for query normalization, acronym expansion, and cross-encoder re-ranking in `backend/tests/test_retrieval.py`.
   - [x] Full test suite passing with 39/39 tests (`pytest backend/tests`).
 
-## Milestone 5: Trust, Freshness & Institutional Memory (In Progress)
+## Milestone 5: Trust, Freshness & Institutional Memory (Completed)
 - [x] **Step 5.1: Document Versioning & Lifecycle Schema:**
   - [x] Add `lifecycle_status` (`active`, `superseded`, `archived`, `draft`) to `Document` model.
   - [x] Add versioning metadata (`version`, `effective_date`, `expiration_date`, `superseded_by_id`).
   - [x] Implement `PATCH /api/v1/documents/{document_id}/lifecycle` endpoint with permission guards.
   - [x] Integrate lifecycle state into ChromaDB ingestion sync metadata.
   - [x] Integration tests for lifecycle transitions and version tracking (`backend/tests/test_documents.py`).
-- [ ] **Step 5.2: Freshness & Lifecycle Filtering in RAG Search:**
-  - [ ] Default hybrid search to `lifecycle_status="active"`.
-  - [ ] Attach freshness metadata (`is_current`, `is_superseded`) to evidence citations.
-- [ ] **Step 5.3: Automated Contradiction & Conflict Detection:**
-  - [ ] Multi-version comparison and contradiction warning prompt injection.
-- [ ] **Step 5.4: Frontend Trust Badges & Warning UI:**
-  - [ ] Trust & freshness badges in citation drawer.
-  - [ ] Superseded notice banner in Grounded Q&A.
+- [x] **Step 5.2: Freshness & Lifecycle Filtering in RAG Search:**
+  - [x] Default hybrid search to `lifecycle_status="active"`.
+  - [x] Support `include_superseded` flag in `RAGAskRequest` and `lifecycle_status` in `SearchQueryRequest`.
+  - [x] Attach freshness metadata (`current`, `superseded`, `archived`) to evidence items and citations.
+  - [x] Unit test `test_search_lifecycle_filtering` verifying superseded policy exclusion (`backend/tests/test_retrieval.py`).
+- [x] **Step 5.3: Automated Contradiction & Conflict Detection:**
+  - [x] Multi-version conflict detection rule injected into system prompt (`GROUNDED_SYSTEM_PROMPT`).
+  - [x] Explicit discrepancy report formatting mandate preventing hallucinated rule blending.
+- [x] **Step 5.4: Frontend Trust Badges & Warning UI:**
+  - [x] Freshness badges (🟢 CURRENT `v1.0`, 🔴 SUPERSEDED) embedded in Citation Inspector slide-over drawer.
+  - [x] Superseded policy disclaimer notice banner in Grounded Q&A answers.
+
 
 ## Future Milestones
 - **M6 (Agent Workflows):** Human-in-the-loop approval workflows with LangGraph.

@@ -29,7 +29,8 @@ async def query_knowledge_base(
         current_user=current_user,
         top_k=request.top_k,
         target_department_id=request.department_id,
-        mode=request.mode
+        mode=request.mode,
+        lifecycle_status=request.lifecycle_status
     )
 
     # Log search audit event
