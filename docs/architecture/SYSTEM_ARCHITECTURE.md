@@ -7,15 +7,15 @@ CONCORD is designed as a **Modular Monolith** with dependency inversion. This pr
 ```
 +-------------------------------------------------------------------------+
 |                           PRESENTATION LAYER                            |
-|          React (Vite) + Vanilla CSS Design System (Inter, Dark UI)      |
-|           Auth Context | Dashboard | Search | Documents | Admin         |
+|       React (Vite) + Vanilla CSS Design System (Inter, Light/Dark UI)   |
+|     Auth Context | Dashboard | Search (RRF) | Documents | Q&A (Groq)    |
 +------------------------------------+------------------------------------+
                                      | HTTPS / JSON API contracts
 +------------------------------------v------------------------------------+
 |                         BACKEND API & APPLICATION                       |
-|                             FastAPI (Python 3.12)                       |
-|  - API Gateway / Router v1 (/api/v1/health, /api/v1/auth, /api/v1/admin)|
-|  - Core Security: Token Verification, RBAC Policy Guard, ASVS Checks    |
+|                             FastAPI (Python 3.11/3.12)                  |
+|  - API Gateway / Router v1 (/auth, /documents, /search, /rag, /audit)   |
+|  - Core Security: Token Verification, RBAC Policy Guard (OWASP ASVS 4.1)|
 |  - Structured Error Handlers, Correlation IDs, Structured Logger        |
 +--------------------+---------------------+--------------------+---------+
                      |                     |                    |
@@ -24,11 +24,16 @@ CONCORD is designed as a **Modular Monolith** with dependency inversion. This pr
         |  Users, Roles, Perms   |  | Departments  |  | Security Logs  |
         +------------------------+  +--------------+  +----------------+
                      |                     |                    |
+        +------------v-----------+  +------v-------+  +---------v------+
+        | Ingestion & Chunkers   |  | Hybrid RRF   |  | Grounded RAG   |
+        | Tabular, Semantic, Win |  | BM25 + Vec   |  | Groq Cloud LLM |
+        +------------------------+  +--------------+  +----------------+
+                     |                     |                    |
 +--------------------v---------------------v--------------------v---------+
 |                              DATA LAYER                                 |
 |          SQLAlchemy 2.0 (Async) + Alembic Schema Migrations             |
-|                 PostgreSQL 16 + pgvector / Full-Text Search             |
-|                 (SQLite supported for isolated unit tests)              |
+|          PostgreSQL 16 + pgvector (Production) / SQLite (Local)         |
+|          Embedded ChromaDB Vector Store (Persistent HNSW Cosine Index)  |
 +-------------------------------------------------------------------------+
 ```
 

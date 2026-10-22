@@ -1,7 +1,12 @@
 # Environment
 .env
-.env.local
+.env.*
+!.env.example
 *.env
+
+# ChromaDB & Vector Store
+backend/data/
+data/chroma/
 
 # Python
 __pycache__/

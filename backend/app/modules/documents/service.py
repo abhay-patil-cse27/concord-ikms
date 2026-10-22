@@ -98,6 +98,29 @@ class DocumentService:
                 f"Document {document.id} ({filename}) parsed successfully: {len(extracted_pages)} pages, {len(chunk_results)} chunks"
             )
 
+            # Sync vectors into ChromaDB embedded store
+            try:
+                from app.modules.retrieval.chroma_store import get_vector_store
+                chroma_chunks = []
+                for chunk_data in chunk_results:
+                    meta = chunk_data.metadata.copy()
+                    meta.update({
+                        "document_id": document.id,
+                        "document_title": display_title,
+                        "document_filename": filename,
+                        "department_id": str(department_id),
+                        "chunk_index": chunk_data.index,
+                        "page_number": meta.get("page_number", 1)
+                    })
+                    chroma_chunks.append({
+                        "id": f"{document.id}_{chunk_data.index}",
+                        "content": chunk_data.content,
+                        "metadata": meta
+                    })
+                get_vector_store().upsert_chunks(chroma_chunks)
+            except Exception as chroma_exc:
+                logger.warning(f"ChromaDB ingestion sync warning: {chroma_exc}")
+
         except Exception as exc:
             logger.error(f"Failed parsing document {document.id} ({filename}): {exc}")
             document.status = "failed"
@@ -180,6 +203,13 @@ class DocumentService:
             await storage_provider.delete_file(doc.file_path)
         except Exception as exc:
             logger.warning(f"Could not delete storage file {doc.file_path}: {exc}")
+
+        # Delete vectors from ChromaDB
+        try:
+            from app.modules.retrieval.chroma_store import get_vector_store
+            get_vector_store().delete_document_chunks(str(document_id))
+        except Exception as chroma_exc:
+            logger.warning(f"ChromaDB vector delete warning: {chroma_exc}")
 
         # Delete from database (cascades chunks)
         await self.db.delete(doc)

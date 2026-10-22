@@ -75,11 +75,7 @@ class RetrievalService:
             )
 
         # 3. Candidate evaluation
-        query_vector = self.embedding_provider.embed_text(query)
-
         lexical_candidates: List[Dict[str, Any]] = []
-        vector_candidates: List[Dict[str, Any]] = []
-
         for chunk in chunks:
             doc = chunk.document
             meta = chunk.metadata_ or {}
@@ -105,13 +101,42 @@ class RetrievalService:
                 item_lex["score"] = lex_score
                 lexical_candidates.append(item_lex)
 
-            # Vector scoring
-            chunk_vector = self.embedding_provider.embed_text(chunk.content)
-            vec_score = compute_cosine_similarity(query_vector, chunk_vector)
-            if vec_score > 0.0:
-                item_vec = dict(base_item)
-                item_vec["score"] = vec_score
-                vector_candidates.append(item_vec)
+        # 3b. Vector candidate evaluation via ChromaDB
+        vector_candidates: List[Dict[str, Any]] = []
+        try:
+            from app.modules.retrieval.chroma_store import get_vector_store
+            chroma_hits = get_vector_store().query_similarity(
+                query=query,
+                top_k=top_k * 2,
+                department_id=allowed_dept_id
+            )
+            if chroma_hits:
+                vector_candidates = chroma_hits
+        except Exception:
+            pass
+
+        # In-memory vector fallback if ChromaDB returned empty or is not initialized yet
+        if not vector_candidates:
+            query_vector = self.embedding_provider.embed_text(query)
+            for chunk in chunks:
+                doc = chunk.document
+                meta = chunk.metadata_ or {}
+                chunk_vector = self.embedding_provider.embed_text(chunk.content)
+                vec_score = compute_cosine_similarity(query_vector, chunk_vector)
+                if vec_score > 0.0:
+                    vector_candidates.append({
+                        "chunk_id": chunk.id,
+                        "document_id": doc.id,
+                        "document_title": doc.title,
+                        "document_filename": doc.filename,
+                        "department_id": doc.department_id,
+                        "chunk_index": chunk.chunk_index,
+                        "content": chunk.content,
+                        "page_number": meta.get("page_number", 1),
+                        "char_count": chunk.char_count,
+                        "score": vec_score,
+                        "metadata": meta
+                    })
 
         # Sort candidate lists
         lexical_candidates.sort(key=lambda x: x["score"], reverse=True)

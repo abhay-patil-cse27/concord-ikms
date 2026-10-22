@@ -85,8 +85,40 @@
   - [x] RBAC integration tests ensuring cross-department document leakage is impossible.
   - [x] Complete test suite passing: 30/30 tests.
 
+## Milestone 4: Grounded RAG & Verifiable Answers (Completed)
+- [x] **LLM Integration & Provider Strategy:**
+  - [x] Abstract provider contract `BaseLLMProvider`.
+  - [x] Ultra-fast Groq Cloud API integration (`llama-3.3-70b-versatile`).
+  - [x] Fail-safe offline deterministic synthesizer fallback (`OfflineFallbackLLMProvider`).
+  - [x] Strict institutional prompt engineering: answer *only* from verified evidence, mandate inline citations `[1]`, refuse if information is absent.
+- [x] **RAG Domain Service & API:**
+  - [x] `RAGService` connecting department-scoped `RetrievalService` with LLM provider.
+  - [x] Versioned endpoint: `POST /api/v1/rag/ask` with RBAC guard `require_permission("documents:read")`.
+  - [x] Audit trail recording query metrics, latency, model used, and citation counts.
+- [x] **Frontend Institutional Q&A Interface:**
+  - [x] Reusable `RAGAssistantView.jsx` and `useRAG` custom hook.
+  - [x] Interactive inline citation tags (`[1]`, `[2]`) in generated answers.
+  - [x] Citation Inspector slide-over drawer showing document filename, title, page number, and original chunk snippet.
+  - [x] Sidebar navigation with active role scoping and responsive light/dark themes.
+- [x] **Automated Tests:**
+  - [x] Pytest suite covering offline fallback, empty evidence refusal, RAG API, and unauthorized rejections (`tests/test_rag.py`).
+  - [x] Full test suite passing (34/34 tests).
+
+## Phase 4b: Embedded Local Vector Store (ChromaDB Integration) (Completed)
+- [x] **ChromaDB Core Architecture & Lifecycle:**
+  - [x] Add `chromadb` to `backend/requirements.txt` and define persistent storage directory at `backend/data/chroma`.
+  - [x] Implement `ChromaVectorStore` utilizing embedded `PersistentClient` with native metadata filtering.
+- [x] **Ingestion Sync & Deduplication:**
+  - [x] Hook into Document Ingestion pipeline (`backend/app/modules/documents/service.py`) to automatically upsert chunks and metadata (`document_id`, `department_id`, `chunk_index`, `page_number`) into ChromaDB collection.
+  - [x] Implement atomic deletion hook so deleting a document also purges all associated chunk vectors from ChromaDB (`collection.delete(where={"document_id": doc_id})`).
+- [x] **Hardware/Index-Level RBAC Filtering in Hybrid Search:**
+  - [x] Update `RetrievalService` to query ChromaDB with `where={"department_id": user_dept_id}` (or unrestricted for `platform_admin`), offloading vector similarity search from Python in-memory math to Chroma's HNSW vector index.
+  - [x] Preserve Reciprocal Rank Fusion (RRF) combining ChromaDB semantic search hits with lexical BM25 hits.
+- [x] **Verification & Benchmarks:**
+  - [x] Automated tests in `backend/tests/test_chroma.py` verifying vector persistence, index retrieval, metadata filtering, and document deletion cascades.
+  - [x] Validate zero-downtime execution and verify offline capability without external daemon processes.
+
 ## Future Milestones
-- **M4 (Grounded RAG & Verifiable Answers):** Evidence citation validation, grounded prompt execution, hallucination prevention.
 - **M5 (Trust & Institutional Memory):** Versioning, conflict detection, freshness badges, superseded notice flags.
 - **M6 (Agent Workflows):** Human-in-the-loop approval workflows with LangGraph.
 - **M7 (Evaluation & Hardening):** Retrieval benchmarks (Hit Rate, MRR), security verification (OWASP ASVS).

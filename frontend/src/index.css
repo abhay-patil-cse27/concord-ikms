@@ -289,3 +289,92 @@ input:focus, select:focus, textarea:focus {
 @keyframes spin {
   100% { transform: rotate(360deg); }
 }
+
+/* Markdown Formatted Answer Styling (Tables, Headings, Lists, Quotes) */
+.markdown-body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-main);
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.6rem;
+  color: var(--text-main);
+  font-family: var(--font-heading);
+}
+
+.markdown-body h1 { font-size: 1.35rem; }
+.markdown-body h2 { font-size: 1.2rem; }
+.markdown-body h3 { font-size: 1.05rem; }
+
+.markdown-body p {
+  margin-bottom: 0.85rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.4rem;
+}
+
+.markdown-body hr {
+  border: 0;
+  height: 1px;
+  background: var(--border-light);
+  margin: 1.5rem 0;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--primary);
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  background: var(--bg-subtle);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-muted);
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.markdown-body th {
+  background: var(--bg-subtle);
+  color: var(--text-main);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.markdown-body td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+}
+
+.markdown-body tr:hover td {
+  background: var(--bg-card-hover);
+}
+
+.markdown-body code {
+  background: var(--bg-subtle);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: monospace;
+  color: var(--primary);
+}

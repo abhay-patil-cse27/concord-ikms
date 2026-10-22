@@ -140,6 +140,7 @@ Run the complete backend test suite:
 - **Milestone 2 (Document Ingestion, Multi-Format Parsing & Chunking):** Completed (Storage provider abstraction, PDF/DOCX/TXT/Excel parsers, format-aware chunking strategies, cryptographic provenance, and upload/preview/inspection UI).
 - **Milestone 3 (Hybrid Search & Retrieval Engine):** Completed (Reciprocal Rank Fusion, BM25-style lexical search + vector cosine similarity, department-scoped RBAC retrieval, reusable SearchBar UI, and Institutional Landing Page).
 - **Milestone 4 (Grounded RAG & Verifiable Answers):** Completed (Groq Cloud LLM provider integration with `llama-3.3-70b-versatile`, offline synthesizer fallback, interactive click-to-inspect citations, zero-hallucination refusal rules, and `POST /api/v1/rag/ask`).
+- **Phase 4b (Embedded Local Vector Store — ChromaDB Integration):** Completed (Embedded `PersistentClient` in `backend/data/chroma`, index-level RBAC filtering with `where={"department_id": dept_id}`, automated ingestion sync & deletion hooks, and hybrid RRF search optimization).
 - **Next Milestone (Milestone 5):** Knowledge Graph & Governance (Semantic entity relations, institutional approval workflows, and lifecycle governance).
 
 ---

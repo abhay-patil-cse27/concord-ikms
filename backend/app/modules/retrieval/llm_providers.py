@@ -25,9 +25,17 @@ class GroqCloudLLMProvider(BaseLLMProvider):
     """
 
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
-        self.api_key = api_key or settings.GROQ_API_KEY
-        self.model = model or settings.GROQ_MODEL
+        self._api_key = api_key
+        self._model = model
         self.api_url = "https://api.groq.com/openai/v1/chat/completions"
+
+    @property
+    def api_key(self) -> str:
+        return self._api_key or settings.GROQ_API_KEY
+
+    @property
+    def model(self) -> str:
+        return self._model or settings.GROQ_MODEL
 
     async def generate_grounded_answer(
         self,
@@ -95,6 +103,10 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                 if res.status_code == 200:
                     data = res.json()
                     answer_text = data["choices"][0]["message"]["content"]
+                    # Normalize special unicode brackets (e.g. 【1】 or [Evidence 1] -> [1]) so citations parse cleanly
+                    import re
+                    answer_text = re.sub(r'【(\d+)】', r'[\1]', answer_text)
+                    answer_text = re.sub(r'\[Evidence\s*(\d+)\]', r'[\1]', answer_text, flags=re.IGNORECASE)
                     return {
                         "answer": answer_text,
                         "citations": citations_metadata,

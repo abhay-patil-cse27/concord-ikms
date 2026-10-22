@@ -11,9 +11,6 @@ from app.modules.audit.service import AuditService
 from app.modules.audit.schemas import AuditEventCreate
 
 router = APIRouter(prefix="/rag", tags=["Grounded Q&A (RAG)"])
-rag_service = RAGService()
-
-
 @router.post("/ask", response_model=RAGAskResponse)
 async def ask_grounded_rag(
     request: RAGAskRequest,
@@ -25,6 +22,7 @@ async def ask_grounded_rag(
     Strictly scoped by the user's role and authorized department boundaries.
     Generates verifiable responses with exact document and chunk citations.
     """
+    rag_service = RAGService()
     response = await rag_service.ask(
         db=db,
         request=request,

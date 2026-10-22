@@ -15,6 +15,8 @@ import {
   Quote,
   ShieldCheck
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useRAG } from '../hooks/useRAG';
 
 export default function RAGAssistantView() {
@@ -45,45 +47,81 @@ export default function RAGAssistantView() {
     setShowCitationDrawer(true);
   };
 
-  // Helper to parse answer and convert [1], [2] citations into clickable interactive tags
-  const renderFormattedAnswer = (text, citations = []) => {
-    if (!text) return null;
-    const parts = text.split(/(\[\d+\])/g);
+  // Helper to parse text nodes and convert [1], [2], or 【1】 into interactive buttons
+  const renderFormattedAnswer = (rawText, citations = []) => {
+    if (!rawText) return null;
 
-    return parts.map((part, i) => {
-      const match = part.match(/\[(\d+)\]/);
-      if (match) {
-        const index = parseInt(match[1], 10);
-        const citation = citations.find(c => c.citation_index === index);
+    // First normalize any remaining unicode brackets
+    const normalized = rawText
+      .replace(/【(\d+)】/g, '[$1]')
+      .replace(/\[Evidence\s*(\d+)\]/gi, '[$1]');
 
-        return (
-          <button
-            key={i}
-            type="button"
-            onClick={() => citation && handleCitationClick(citation)}
-            title={citation ? `View source: ${citation.document_title} (Page ${citation.page_number})` : 'Citation'}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(56, 189, 248, 0.15)',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
-              color: 'var(--primary)',
-              borderRadius: '4px',
-              padding: '0.1rem 0.45rem',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: citation ? 'pointer' : 'default',
-              margin: '0 0.2rem',
-              verticalAlign: 'baseline',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {part}
-          </button>
-        );
-      }
-      return <span key={i}>{part}</span>;
+    return (
+      <div className="markdown-body">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            p: ({ node, children, ...props }) => {
+              // Parse children to transform bracket citations
+              return <p {...props}>{renderChildrenWithCitations(children, citations)}</p>;
+            },
+            li: ({ node, children, ...props }) => {
+              return <li {...props}>{renderChildrenWithCitations(children, citations)}</li>;
+            },
+            td: ({ node, children, ...props }) => {
+              return <td {...props}>{renderChildrenWithCitations(children, citations)}</td>;
+            }
+          }}
+        >
+          {normalized}
+        </ReactMarkdown>
+      </div>
+    );
+  };
+
+  const renderChildrenWithCitations = (children, citations) => {
+    if (!children) return null;
+    return React.Children.map(children, (child) => {
+      if (typeof child !== 'string') return child;
+
+      const parts = child.split(/(\[\d+\])/g);
+      if (parts.length === 1) return child;
+
+      return parts.map((part, i) => {
+        const match = part.match(/\[(\d+)\]/);
+        if (match) {
+          const index = parseInt(match[1], 10);
+          const citation = citations.find((c) => c.citation_index === index);
+
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => citation && handleCitationClick(citation)}
+              title={citation ? `View Source: ${citation.document_title} (Page ${citation.page_number})` : 'Source Citation'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                color: 'var(--primary)',
+                borderRadius: '4px',
+                padding: '0.05rem 0.4rem',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: citation ? 'pointer' : 'default',
+                margin: '0 0.2rem',
+                verticalAlign: 'baseline',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {part}
+            </button>
+          );
+        }
+        return part;
+      });
     });
   };
 
