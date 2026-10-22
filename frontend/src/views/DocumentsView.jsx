@@ -410,6 +410,7 @@ export default function DocumentsView() {
                   <th style={{ padding: '0.75rem 1rem' }}>Document</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Department</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>Version / Trust</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Chunks</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Size</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Uploaded</th>
@@ -454,6 +455,25 @@ export default function DocumentsView() {
                             <Clock size={14} /> Processing
                           </span>
                         )}
+                      </td>
+
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{doc.version || 'v1.0'}</span>
+                          {doc.lifecycle_status === 'superseded' ? (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', width: 'fit-content' }}>
+                              🔴 SUPERSEDED
+                            </span>
+                          ) : doc.lifecycle_status === 'archived' ? (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', background: 'rgba(148, 163, 184, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', width: 'fit-content' }}>
+                              ⚪ ARCHIVED
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#22c55e', background: 'rgba(34, 197, 94, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', width: 'fit-content' }}>
+                              🟢 ACTIVE
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td style={{ padding: '0.75rem 1rem' }}>

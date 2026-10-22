@@ -120,6 +120,21 @@ export const api = {
       }),
     }),
 
+  // Document Lifecycle & Versioning (M5)
+  updateDocumentLifecycle: (id, payload) =>
+    apiRequest(`/documents/${id}/lifecycle`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+
+  // Governance & Approvals (M6)
+  getPendingDocuments: () => apiRequest('/governance/pending-documents'),
+  reviewDocument: (id, decision, notes = '') =>
+    apiRequest(`/governance/documents/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, notes }),
+    }),
+
   // Grounded RAG with Groq Cloud (M4)
   askQuestion: (query, options = {}) =>
     apiRequest('/rag/ask', {
@@ -128,6 +143,7 @@ export const api = {
         query,
         department_id: options.departmentId || null,
         top_k: options.topK || 5,
+        include_superseded: options.includeSuperseded || false,
       }),
     }),
 };
