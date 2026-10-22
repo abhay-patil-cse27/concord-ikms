@@ -54,6 +54,9 @@ export default function RAGAssistantView() {
   const [speechSupported, setSpeechSupported] = useState(false);
 
   const recognitionRef = React.useRef(null);
+  const silenceTimerRef = React.useRef(null);
+  const transcriptAccumulatorRef = React.useRef('');
+  const shouldKeepListeningRef = React.useRef(false);
   const [speechError, setSpeechError] = useState(null);
 
   // Initialize Web Speech Recognition
@@ -63,7 +66,8 @@ export default function RAGAssistantView() {
       setSpeechSupported(true);
       try {
         const recognition = new SpeechRecognition();
-        recognition.continuous = false;
+        // continuous: true prevents the browser from automatically killing the mic after a brief 1-second pause
+        recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
@@ -73,31 +77,70 @@ export default function RAGAssistantView() {
         };
 
         recognition.onresult = (event) => {
-          let currentTranscript = '';
+          // Reset silence timer on every spoken syllable
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+          }
+
+          let interimTranscript = '';
+          let finalTranscript = transcriptAccumulatorRef.current;
+
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            currentTranscript += event.results[i][0].transcript;
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += (finalTranscript ? ' ' : '') + transcript.trim();
+              transcriptAccumulatorRef.current = finalTranscript;
+            } else {
+              interimTranscript += transcript;
+            }
           }
-          if (currentTranscript.trim()) {
-            setQuery(currentTranscript);
+
+          const combined = (finalTranscript + (interimTranscript ? ' ' + interimTranscript : '')).trim();
+          if (combined) {
+            setQuery(combined);
           }
+
+          // Give a generous 3-second grace period of complete silence before auto-stopping
+          silenceTimerRef.current = setTimeout(() => {
+            if (shouldKeepListeningRef.current && recognitionRef.current) {
+              try {
+                recognitionRef.current.stop();
+              } catch (e) {
+                // ignore
+              }
+            }
+          }, 3000);
         };
 
         recognition.onerror = (event) => {
           console.warn('Speech recognition error:', event.error);
           if (event.error === 'not-allowed') {
             setSpeechError('Microphone permission was denied. Please allow microphone access in your browser address bar.');
+            shouldKeepListeningRef.current = false;
+            setIsListening(false);
           } else if (event.error === 'no-speech') {
-            setSpeechError('No speech was detected. Please try speaking closer to your microphone.');
+            // Under continuous mode, no-speech is non-fatal; don't terminate immediately unless user clicked off
           } else if (event.error === 'network') {
             setSpeechError('Network error connecting to speech recognition service.');
+            shouldKeepListeningRef.current = false;
+            setIsListening(false);
           } else {
-            setSpeechError(`Speech error: ${event.error}`);
+            setSpeechError(`Speech status: ${event.error}`);
           }
-          setIsListening(false);
         };
 
         recognition.onend = () => {
+          // If browser closed the socket automatically but user is still speaking/waiting, auto-restart
+          if (shouldKeepListeningRef.current) {
+            try {
+              recognition.start();
+              return;
+            } catch (err) {
+              // restart failed
+            }
+          }
           setIsListening(false);
+          shouldKeepListeningRef.current = false;
         };
 
         recognitionRef.current = recognition;
@@ -107,6 +150,10 @@ export default function RAGAssistantView() {
     }
 
     return () => {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+      }
+      shouldKeepListeningRef.current = false;
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
@@ -123,7 +170,12 @@ export default function RAGAssistantView() {
       return;
     }
 
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+    }
+
     if (isListening) {
+      shouldKeepListeningRef.current = false;
       try {
         recognitionRef.current.stop();
       } catch (e) {
@@ -134,11 +186,13 @@ export default function RAGAssistantView() {
     }
 
     setSpeechError(null);
+    transcriptAccumulatorRef.current = query ? query.trim() : '';
+    shouldKeepListeningRef.current = true;
+
     try {
       recognitionRef.current.start();
     } catch (err) {
       console.warn('Could not start recognition:', err);
-      // If already started or in transition, abort and re-start
       try {
         recognitionRef.current.abort();
         setTimeout(() => {
@@ -147,6 +201,7 @@ export default function RAGAssistantView() {
       } catch (retryErr) {
         setSpeechError('Microphone unavailable or already in use. Please check browser permissions.');
         setIsListening(false);
+        shouldKeepListeningRef.current = false;
       }
     }
   };
