@@ -80,6 +80,52 @@ export default function DashboardView() {
         </div>
       </div>
 
+      {/* Admin Demo Management Bar */}
+      {role?.code === 'platform_admin' && (
+        <div 
+          className="glass-panel animate-fade-in" 
+          style={{ 
+            padding: '1rem 1.5rem', 
+            marginBottom: '1.5rem', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            flexWrap: 'wrap', 
+            gap: '1rem',
+            background: 'rgba(56, 189, 248, 0.05)',
+            border: '1px solid rgba(56, 189, 248, 0.25)'
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldCheck size={18} color="var(--primary)" />
+              Institutional Demo Evaluator Controls
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              Reset and re-populate canonical cross-department documents (CSE, ENTC, Exam Regulations) into SQLite and ChromaDB.
+            </div>
+          </div>
+
+          <button
+            onClick={async () => {
+              if (window.confirm('Reset and re-populate canonical demo knowledge records into SQLite and ChromaDB?')) {
+                try {
+                  const res = await api.reseedDemoData();
+                  alert(res.message || 'Demo records reseeded successfully!');
+                } catch (err) {
+                  alert(`Reseed failed: ${err.message}`);
+                }
+              }
+            }}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}
+          >
+            <Layers size={16} />
+            Reseed Demo Knowledge Base
+          </button>
+        </div>
+      )}
+
       {/* Live System Health */}
       <HealthCard />
 

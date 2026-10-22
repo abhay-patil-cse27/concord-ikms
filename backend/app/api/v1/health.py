@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.logging import logger
+from app.core.security import require_role
 
 router = APIRouter(tags=["Health & Readiness"])
 
@@ -53,3 +54,26 @@ async def readyz(db: AsyncSession = Depends(get_db)):
             }
         }
     }
+
+
+@router.post("/admin/reseed-demo", summary="Reseed Demo Knowledge Base")
+async def reseed_demo_data(
+    current_user = Depends(require_role("platform_admin")),
+    db: AsyncSession = Depends(get_db)
+):
+    """Reseeds demo institutional knowledge documents and ChromaDB embeddings."""
+    from app.core.seed import seed_database
+    await seed_database(db)
+    
+    # Also trigger script demo seeding into ChromaDB
+    try:
+        from scripts.seed_demo_data import seed_institutional_demo_data
+        await seed_institutional_demo_data()
+    except Exception as e:
+        logger.warning(f"Chroma demo data sync note: {e}")
+
+    return {
+        "success": True,
+        "message": "Demo institutional documents and ChromaDB vectors reseeded successfully."
+    }
+

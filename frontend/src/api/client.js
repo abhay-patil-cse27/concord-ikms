@@ -29,9 +29,13 @@ export async function apiRequest(endpoint, options = {}) {
 }
 
 export const api = {
-  // Health
+  // Health & Admin Maintenance
   getHealth: () => apiRequest('/healthz'),
   getReadiness: () => apiRequest('/readyz'),
+  reseedDemoData: () =>
+    apiRequest('/admin/reseed-demo', {
+      method: 'POST',
+    }),
 
   // Auth
   login: (email, password) =>

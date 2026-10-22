@@ -21,6 +21,8 @@ export default function DocumentsView() {
   const [documents, setDocuments] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [selectedDept, setSelectedDept] = useState('');
+  const [activeFilterTab, setActiveFilterTab] = useState('all'); // 'all' | 'pending'
+  const [pendingDocs, setPendingDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -38,16 +40,22 @@ export default function DocumentsView() {
 
   const canWrite = hasPermission('documents:write');
   const canDelete = hasPermission('documents:delete');
+  const isApprover = user?.roles?.some((r) => ['platform_admin', 'dept_admin'].includes(r.code));
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [docsData, deptsData] = await Promise.all([
+      const promises = [
         api.getDocuments(selectedDept || null),
         api.getDepartments(),
-      ]);
+      ];
+      if (isApprover) {
+        promises.push(api.getPendingDocuments().catch(() => []));
+      }
+      const [docsData, deptsData, pendingData = []] = await Promise.all(promises);
       setDocuments(docsData);
       setDepartments(deptsData);
+      setPendingDocs(pendingData);
       if (!uploadDeptId && deptsData.length > 0) {
         setUploadDeptId(user?.primary_department_id || deptsData[0].id);
       }
@@ -56,6 +64,16 @@ export default function DocumentsView() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReview = async (docId, decision) => {
+    const notes = window.prompt(`Enter optional review notes for ${decision}:`) || '';
+    try {
+      await api.reviewDocument(docId, decision, notes);
+      await fetchData();
+    } catch (err) {
+      alert(`Review failed: ${err.message}`);
     }
   };
 
@@ -121,14 +139,53 @@ export default function DocumentsView() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-            Institutional Document Ingestion & Chunking
+            Institutional Document Ingestion & Governance
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Parse, deduplicate, and chunk institutional policies, course syllabi, and administrative records.
+            Parse, deduplicate, chunk, and review institutional policies, course syllabi, and administrative records.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          {/* View Filter Pills */}
+          {isApprover && (
+            <div style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+              <button
+                onClick={() => setActiveFilterTab('all')}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: activeFilterTab === 'all' ? 'var(--primary)' : 'transparent',
+                  color: activeFilterTab === 'all' ? '#fff' : 'var(--text-muted)',
+                }}
+              >
+                All Documents ({documents.length})
+              </button>
+              <button
+                onClick={() => setActiveFilterTab('pending')}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: activeFilterTab === 'pending' ? '#f59e0b' : 'transparent',
+                  color: activeFilterTab === 'pending' ? '#fff' : 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                Pending Review ({pendingDocs.length})
+              </button>
+            </div>
+          )}
+
           {/* Department Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Filter size={16} color="var(--text-muted)" />
@@ -409,7 +466,7 @@ export default function DocumentsView() {
                 <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
                   <th style={{ padding: '0.75rem 1rem' }}>Document</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Department</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>Governance</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Version / Trust</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Chunks</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Size</th>
@@ -418,7 +475,7 @@ export default function DocumentsView() {
                 </tr>
               </thead>
               <tbody>
-                {documents.map((doc) => {
+                {(activeFilterTab === 'pending' ? pendingDocs : documents).map((doc) => {
                   const dept = departments.find((d) => d.id === doc.department_id);
                   return (
                     <tr
@@ -493,6 +550,28 @@ export default function DocumentsView() {
 
                       <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                          {/* Governance Action Buttons */}
+                          {isApprover && doc.approval_status === 'pending_approval' && (
+                            <>
+                              <button
+                                onClick={() => handleReview(doc.id, 'approved')}
+                                className="btn btn-primary"
+                                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', background: '#10b981', borderColor: '#10b981' }}
+                                title="Approve Document (Sync to Vector Index)"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReview(doc.id, 'rejected')}
+                                className="btn btn-danger"
+                                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                title="Reject Document"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+
                           <button
                             onClick={() => handleInspect(doc.id)}
                             className="btn btn-secondary"
