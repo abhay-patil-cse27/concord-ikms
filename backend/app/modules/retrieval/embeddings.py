@@ -60,6 +60,54 @@ class DeterministicHashEmbeddingProvider(BaseEmbeddingProvider):
         return [self.embed_text(t) for t in texts]
 
 
+class NeuralONNXEmbeddingProvider(BaseEmbeddingProvider):
+    """
+    Neural Transformer embedding provider based on all-MiniLM-L6-v2 (ONNX runtime).
+    Produces 384-dimensional dense semantic vectors with deep conceptual comprehension.
+    """
+
+    def __init__(self):
+        self._fn = None
+        self._dim = 384
+        try:
+            import chromadb.utils.embedding_functions as ef
+            self._fn = ef.DefaultEmbeddingFunction()
+        except Exception:
+            self._fn = None
+
+    @property
+    def dimension(self) -> int:
+        return self._dim
+
+    def embed_text(self, text: str) -> List[float]:
+        if not text or not text.strip():
+            return [0.0] * self._dim
+        if self._fn is not None:
+            try:
+                vectors = self._fn([text])
+                return [float(x) for x in vectors[0]]
+            except Exception:
+                pass
+        # Fallback to feature hash if ONNX model unavailable
+        return DeterministicHashEmbeddingProvider(dimension=self._dim).embed_text(text)
+
+    def embed_batch(self, texts: List[str]) -> List[List[float]]:
+        if not texts:
+            return []
+        if self._fn is not None:
+            try:
+                vectors = self._fn(texts)
+                return [[float(x) for x in vec] for vec in vectors]
+            except Exception:
+                pass
+        fallback = DeterministicHashEmbeddingProvider(dimension=self._dim)
+        return [fallback.embed_text(t) for t in texts]
+
+
 def get_default_embedding_provider() -> BaseEmbeddingProvider:
-    """Factory helper to obtain the configured embedding provider."""
-    return DeterministicHashEmbeddingProvider(dimension=256)
+    """Factory helper to obtain the configured neural embedding provider."""
+    try:
+        return NeuralONNXEmbeddingProvider()
+    except Exception:
+        return DeterministicHashEmbeddingProvider(dimension=256)
+
