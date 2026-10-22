@@ -22,8 +22,16 @@ class Document(Base):
     department_id: Mapped[str] = mapped_column(String(36), ForeignKey("departments.id", ondelete="CASCADE"), index=True, nullable=False)
     uploader_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
 
+    # Lifecycle & Versioning (Milestone 5)
     # Status: pending, processing, processed, failed
     status: Mapped[str] = mapped_column(String(32), default="pending", index=True, nullable=False)
+    # Lifecycle: active, superseded, archived, draft
+    lifecycle_status: Mapped[str] = mapped_column(String(32), default="active", index=True, nullable=False)
+    version: Mapped[str] = mapped_column(String(32), default="v1.0", nullable=False)
+    effective_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expiration_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
+
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     chunk_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
@@ -33,6 +41,7 @@ class Document(Base):
     # Relationships
     department = relationship("Department", foreign_keys=[department_id])
     uploader = relationship("User", foreign_keys=[uploader_id])
+    superseded_by = relationship("Document", remote_side="Document.id", foreign_keys=[superseded_by_id])
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan", order_by="DocumentChunk.chunk_index")
 
 

@@ -93,3 +93,45 @@ async def test_student_cannot_upload_or_delete_documents(client: AsyncClient):
     upload_res = await client.post("/api/v1/documents/upload", files=files, data=data, headers={"Authorization": f"Bearer {token}"})
     assert upload_res.status_code == 403
     assert upload_res.json()["error"]["code"] == "PERMISSION_DENIED"
+
+
+@pytest.mark.asyncio
+async def test_document_lifecycle_version_update(client: AsyncClient):
+    # Admin logs in and uploads document
+    login_res = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = login_res.json()["access_token"]
+    user_dept_id = login_res.json()["user"]["primary_department_id"]
+
+    content = b"Draft curriculum for autonomous batch 2026-27."
+    files = {"file": ("curriculum_v1.txt", content, "text/plain")}
+    data = {"department_id": user_dept_id, "title": "Curriculum 2026"}
+
+    upload_res = await client.post(
+        "/api/v1/documents/upload",
+        files=files,
+        data=data,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert upload_res.status_code == 201
+    doc_id = upload_res.json()["document"]["id"]
+    assert upload_res.json()["document"]["lifecycle_status"] == "active"
+    assert upload_res.json()["document"]["version"] == "v1.0"
+
+    # Transition lifecycle to superseded
+    patch_res = await client.patch(
+        f"/api/v1/documents/{doc_id}/lifecycle",
+        json={"lifecycle_status": "superseded", "version": "v1.0-deprecated"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert patch_res.status_code == 200
+    updated_doc = patch_res.json()
+    assert updated_doc["lifecycle_status"] == "superseded"
+    assert updated_doc["version"] == "v1.0-deprecated"
+
+    # Cleanup
+    del_res = await client.delete(
+        f"/api/v1/documents/{doc_id}",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert del_res.status_code == 204
+

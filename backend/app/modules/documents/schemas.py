@@ -27,6 +27,11 @@ class DocumentRead(BaseModel):
     department_id: str
     uploader_id: str
     status: str
+    lifecycle_status: str = "active"
+    version: str = "v1.0"
+    effective_date: Optional[datetime] = None
+    expiration_date: Optional[datetime] = None
+    superseded_by_id: Optional[str] = None
     error_message: Optional[str] = None
     chunk_count: int
     created_at: datetime
@@ -35,6 +40,13 @@ class DocumentRead(BaseModel):
 
 class DocumentDetailRead(DocumentRead):
     chunks: List[DocumentChunkRead] = []
+    superseded_by_title: Optional[str] = None
+
+
+class DocumentLifecycleUpdate(BaseModel):
+    lifecycle_status: str
+    version: Optional[str] = None
+    superseded_by_id: Optional[str] = None
 
 
 class DocumentUploadResponse(BaseModel):

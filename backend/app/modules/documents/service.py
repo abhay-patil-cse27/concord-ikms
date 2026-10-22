@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import logger
-from app.core.errors import NotFoundError, ConflictError
+from app.core.errors import NotFoundError, ConflictError, ValidationError
 from app.core.storage import storage_provider
 from app.modules.documents.models import Document, DocumentChunk
 from app.modules.documents.parsers import get_parser_for_mime_or_ext
@@ -109,6 +109,8 @@ class DocumentService:
                         "document_title": display_title,
                         "document_filename": filename,
                         "department_id": str(department_id),
+                        "lifecycle_status": document.lifecycle_status,
+                        "version": document.version,
                         "chunk_index": chunk_obj.chunk_index,
                         "page_number": meta.get("page_number", 1)
                     })
@@ -232,4 +234,54 @@ class DocumentService:
         except Exception as audit_exc:
             logger.warning(f"Failed to log document deletion audit: {audit_exc}")
 
-        return True
+    async def update_lifecycle(
+        self,
+        document_id: str,
+        lifecycle_status: str,
+        version: Optional[str] = None,
+        superseded_by_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        ip_address: Optional[str] = None,
+    ) -> Document:
+        """Updates the lifecycle status and version relationships of an institutional document."""
+        valid_statuses = {"active", "superseded", "archived", "draft"}
+        if lifecycle_status not in valid_statuses:
+            raise ValidationError(f"Invalid lifecycle status '{lifecycle_status}'. Allowed: {valid_statuses}")
+
+        query = select(Document).where(Document.id == str(document_id))
+        res = await self.db.execute(query)
+        doc = res.scalar_one_or_none()
+        if not doc:
+            raise NotFoundError(f"Document with ID {document_id} not found")
+
+        doc.lifecycle_status = lifecycle_status
+        if version:
+            doc.version = version
+        if superseded_by_id:
+            doc.superseded_by_id = superseded_by_id
+
+        await self.db.commit()
+        await self.db.refresh(doc)
+
+        # Audit lifecycle update
+        try:
+            await AuditService.log_event(
+                self.db,
+                AuditEventCreate(
+                    user_id=str(user_id) if user_id else str(doc.uploader_id),
+                    action="document.lifecycle_updated",
+                    resource_type="document",
+                    resource_id=str(document_id),
+                    status="SUCCESS",
+                    details={
+                        "filename": doc.filename,
+                        "new_status": lifecycle_status,
+                        "version": doc.version,
+                        "superseded_by_id": doc.superseded_by_id
+                    },
+                    ip_address=ip_address,
+                ),
+            )
+        except Exception as audit_exc:
+            logger.warning(f"Failed to log lifecycle audit: {audit_exc}")
+        return doc

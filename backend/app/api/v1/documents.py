@@ -9,7 +9,12 @@ from app.core.security import require_permission, get_current_user
 from app.core.storage import storage_provider
 from app.core.errors import ValidationError
 from app.modules.identity.models import User
-from app.modules.documents.schemas import DocumentRead, DocumentDetailRead, DocumentUploadResponse
+from app.modules.documents.schemas import (
+    DocumentRead,
+    DocumentDetailRead,
+    DocumentUploadResponse,
+    DocumentLifecycleUpdate,
+)
 from app.modules.documents.service import DocumentService
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -99,6 +104,28 @@ async def download_document(
     )
 
 
+@router.patch("/{document_id}/lifecycle", response_model=DocumentRead)
+async def update_document_lifecycle(
+    request: Request,
+    document_id: str,
+    payload: DocumentLifecycleUpdate,
+    current_user: User = Depends(require_permission("documents:write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Updates document lifecycle state (active, superseded, archived) and version pointer."""
+    service = DocumentService(db)
+    client_ip = request.client.host if request.client else None
+    doc = await service.update_lifecycle(
+        document_id=document_id,
+        lifecycle_status=payload.lifecycle_status,
+        version=payload.version,
+        superseded_by_id=payload.superseded_by_id,
+        user_id=str(current_user.id),
+        ip_address=client_ip,
+    )
+    return DocumentRead.model_validate(doc)
+
+
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
     request: Request,
@@ -111,3 +138,4 @@ async def delete_document(
     client_ip = request.client.host if request.client else None
     await service.delete_document(document_id, user_id=str(current_user.id), ip_address=client_ip)
     return None
+
