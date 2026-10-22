@@ -492,13 +492,13 @@ table tbody tr:hover {
 }
 
 .chatgpt-new-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.16) !important;
+  background: var(--bg-card-hover) !important;
+  border-color: var(--border-focus) !important;
 }
 
 .chatgpt-thread-row:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #f1f5f9 !important;
+  background: var(--bg-card-hover) !important;
+  color: var(--primary) !important;
 }
 
 .chatgpt-thread-row .chatgpt-thread-delete {
@@ -521,10 +521,9 @@ table tbody tr:hover {
 }
 
 .chatgpt-scrollable-threads::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--border-light);
   border-radius: 4px;
 }
-
 
 .chat-container-layout {
   display: flex;
@@ -533,7 +532,8 @@ table tbody tr:hover {
   overflow: hidden;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
-  background: var(--bg-primary);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .chat-messages-scroll {
@@ -544,6 +544,7 @@ table tbody tr:hover {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  background: var(--bg-primary);
 }
 
 .chat-input-bottom-bar {
@@ -552,7 +553,7 @@ table tbody tr:hover {
   left: 0;
   right: 0;
   padding: 1.25rem 2rem 1.5rem 2rem;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.95) 35%, rgba(15, 23, 42, 1) 100%);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 0.92) 35%, rgba(248, 250, 252, 1) 100%);
   backdrop-filter: blur(8px);
   z-index: 20;
 }

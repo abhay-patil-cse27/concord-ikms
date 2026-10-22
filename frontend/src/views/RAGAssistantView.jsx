@@ -338,8 +338,19 @@ export default function RAGAssistantView() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', gap: '1.5rem', minHeight: 'calc(100vh - 120px)' }}>
-      {/* Collapsible Reusable ChatGPT-style ThreadSidebar */}
+    <div 
+      className="animate-fade-in chat-container-layout" 
+      style={{ 
+        display: 'flex', 
+        height: 'calc(100vh - 120px)',
+        border: '1px solid var(--border-light)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        background: 'var(--bg-card)',
+        boxShadow: 'var(--shadow-sm)'
+      }}
+    >
+      {/* Integrated Thread Sidebar inside Single Card */}
       {showSessionsSidebar && (
         <ThreadSidebar
           conversations={conversations}
@@ -353,8 +364,8 @@ export default function RAGAssistantView() {
         />
       )}
 
-      {/* Main Conversation & Question Answering Area (ChatGPT layout) */}
-      <main className="chat-container-layout" style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>
+      {/* Main Conversation & Question Answering Area inside Same Card */}
+      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', height: '100%', background: 'var(--bg-primary)' }}>
         {/* Top Header Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-card)', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

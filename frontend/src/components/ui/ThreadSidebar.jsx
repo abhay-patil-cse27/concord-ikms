@@ -71,8 +71,8 @@ export default function ThreadSidebar({
       style={{
         width: '260px',
         flexShrink: 0,
-        background: '#0d1117',
-        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'var(--bg-card)',
+        borderRight: '1px solid var(--border-light)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -88,14 +88,15 @@ export default function ThreadSidebar({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+          borderBottom: '1px solid var(--border-light)',
+          background: 'var(--bg-subtle)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontWeight: 700, fontSize: '0.92rem', color: '#f1f5f9' }}>
-          <div style={{ width: 22, height: 22, borderRadius: '6px', background: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={13} color="#0f172a" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)' }}>
+          <div style={{ width: 24, height: 24, borderRadius: '6px', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Sparkles size={14} color="var(--primary)" />
           </div>
-          <span style={{ letterSpacing: '-0.01em' }}>CONCORD RAG</span>
+          <span style={{ letterSpacing: '-0.01em' }}>Inquiry Threads</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
@@ -103,7 +104,7 @@ export default function ThreadSidebar({
             type="button"
             onClick={() => setShowSearch(!showSearch)}
             className="btn btn-ghost"
-            style={{ padding: '6px', borderRadius: '6px', color: '#94a3b8' }}
+            style={{ padding: '6px', borderRadius: '6px', color: 'var(--text-muted)' }}
             title="Search threads"
           >
             <Search size={15} />
@@ -114,7 +115,7 @@ export default function ThreadSidebar({
               type="button"
               onClick={onCloseSidebar}
               className="btn btn-ghost"
-              style={{ padding: '6px', borderRadius: '6px', color: '#94a3b8' }}
+              style={{ padding: '6px', borderRadius: '6px', color: 'var(--text-muted)' }}
               title="Close sidebar"
             >
               <PanelLeftClose size={15} />
@@ -134,10 +135,10 @@ export default function ThreadSidebar({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0.65rem 0.85rem',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--border-light)',
             borderRadius: '10px',
-            color: '#f8fafc',
+            color: 'var(--text-main)',
             fontSize: '0.85rem',
             fontWeight: 600,
             cursor: 'pointer',
@@ -146,10 +147,10 @@ export default function ThreadSidebar({
           className="chatgpt-new-btn"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-            <SquarePen size={15} color="#38bdf8" />
-            <span>New chat</span>
+            <SquarePen size={15} color="var(--primary)" />
+            <span>New inquiry</span>
           </div>
-          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>⌘N</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>⌘N</span>
         </button>
 
         {/* Filter input */}
@@ -164,10 +165,10 @@ export default function ThreadSidebar({
                 width: '100%',
                 padding: '0.45rem 0.75rem',
                 fontSize: '0.8rem',
-                background: '#161b22',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-light)',
                 borderRadius: '8px',
-                color: '#e2e8f0',
+                color: 'var(--text-main)',
                 outline: 'none'
               }}
               autoFocus
@@ -225,9 +226,9 @@ export default function ThreadSidebar({
                         cursor: 'pointer',
                         fontSize: '0.84rem',
                         fontWeight: isActive ? 600 : 400,
-                        color: isActive ? '#f8fafc' : '#94a3b8',
-                        background: isActive ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
-                        border: isActive ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid transparent',
+                        color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                        background: isActive ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
+                        border: isActive ? '1px solid rgba(2, 132, 199, 0.25)' : '1px solid transparent',
                         transition: 'all 0.15s ease'
                       }}
                       className="chatgpt-thread-row"
@@ -254,7 +255,7 @@ export default function ThreadSidebar({
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: '#64748b',
+                          color: 'var(--text-dim)',
                           cursor: 'pointer',
                           padding: '2px 4px',
                           display: 'flex',
@@ -276,15 +277,15 @@ export default function ThreadSidebar({
         )}
       </div>
 
-      {/* Footer Profile Section (like ChatGPT avatar + name) */}
+      {/* Footer Profile Section */}
       <div
         style={{
           padding: '0.75rem 0.95rem',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          borderTop: '1px solid var(--border-light)',
           display: 'flex',
           alignItems: 'center',
           gap: '0.65rem',
-          background: 'rgba(0, 0, 0, 0.2)'
+          background: 'var(--bg-subtle)'
         }}
       >
         <div
@@ -292,7 +293,7 @@ export default function ThreadSidebar({
             width: 32,
             height: 32,
             borderRadius: '50%',
-            background: '#e07a5f',
+            background: 'var(--primary)',
             color: '#ffffff',
             display: 'flex',
             alignItems: 'center',
@@ -305,10 +306,10 @@ export default function ThreadSidebar({
           {initials}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {userName}
           </span>
-          <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>
             {userRole}
           </span>
         </div>
