@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -38,10 +38,43 @@ function MilestonePreviewView({ title, milestone, description }) {
 
 import LandingView from './views/LandingView';
 
+const VALID_ROUTES = ['dashboard', 'departments', 'users', 'audit', 'documents', 'search', 'rag', 'benchmarks'];
+
+function getRouteFromHash() {
+  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase().trim();
+  return VALID_ROUTES.includes(hash) ? hash : 'dashboard';
+}
+
 export default function App() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTabState] = useState(getRouteFromHash);
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Sync state when URL hash changes (Back/Forward buttons or direct paste)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const route = getRouteFromHash();
+      setActiveTabState(route);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Setter that updates both React state and URL hash
+  const setActiveTab = (newTab) => {
+    if (VALID_ROUTES.includes(newTab)) {
+      window.location.hash = `#/${newTab}`;
+      setActiveTabState(newTab);
+    }
+  };
+
+  // Ensure default URL has valid hash on initial load
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.location.hash = `#/dashboard`;
+    }
+  }, []);
 
   if (loading) {
     return (
