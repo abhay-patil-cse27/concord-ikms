@@ -102,19 +102,19 @@ class DocumentService:
             try:
                 from app.modules.retrieval.chroma_store import get_vector_store
                 chroma_chunks = []
-                for chunk_data in chunk_results:
-                    meta = chunk_data.metadata.copy()
+                for chunk_obj in document.chunks:
+                    meta = chunk_obj.metadata_.copy() if chunk_obj.metadata_ else {}
                     meta.update({
                         "document_id": document.id,
                         "document_title": display_title,
                         "document_filename": filename,
                         "department_id": str(department_id),
-                        "chunk_index": chunk_data.index,
+                        "chunk_index": chunk_obj.chunk_index,
                         "page_number": meta.get("page_number", 1)
                     })
                     chroma_chunks.append({
-                        "id": f"{document.id}_{chunk_data.index}",
-                        "content": chunk_data.content,
+                        "id": str(chunk_obj.id),
+                        "content": chunk_obj.content,
                         "metadata": meta
                     })
                 get_vector_store().upsert_chunks(chroma_chunks)

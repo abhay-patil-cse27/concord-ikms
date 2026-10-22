@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "openai/gpt-oss-120b"
 
+    # Vector Store (Phase 4b - Embedded ChromaDB)
+    CHROMA_PERSIST_DIR: str = "./data/chroma"
+
     @field_validator("CORS_ORIGINS", mode="before") 
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
