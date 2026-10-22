@@ -140,7 +140,7 @@ export default function DocumentsView() {
                 border: '1px solid var(--border-light)',
                 borderRadius: '6px',
                 padding: '0.45rem 0.75rem',
-                color: '#fff',
+                color: 'var(--text-main)',
                 fontSize: '0.85rem',
               }}
             >
@@ -227,7 +227,7 @@ export default function DocumentsView() {
                     border: '1px solid var(--border-light)',
                     borderRadius: '6px',
                     padding: '0.6rem 0.75rem',
-                    color: '#fff',
+                    color: 'var(--text-main)',
                     fontSize: '0.9rem',
                   }}
                 >
@@ -254,7 +254,7 @@ export default function DocumentsView() {
                     border: '1px solid var(--border-light)',
                     borderRadius: '6px',
                     padding: '0.6rem 0.75rem',
-                    color: '#fff',
+                    color: 'var(--text-main)',
                     fontSize: '0.9rem',
                   }}
                 />
@@ -428,7 +428,7 @@ export default function DocumentsView() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                           <FileText size={16} color="var(--primary)" />
                           <div>
-                            <div style={{ fontWeight: 600, color: '#fff' }}>{doc.title}</div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{doc.title}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{doc.filename}</div>
                           </div>
                         </div>

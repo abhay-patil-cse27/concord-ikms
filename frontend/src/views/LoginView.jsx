@@ -76,44 +76,51 @@ export default function LoginView() {
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>CONCORD Institutional Gateway</span>
           </div>
 
-          <h1 style={{ fontSize: '2.25rem', fontWeight: 700, lineHeight: 1.15, marginBottom: '1rem', color: '#fff' }}>
-            Trust-Aware Institutional Intelligence
+          <h1 style={{ fontSize: '2.25rem', fontWeight: 700, lineHeight: 1.15, marginBottom: '1rem', color: 'var(--text-main)' }}>
+            Institutional Identity & Personas
           </h1>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
             Context-Oriented Cognitive Memory Layer for Multi-Source Knowledge Integration, Adaptive Retrieval, and Governed Institutional Intelligence.
           </p>
 
           <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.75rem' }}>
-            One-Click Evaluator Personas (Pre-seeded DB):
+            Select Institutional Persona to Pre-fill Credentials:
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {demoAccounts.map((acc) => (
               <button
                 key={acc.role}
-                onClick={() => handleDemoSelect(acc.role)}
-                disabled={loading}
+                type="button"
+                onClick={() => {
+                  setEmail(acc.email);
+                  // Populate matching pre-seeded password
+                  if (acc.role === 'platform_admin') setPassword('Admin@12345');
+                  else if (acc.role === 'dept_admin') setPassword('Dept@12345');
+                  else if (acc.role === 'faculty') setPassword('Faculty@12345');
+                  else if (acc.role === 'student') setPassword('Student@12345');
+                }}
                 className="glass-panel"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '1rem',
+                  padding: '0.85rem 1rem',
                   textAlign: 'left',
                   cursor: 'pointer',
+                  border: email === acc.email ? '1px solid var(--primary)' : '1px solid var(--border-card)',
+                  background: email === acc.email ? 'var(--status-info-bg)' : 'var(--bg-card)',
                   transition: 'var(--transition)',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-card)')}
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
                     <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>{acc.title}</span>
                     <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>{acc.badge}</span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>{acc.desc}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>{acc.email}</div>
                 </div>
-                <ArrowRight size={18} color="var(--primary)" />
+                <ArrowRight size={16} color="var(--primary)" />
               </button>
             ))}
           </div>

@@ -83,50 +83,6 @@ export default function Navbar() {
 
       {/* Right Controls: Demo Role Quick Switcher & User Profile */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        {/* Fast Role Switcher for Evaluators */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            background: 'rgba(255,255,255,0.03)',
-            padding: '0.3rem 0.5rem',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-light)',
-          }}
-        >
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginRight: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-            <RefreshCw size={12} /> Switch Role:
-          </span>
-          {[
-            { code: 'platform_admin', label: 'Admin' },
-            { code: 'dept_admin', label: 'HOD' },
-            { code: 'faculty', label: 'Faculty' },
-            { code: 'student', label: 'Student' },
-          ].map((r) => {
-            // Check primary role (first role or exact match)
-            const isActive = user?.roles?.[0]?.code === r.code;
-            return (
-              <button
-                key={r.code}
-                onClick={() => handleRoleSwitch(r.code)}
-                style={{
-                  fontSize: '0.72rem',
-                  padding: '0.2rem 0.55rem',
-                  borderRadius: 'var(--radius-sm)',
-                  background: isActive ? 'var(--primary)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'var(--text-muted)',
-                  fontWeight: isActive ? 600 : 400,
-                  transition: 'all 0.15s ease',
-                  border: isActive ? '1px solid var(--primary)' : '1px solid transparent',
-                }}
-              >
-                {r.label}
-              </button>
-            );
-          })}
-        </div>
-
         {/* Theme Switcher */}
         <ThemeToggle />
 

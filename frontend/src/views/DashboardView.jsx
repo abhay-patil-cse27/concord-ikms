@@ -55,7 +55,7 @@ export default function DashboardView() {
               • Code: <code style={{ color: 'var(--primary)' }}>{role?.code}</code>
             </span>
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.35rem', color: '#fff' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
             Welcome, {user?.full_name}
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>

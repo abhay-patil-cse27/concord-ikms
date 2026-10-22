@@ -27,10 +27,10 @@ export default function SearchBar({
           alignItems: 'center',
           gap: '0.75rem',
           padding: '0.6rem 1rem',
-          border: '1px solid rgba(56, 189, 248, 0.25)',
-          background: 'rgba(15, 23, 42, 0.6)',
+          border: '1px solid var(--border-light)',
+          background: 'var(--bg-card)',
           borderRadius: '12px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
         <SearchIcon size={20} color="var(--primary)" />
@@ -45,7 +45,7 @@ export default function SearchBar({
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            color: '#fff',
+            color: 'var(--text-main)',
             fontSize: '1rem',
             fontFamily: 'inherit',
           }}

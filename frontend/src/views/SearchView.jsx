@@ -31,7 +31,7 @@ export default function SearchView() {
           <span className="badge badge-primary">Milestone 3</span>
           <span className="badge badge-neutral">Reciprocal Rank Fusion</span>
         </div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', margin: 0 }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
           Contextual Search & Retrieval
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>

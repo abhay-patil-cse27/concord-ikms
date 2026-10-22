@@ -48,7 +48,7 @@ export default function EvidenceCitationCard({ item }) {
           >
             #{rank}
           </span>
-          <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#fff' }}>
+          <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
             {document_title}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
