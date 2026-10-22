@@ -65,8 +65,37 @@ def test_chunker_sliding_window():
 def test_parser_factory():
     p_pdf = get_parser_for_mime_or_ext("handbook.pdf", "application/pdf")
     p_docx = get_parser_for_mime_or_ext("curriculum.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    p_xlsx = get_parser_for_mime_or_ext("grades.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     p_txt = get_parser_for_mime_or_ext("notes.txt", "text/plain")
 
+    from app.modules.documents.parsers import ExcelParser
     assert isinstance(p_pdf, PDFParser)
     assert isinstance(p_docx, DocxParser)
+    assert isinstance(p_xlsx, ExcelParser)
     assert isinstance(p_txt, TextParser)
+
+
+def test_excel_parser_extraction():
+    import io
+    import openpyxl
+    from app.modules.documents.parsers import ExcelParser
+
+    # Create an in-memory workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "FeeStructure"
+    ws.append(["Category", "Amount", "DueDate"])
+    ws.append(["Tuition", 85000, "2026-08-30"])
+    ws.append(["Library", 5000, "2026-08-30"])
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    excel_bytes = buffer.getvalue()
+
+    parser = ExcelParser()
+    pages = parser.extract_pages(excel_bytes)
+
+    assert len(pages) == 1
+    assert "FeeStructure" in pages[0].text
+    assert "Tuition | 85000 | 2026-08-30" in pages[0].text
+    assert pages[0].metadata["row_count"] == 3

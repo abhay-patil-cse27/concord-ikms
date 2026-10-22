@@ -67,6 +67,41 @@ class TextParser(BaseDocumentParser):
         return [ExtractedPage(text=text.strip(), page_number=1, metadata={})]
 
 
+class ExcelParser(BaseDocumentParser):
+    """Extracts structured rows, sheets, and cell data from Excel spreadsheets (.xlsx)."""
+
+    def extract_pages(self, file_bytes: bytes) -> List[ExtractedPage]:
+        import openpyxl
+
+        workbook = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+        pages: List[ExtractedPage] = []
+
+        for sheet_idx, sheet_name in enumerate(workbook.sheetnames, start=1):
+            sheet = workbook[sheet_name]
+            rows_text: List[str] = [f"=== Sheet: {sheet_name} ==="]
+
+            for row in sheet.iter_rows(values_only=True):
+                # Clean and filter non-empty cell values
+                row_vals = [str(cell).strip() for cell in row if cell is not None and str(cell).strip()]
+                if row_vals:
+                    rows_text.append(" | ".join(row_vals))
+
+            if len(rows_text) > 1:  # More than just the header
+                sheet_content = "\n".join(rows_text)
+                pages.append(
+                    ExtractedPage(
+                        text=sheet_content,
+                        page_number=sheet_idx,
+                        metadata={"sheet_name": sheet_name, "row_count": len(rows_text) - 1}
+                    )
+                )
+
+        if not pages:
+            pages.append(ExtractedPage(text="[Empty Excel Workbook]", page_number=1, metadata={}))
+
+        return pages
+
+
 def get_parser_for_mime_or_ext(filename: str, mime_type: str) -> BaseDocumentParser:
     """Factory resolving appropriate parser based on file extension and MIME type."""
     fn_lower = filename.lower()
@@ -74,7 +109,9 @@ def get_parser_for_mime_or_ext(filename: str, mime_type: str) -> BaseDocumentPar
         return PDFParser()
     elif fn_lower.endswith(".docx") or "wordprocessingml" in mime_type:
         return DocxParser()
-    elif fn_lower.endswith((".txt", ".md", ".csv", ".json", ".log")) or "text" in mime_type:
+    elif fn_lower.endswith((".xlsx", ".xlsm", ".xltx")) or "spreadsheetml" in mime_type or "excel" in mime_type:
+        return ExcelParser()
+    elif fn_lower.endswith((".txt", ".md", ".csv", ".json", ".log")) or "text" in mime_type or "csv" in mime_type:
         return TextParser()
     else:
         # Default fallback to plain text parsing

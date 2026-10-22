@@ -266,7 +266,7 @@ export default function DocumentsView() {
                 </label>
                 <input
                   type="file"
-                  accept=".pdf,.docx,.txt,.md,.csv,.json"
+                  accept=".pdf,.docx,.xlsx,.xls,.txt,.md,.csv,.json"
                   required
                   onChange={(e) => setFileToUpload(e.target.files[0])}
                   style={{
