@@ -122,14 +122,14 @@ Run the complete backend test suite:
 ```bash
 .\.venv\Scripts\pytest -v backend/tests
 ```
-- **Test Coverage Includes (30 Test Cases):**
+- **Test Coverage Includes (39 Test Cases):**
   - `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
   - Password login verification and invalid credential 401 rejections.
   - Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.
   - Document ingestion lifecycle: multipart file upload, SHA-256 deduplication, raw file download, and document deletion.
   - Multi-format parsers: PDF (`pypdf`), DOCX (`python-docx`), Excel (`openpyxl`), Markdown, and plain text.
   - Format-aware chunking strategies: `TabularChunker` (preserves rows & headers), `SemanticParagraphChunker` (preserves headings & paragraphs), and `SlidingWindowTextChunker` (boundary-aware sentence sliding).
-  - Hybrid Retrieval Engine: Deterministic embeddings, exact phrase lexical scoring, Reciprocal Rank Fusion (RRF), search API queries, and unauthorized request rejections.
+  - Hybrid Retrieval Engine: Neural ONNX transformer embeddings (384-d), BM25 lexical scoring, Reciprocal Rank Fusion (RRF), FlashRank Cross-Encoder re-ranking, search API queries, and unauthorized request rejections.
 
 ---
 
@@ -139,9 +139,11 @@ Run the complete backend test suite:
 - **Milestone 1 (Platform Foundation):** Completed (Frontend & backend startup, config management, DB migrations, health probes, structured logging, error envelopes, and RBAC security foundation).
 - **Milestone 2 (Document Ingestion, Multi-Format Parsing & Chunking):** Completed (Storage provider abstraction, PDF/DOCX/TXT/Excel parsers, format-aware chunking strategies, cryptographic provenance, and upload/preview/inspection UI).
 - **Milestone 3 (Hybrid Search & Retrieval Engine):** Completed (Reciprocal Rank Fusion, BM25-style lexical search + vector cosine similarity, department-scoped RBAC retrieval, reusable SearchBar UI, and Institutional Landing Page).
-- **Milestone 4 (Grounded RAG & Verifiable Answers):** Completed (Groq Cloud LLM provider integration with `llama-3.3-70b-versatile`, offline synthesizer fallback, interactive click-to-inspect citations, zero-hallucination refusal rules, and `POST /api/v1/rag/ask`).
+- **Milestone 4 (Grounded RAG & Verifiable Answers):** Completed (Groq Cloud LLM provider integration with `openai/gpt-oss-120b`, offline synthesizer fallback, interactive click-to-inspect citations, zero-hallucination refusal rules, and `POST /api/v1/rag/ask`).
 - **Phase 4b (Embedded Local Vector Store — ChromaDB Integration):** Completed (Embedded `PersistentClient` in `backend/data/chroma`, index-level RBAC filtering with `where={"department_id": dept_id}`, automated ingestion sync & deletion hooks, and hybrid RRF search optimization).
-- **Next Milestone (Milestone 5):** Knowledge Graph & Governance (Semantic entity relations, institutional approval workflows, and lifecycle governance).
+- **Phase 4c (Optimal RAG Architecture & Algorithmic Hardening):** Completed (Query normalization & acronym expansion, unified 384-d `NeuralONNXEmbeddingProvider`, and FlashRank cross-encoder deep contextual re-ranking).
+- **Next Milestone (Milestone 5):** Trust, Freshness & Institutional Memory (Versioning, conflict detection, freshness badges, and superseded notices).
+
 
 ---
 

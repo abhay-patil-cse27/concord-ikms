@@ -118,9 +118,25 @@
   - [x] Automated tests in `backend/tests/test_chroma.py` verifying vector persistence, index retrieval, metadata filtering, and document deletion cascades.
   - [x] Validate zero-downtime execution and verify offline capability without external daemon processes.
 
+## Phase 4c: Optimal RAG Architecture & Algorithmic Hardening (Completed)
+- [x] **Academic Query Preprocessing & Acronym Expansion:**
+  - [x] Implement `AcademicQueryNormalizer` in `backend/app/modules/retrieval/normalizer.py`.
+  - [x] Correct common typographical errors (*"syallbus"*, *"devpos"*, *"curriculam"*).
+  - [x] Expand academic and syllabus acronyms (*"bda"*, *"cns"*, *"nep"*, *"co/po"*, *"devops"*).
+- [x] **Unified Neural Transformer Semantic Embeddings:**
+  - [x] Implement `NeuralONNXEmbeddingProvider` generating 384-dimensional dense semantic vectors using `all-MiniLM-L6-v2` ONNX transformer runtime.
+  - [x] Standardize in-memory candidate retrieval and ChromaDB HNSW indexing on the exact same neural semantic vector space.
+- [x] **FlashRank Cross-Encoder Re-Ranking Stage:**
+  - [x] Integrate `flashrank` (`ms-marco-TinyBERT-L-2-v2`) in `backend/app/modules/retrieval/reranker.py`.
+  - [x] Re-score top-15 hybrid RRF candidates with full query-document cross-attention in ~10ms on CPU, pushing highest-fidelity evidence to Rank 1.
+- [x] **Verification & Suite Expansion:**
+  - [x] Add unit tests for query normalization, acronym expansion, and cross-encoder re-ranking in `backend/tests/test_retrieval.py`.
+  - [x] Full test suite passing with 39/39 tests (`pytest backend/tests`).
+
 ## Future Milestones
 - **M5 (Trust & Institutional Memory):** Versioning, conflict detection, freshness badges, superseded notice flags.
 - **M6 (Agent Workflows):** Human-in-the-loop approval workflows with LangGraph.
 - **M7 (Evaluation & Hardening):** Retrieval benchmarks (Hit Rate, MRR), security verification (OWASP ASVS).
 - **M8 (Deployment & Demonstration):** End-to-end multi-department institutional scenario demonstration.
+
 
