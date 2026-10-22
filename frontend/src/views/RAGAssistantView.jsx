@@ -51,10 +51,13 @@ export default function RAGAssistantView() {
   const renderFormattedAnswer = (rawText, citations = []) => {
     if (!rawText) return null;
 
-    // First normalize any remaining unicode brackets
-    const normalized = rawText
+    // 1. Normalize special unicode citations to standard bracket format
+    let cleaned = rawText
       .replace(/【(\d+)】/g, '[$1]')
       .replace(/\[Evidence\s*(\d+)\]/gi, '[$1]');
+
+    // 2. Collapse excessive line breaks (3 or more newlines into 2)
+    cleaned = cleaned.replace(/\n\s*\n\s*\n+/g, '\n\n');
 
     return (
       <div className="markdown-body">
@@ -286,7 +289,7 @@ export default function RAGAssistantView() {
           </div>
 
           {/* Answer text with clickable inline citations */}
-          <div style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--text-main)', whiteSpace: 'pre-wrap' }}>
+          <div style={{ fontSize: '0.95rem', lineHeight: 1.6, color: 'var(--text-main)' }}>
             {renderFormattedAnswer(response.answer, response.citations)}
           </div>
 
