@@ -38,7 +38,8 @@ export default function DashboardView() {
         style={{
           padding: '2rem',
           marginBottom: '1.5rem',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(2, 132, 199, 0.15) 100%)',
+          background: 'var(--banner-bg)',
+          border: '1px solid var(--banner-border)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -47,32 +48,32 @@ export default function DashboardView() {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-            <span className="badge badge-info" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+            <span className="badge badge-info" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
               {role?.name || 'Active Persona'}
             </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              • Code: <code style={{ color: 'var(--primary)' }}>{role?.code}</code>
+            <span style={{ fontSize: '0.825rem', color: 'var(--text-muted)' }}>
+              • Code: <strong style={{ color: 'var(--primary)' }}>{role?.code}</strong>
             </span>
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             Welcome, {user?.full_name}
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Authenticated under institutional scope • Account: {user?.email}
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+            Authenticated under institutional scope • Account: <span style={{ color: 'var(--text-main)' }}>{user?.email}</span>
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Assigned Roles</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>
+          <div style={{ textAlign: 'right', background: 'var(--bg-card)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assigned Roles</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
               {user?.roles?.length || 0}
             </div>
           </div>
-          <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Granted Permissions</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--status-success)' }}>
+          <div style={{ textAlign: 'right', background: 'var(--bg-card)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Granted Permissions</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--status-success)' }}>
               {role?.code === 'platform_admin' ? 'ALL (Superuser)' : permissions.length}
             </div>
           </div>
