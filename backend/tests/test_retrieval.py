@@ -79,3 +79,35 @@ async def test_search_unauthorized_rejection(client: AsyncClient):
         json={"query": "syllabus"}
     )
     assert response.status_code == 401
+
+
+def test_academic_query_normalizer():
+    from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+    
+    # Test typo correction
+    norm, expanded = AcademicQueryNormalizer.normalize("summaries syallbus of devpos")
+    assert "summarize" in norm
+    assert "syllabus" in norm
+    assert "devops" in norm
+
+    # Test acronym expansion
+    norm_bda, expanded_bda = AcademicQueryNormalizer.normalize("explain bda course outcomes")
+    assert "big data analytics" in expanded_bda
+    assert "bda" in norm_bda
+
+
+def test_flashrank_cross_encoder_reranking():
+    from app.modules.retrieval.reranker import get_reranker
+    reranker = get_reranker()
+
+    candidates = [
+        {"chunk_id": "c1", "content": "The weather today in Paris is sunny.", "score": 0.9},
+        {"chunk_id": "c2", "content": "DevOps laboratory covers Docker containers and CI/CD pipelines.", "score": 0.4}
+    ]
+
+    # Query specifically about Docker/DevOps
+    reranked = reranker.rerank("Docker container deployment", candidates, top_k=2)
+    assert len(reranked) == 2
+    # The relevant DevOps document chunk must be elevated to Rank 1 over the weather text
+    assert reranked[0]["chunk_id"] == "c2"
+

@@ -14,6 +14,8 @@ from app.modules.retrieval.fusion import (
     compute_lexical_score,
     reciprocal_rank_fusion
 )
+from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+from app.modules.retrieval.reranker import get_reranker
 from app.modules.retrieval.schemas import SearchEvidenceItem, SearchQueryResponse
 
 
@@ -36,6 +38,10 @@ class RetrievalService:
         mode: str = "hybrid"
     ) -> SearchQueryResponse:
         start_time = time.perf_counter()
+
+        # 0. Academic query normalization and acronym expansion
+        norm_query, expanded_query = AcademicQueryNormalizer.normalize(query)
+        effective_query = norm_query or query
 
         # 1. Resolve authorized department scope
         # Global platform admin can access all departments.
@@ -94,20 +100,20 @@ class RetrievalService:
                 "metadata": meta
             }
 
-            # Lexical scoring
-            lex_score = compute_lexical_score(query, chunk.content)
+            # Lexical scoring using normalized and expanded query terms
+            lex_score = compute_lexical_score(effective_query, chunk.content)
             if lex_score > 0.0:
                 item_lex = dict(base_item)
                 item_lex["score"] = lex_score
                 lexical_candidates.append(item_lex)
 
-        # 3b. Vector candidate evaluation via ChromaDB
+        # 3b. Vector candidate evaluation via ChromaDB using expanded query
         vector_candidates: List[Dict[str, Any]] = []
         try:
             from app.modules.retrieval.chroma_store import get_vector_store
             chroma_hits = get_vector_store().query_similarity(
-                query=query,
-                top_k=top_k * 2,
+                query=expanded_query,
+                top_k=top_k * 3,
                 department_id=allowed_dept_id
             )
             if chroma_hits:
@@ -117,7 +123,7 @@ class RetrievalService:
 
         # In-memory vector fallback if ChromaDB returned empty or is not initialized yet
         if not vector_candidates:
-            query_vector = self.embedding_provider.embed_text(query)
+            query_vector = self.embedding_provider.embed_text(expanded_query)
             for chunk in chunks:
                 doc = chunk.document
                 meta = chunk.metadata_ or {}
@@ -143,22 +149,32 @@ class RetrievalService:
         vector_candidates.sort(key=lambda x: x["score"], reverse=True)
 
         # 4. Fusion / Mode routing
-        final_items: List[SearchEvidenceItem] = []
+        candidates_to_rerank: List[Dict[str, Any]] = []
 
         if mode == "lexical":
-            for rank, item in enumerate(lexical_candidates[:top_k], start=1):
-                item["rank"] = rank
-                final_items.append(SearchEvidenceItem(**item))
+            candidates_to_rerank = lexical_candidates[:top_k * 2]
         elif mode == "vector":
-            for rank, item in enumerate(vector_candidates[:top_k], start=1):
-                item["rank"] = rank
-                final_items.append(SearchEvidenceItem(**item))
+            candidates_to_rerank = vector_candidates[:top_k * 2]
         else:
-            # Default: Hybrid Reciprocal Rank Fusion
-            fused = reciprocal_rank_fusion(lexical_candidates, vector_candidates, k=60, top_n=top_k)
-            for item in fused:
-                item["score"] = item["rrf_score"]
-                final_items.append(SearchEvidenceItem(**item))
+            # Default: Hybrid Reciprocal Rank Fusion (take top 2x candidates for cross-encoder reranking)
+            fused = reciprocal_rank_fusion(lexical_candidates, vector_candidates, k=60, top_n=top_k * 2)
+            candidates_to_rerank = fused
+
+        # 5. Cross-Encoder Re-Ranking Stage (FlashRank)
+        reranker = get_reranker()
+        reranked = reranker.rerank(
+            query=effective_query,
+            candidates=candidates_to_rerank,
+            top_k=top_k
+        )
+
+        final_items: List[SearchEvidenceItem] = []
+        for rank, item in enumerate(reranked, start=1):
+            item["rank"] = rank
+            # Ensure score exists
+            if "score" not in item:
+                item["score"] = item.get("rrf_score", 0.0)
+            final_items.append(SearchEvidenceItem(**item))
 
         latency = (time.perf_counter() - start_time) * 1000.0
 
