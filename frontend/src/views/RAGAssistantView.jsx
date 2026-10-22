@@ -53,57 +53,101 @@ export default function RAGAssistantView() {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
 
+  const recognitionRef = React.useRef(null);
+  const [speechError, setSpeechError] = useState(null);
+
   // Initialize Web Speech Recognition
   useEffect(() => {
-    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+    if (SpeechRecognition) {
       setSpeechSupported(true);
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+          setIsListening(true);
+          setSpeechError(null);
+        };
+
+        recognition.onresult = (event) => {
+          let currentTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            currentTranscript += event.results[i][0].transcript;
+          }
+          if (currentTranscript.trim()) {
+            setQuery(currentTranscript);
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.warn('Speech recognition error:', event.error);
+          if (event.error === 'not-allowed') {
+            setSpeechError('Microphone permission was denied. Please allow microphone access in your browser address bar.');
+          } else if (event.error === 'no-speech') {
+            setSpeechError('No speech was detected. Please try speaking closer to your microphone.');
+          } else if (event.error === 'network') {
+            setSpeechError('Network error connecting to speech recognition service.');
+          } else {
+            setSpeechError(`Speech error: ${event.error}`);
+          }
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      } catch (err) {
+        console.warn('SpeechRecognition init failed:', err);
+      }
     }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {
+          // ignore cleanup abort
+        }
+      }
+    };
   }, []);
 
   const toggleSpeechRecognition = () => {
-    if (!speechSupported) {
-      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+    if (!speechSupported || !recognitionRef.current) {
+      alert('Speech recognition is not supported in this browser. Please open in Google Chrome or Microsoft Edge.');
       return;
     }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
 
     if (isListening) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // ignore
+      }
       setIsListening(false);
       return;
     }
 
+    setSpeechError(null);
     try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript) {
-          setQuery(transcript);
-        }
-        setIsListening(false);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.start();
+      recognitionRef.current.start();
     } catch (err) {
-      console.warn('Speech recognition start failed:', err);
-      setIsListening(false);
+      console.warn('Could not start recognition:', err);
+      // If already started or in transition, abort and re-start
+      try {
+        recognitionRef.current.abort();
+        setTimeout(() => {
+          recognitionRef.current.start();
+        }, 150);
+      } catch (retryErr) {
+        setSpeechError('Microphone unavailable or already in use. Please check browser permissions.');
+        setIsListening(false);
+      }
     }
   };
 
@@ -478,6 +522,23 @@ export default function RAGAssistantView() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Speech Recognition Error Feedback */}
+        {speechError && (
+          <div className="glass-panel animate-fade-in" style={{ padding: '0.75rem 1rem', borderLeft: '4px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', background: 'rgba(245, 158, 11, 0.08)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <AlertCircle size={18} color="#f59e0b" />
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>{speechError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSpeechError(null)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
+            >
+              ✕
+            </button>
           </div>
         )}
 
