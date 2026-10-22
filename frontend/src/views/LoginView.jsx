@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Shield, ArrowRight, UserCheck, Key, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function LoginView() {
+export default function LoginView({ onBack }) {
   const { login, demoLogin, error } = useAuth();
   const [email, setEmail] = useState('admin@concord.kit.edu');
   const [password, setPassword] = useState('Admin@12345');
@@ -71,7 +71,24 @@ export default function LoginView() {
         
         {/* Left Column: Mission & Demo Switcher */}
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: 'var(--radius-full)', padding: '0.35rem 0.85rem', marginBottom: '1.25rem' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontSize: '0.85rem',
+                color: 'var(--text-muted)',
+                marginBottom: '1rem',
+                cursor: 'pointer',
+              }}
+            >
+              ← Back to Overview
+            </button>
+          )}
+
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--status-info-bg)', border: '1px solid rgba(2, 132, 199, 0.25)', borderRadius: 'var(--radius-full)', padding: '0.35rem 0.85rem', marginBottom: '1.25rem' }}>
             <Shield size={16} color="var(--primary)" />
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>CONCORD Institutional Gateway</span>
           </div>

@@ -1,6 +1,6 @@
 /* ==============================================================================
    CONCORD — Enterprise Institutional Design System (Vanilla CSS Tokens)
-   Strict Contrast, High Legibility, Smooth GPU Transitions
+   Strict Contrast, High Legibility, Smooth GPU Transitions, Light/Dark Modes
    ============================================================================== */
 
 :root {
@@ -12,19 +12,19 @@
   --navbar-height: 70px;
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-lg: 16px;
   --radius-full: 9999px;
-  --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ============================================================================
-     PRIMARY PALETTE: LIGHT THEME (Crisp, High Contrast, Enterprise Clean)
+     PRIMARY PALETTE: LIGHT THEME (Clean, High Contrast, Institutional Slate)
      ============================================================================ */
   --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
   --bg-card-hover: #f1f5f9;
   --bg-subtle: #f1f5f9;
-  --bg-glass: rgba(255, 255, 255, 0.92);
+  --bg-glass: rgba(255, 255, 255, 0.95);
 
   --border-light: #e2e8f0;
   --border-focus: #0284c7;
@@ -43,7 +43,7 @@
   --status-info: #0369a1;
   --status-info-bg: #e0f2fe;
 
-  --text-main: #0f172a;        /* Deep slate for crystal-clear readability */
+  --text-main: #0f172a;        /* Deep slate navy for high contrast */
   --text-muted: #475569;       /* Slate 600 */
   --text-dim: #64748b;         /* Slate 500 */
   --text-inverse: #ffffff;
@@ -53,17 +53,16 @@
   --input-placeholder: #94a3b8;
   --input-text: #0f172a;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 
-  /* Banner specific */
   --banner-bg: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
   --banner-border: #bae6fd;
 }
 
 /* ============================================================================
-   DARK THEME PALETTE (Deep Slate Navy, Neon Azure Accents)
+   DARK THEME PALETTE (Deep Slate Navy, Glow Effects)
    ============================================================================ */
 [data-theme='dark'] {
   --bg-primary: #0a0d14;
@@ -71,7 +70,7 @@
   --bg-card: #131b2e;
   --bg-card-hover: #1e293b;
   --bg-subtle: #1e293b;
-  --bg-glass: rgba(15, 23, 42, 0.88);
+  --bg-glass: rgba(15, 23, 42, 0.92);
 
   --border-light: rgba(255, 255, 255, 0.1);
   --border-focus: rgba(56, 189, 248, 0.6);
@@ -100,11 +99,10 @@
   --input-placeholder: #64748b;
   --input-text: #f8fafc;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
 
-  /* Banner specific */
   --banner-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 132, 199, 0.2) 100%);
   --banner-border: rgba(56, 189, 248, 0.25);
 }
@@ -128,8 +126,8 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.025em;
   color: var(--text-main);
 }
 
@@ -141,9 +139,7 @@ button {
   transition: var(--transition);
 }
 
-/* ============================================================================
-   FORM CONTROLS (High Contrast in both Light & Dark modes)
-   ============================================================================ */
+/* Form Controls */
 input, select, textarea {
   font-family: inherit;
   font-size: 0.9rem;
@@ -175,7 +171,7 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-/* Glassmorphism Card Utility */
+/* Glassmorphism Panel */
 .glass-panel {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
@@ -191,9 +187,9 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
+  padding: 0.65rem 1.25rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: var(--radius-md);
   transition: var(--transition);
 }
@@ -201,7 +197,6 @@ input:focus, select:focus, textarea:focus {
 .btn-primary {
   background: var(--primary);
   color: #ffffff;
-  font-weight: 600;
   box-shadow: var(--shadow-sm);
 }
 
@@ -272,14 +267,23 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--border-light);
 }
 
-/* Animations */
+/* Smooth Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
 }
 
 @keyframes spin {

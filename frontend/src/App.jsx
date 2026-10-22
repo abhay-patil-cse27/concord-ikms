@@ -34,24 +34,29 @@ function MilestonePreviewView({ title, milestone, description }) {
   );
 }
 
+import LandingView from './views/LandingView';
+
 export default function App() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(56, 189, 248, 0.2)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+          <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid var(--border-light)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
           <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Initializing CONCORD Platform...</div>
         </div>
-        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (!user) {
-    return <LoginView />;
+    if (showLoginModal) {
+      return <LoginView onBack={() => setShowLoginModal(false)} />;
+    }
+    return <LandingView onGoToLogin={() => setShowLoginModal(true)} />;
   }
 
   const renderContent = () => {
