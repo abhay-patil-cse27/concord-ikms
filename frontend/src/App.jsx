@@ -8,6 +8,7 @@ import DepartmentsView from './views/DepartmentsView';
 import UsersView from './views/UsersView';
 import AuditLogsView from './views/AuditLogsView';
 import DocumentsView from './views/DocumentsView';
+import SearchView from './views/SearchView';
 import { FileText, Search, Clock } from 'lucide-react';
 
 
@@ -66,14 +67,7 @@ export default function App() {
       case 'documents':
         return <DocumentsView />;
       case 'search':
-
-        return (
-          <MilestonePreviewView
-            title="Hybrid Keyword & Vector Semantic Retrieval"
-            milestone="Milestone 3"
-            description="Combining PostgreSQL full-text search with pgvector semantic similarity, reciprocal rank fusion (RRF), cross-encoder reranking, and department authorization scoping."
-          />
-        );
+        return <SearchView />;
       default:
         return <DashboardView />;
     }

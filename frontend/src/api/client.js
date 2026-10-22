@@ -107,5 +107,17 @@ export const api = {
     }
     return true;
   },
+
+  // Search & Retrieval (M3)
+  searchKnowledgeBase: (query, options = {}) =>
+    apiRequest('/search/query', {
+      method: 'POST',
+      body: JSON.stringify({
+        query,
+        department_id: options.departmentId || null,
+        top_k: options.topK || 5,
+        mode: options.mode || 'hybrid',
+      }),
+    }),
 };
 
