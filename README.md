@@ -33,21 +33,23 @@ IKMS/
 │   │   │   └── audit/       # Tamper-evident Audit Events
 │   │   └── main.py          # FastAPI application & lifecycle hooks
 │   ├── alembic/             # Database migration environment & versions
-│   ├── tests/               # Pytest automated test suite (14 test cases)
+│   ├── tests/               # Pytest automated test suite (47 test cases)
+│   ├── scripts/             # Canonical demo data seeder & DB maintenance scripts
 │   ├── requirements.txt     # Pinned Python dependencies
 │   └── alembic.ini          # Migration configuration
 ├── frontend/
 │   ├── src/
 │   │   ├── api/             # Centralized API client (fetch wrapper)
 │   │   ├── context/         # AuthContext & token management
-│   │   ├── components/      # Navbar, Sidebar, HealthCard
-│   │   └── views/           # DashboardView, LoginView, DepartmentsView, UsersView, AuditLogsView
+│   │   ├── components/      # Navbar, Sidebar, HealthCard, documents/ (UploadModal, DocumentTable, ChunkInspector)
+│   │   └── views/           # DashboardView, DocumentsView, SearchView, RAGAssistantView, BenchmarkView, etc.
 │   ├── package.json
 │   └── vite.config.js
 ├── docs/
 │   ├── PROJECT_BRIEF.md     # Primary engineering specification
-│   ├── architecture/        # Repository assessment, system architecture, data model, backlog
-│   └── decisions/           # Architecture Decision Records (ADR-0001 to ADR-0004)
+│   ├── VIVA_PRESENTATION_GUIDE.md # 5-Minute presentation script & examiner defense guide
+│   ├── architecture/        # System architecture, data model, prioritized backlog
+│   └── decisions/           # Architecture Decision Records (ADR-0001 to ADR-0005)
 ├── infra/docker/            # Backend and Frontend Dockerfiles
 ├── docker-compose.yml       # Reproducible containerized local development stack
 ├── .env.example             # Documented environment template
