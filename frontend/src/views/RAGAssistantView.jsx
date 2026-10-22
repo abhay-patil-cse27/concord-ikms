@@ -53,11 +53,19 @@ export default function RAGAssistantView() {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
 
+  const messagesEndRef = React.useRef(null);
   const recognitionRef = React.useRef(null);
   const silenceTimerRef = React.useRef(null);
   const transcriptAccumulatorRef = React.useRef('');
   const shouldKeepListeningRef = React.useRef(false);
   const [speechError, setSpeechError] = useState(null);
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [history, loading]);
 
   // Initialize Web Speech Recognition
   useEffect(() => {
@@ -419,217 +427,103 @@ export default function RAGAssistantView() {
         </aside>
       )}
 
-      {/* Main Conversation & Question Answering Area */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
-        {/* Header Banner */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
-              {!showSessionsSidebar && (
-                <button
-                  type="button"
-                  onClick={() => setShowSessionsSidebar(true)}
-                  className="btn btn-secondary"
-                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', gap: '4px' }}
-                >
-                  <PanelLeft size={14} /> Show Threads
-                </button>
-              )}
-              <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <Bot size={12} /> Milestone 4 & 5
+      {/* Main Conversation & Question Answering Area (ChatGPT layout) */}
+      <main className="chat-container-layout" style={{ flex: 1, minWidth: 0, flexDirection: 'column' }}>
+        {/* Top Header Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-card)', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {!showSessionsSidebar && (
+              <button
+                type="button"
+                onClick={() => setShowSessionsSidebar(true)}
+                className="btn btn-secondary"
+                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', gap: '4px' }}
+                title="Show conversation threads"
+              >
+                <PanelLeft size={14} /> Threads
+              </button>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bot size={16} color="var(--primary)" />
+              </div>
+              <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                CONCORD Grounded Assistant
               </span>
-              <span className="badge badge-neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Cpu size={12} /> Powered by Groq Cloud
-              </span>
-              {activeConversationId && (
-                <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-                  Active Thread Session
-                </span>
-              )}
             </div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.02em' }}>
-              Verifiable Institutional Q&A
-            </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-              Context-aware generative answers grounded strictly in verified institutional documents with multi-turn continuity.
-            </p>
+            {activeConversationId ? (
+              <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                Active Thread
+              </span>
+            ) : (
+              <span className="badge badge-neutral">New Inquiry</span>
+            )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-card)', padding: '0.5rem 0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-            <ShieldCheck size={16} color="var(--success)" />
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Zero-Hallucination Grounding Enforced
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span className="badge badge-neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Cpu size={12} /> Groq Llama 3.3
             </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+              <ShieldCheck size={14} color="var(--success)" />
+              <span className="no-print">Zero-Hallucination Grounding</span>
+            </div>
           </div>
         </div>
 
-        {/* Input Form with Send Action */}
-        <form onSubmit={handleAsk} style={{ display: 'flex', gap: '0.75rem' }}>
-          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-            <input
-              type="text"
-              className="input-field"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={isListening ? "Listening... Speak your question now..." : "Ask anything (e.g. passing criteria) or follow-up ('What are the attendance rules for it?')..."}
-              style={{
-                paddingLeft: '1.25rem',
-                paddingRight: '3.5rem',
-                height: '54px',
-                fontSize: '0.95rem',
-                borderRadius: '12px',
-                width: '100%',
-                borderColor: isListening ? '#ef4444' : undefined,
-                boxShadow: isListening ? '0 0 12px rgba(239, 68, 68, 0.35)' : undefined
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={toggleSpeechRecognition}
-              className="btn btn-ghost"
-              style={{
-                position: 'absolute',
-                right: '0.65rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                padding: '0.45rem',
-                borderRadius: '8px',
-                color: isListening ? '#ef4444' : 'var(--text-dim)',
-                background: isListening ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease'
-              }}
-              title={isListening ? "Click to stop listening" : "Click to speak your question aloud"}
-            >
-              {isListening ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }} />
-                  <Mic size={18} />
-                </div>
-              ) : (
-                <Mic size={18} />
-              )}
-            </button>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || !query.trim()}
-            className="btn btn-primary"
-            style={{
-              height: '54px',
-              padding: '0 1.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              whiteSpace: 'nowrap',
-              borderRadius: '12px',
-              fontWeight: 600
-            }}
-          >
-            {loading ? (
-              <>
-                <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />
-                <span>Synthesizing...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={18} />
-                <span>Ask Groq</span>
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Suggested Inquiries */}
-        {history.length === 0 && !response && !loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Recommended Institutional Queries
-            </div>
-            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-              {sampleQuestions.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => handlePromptClick(q)}
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-muted)',
-                    padding: '0.5rem 0.95rem',
-                    borderRadius: '20px',
-                    fontSize: '0.82rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <Quote size={12} color="var(--primary)" />
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Speech Recognition Error Feedback */}
-        {speechError && (
-          <div className="glass-panel animate-fade-in" style={{ padding: '0.75rem 1rem', borderLeft: '4px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', background: 'rgba(245, 158, 11, 0.08)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <AlertCircle size={18} color="#f59e0b" />
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>{speechError}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSpeechError(null)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <div className="glass-panel" style={{ padding: '1rem', borderLeft: '4px solid #ef4444', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <AlertCircle size={20} color="#ef4444" />
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{error}</span>
-          </div>
-        )}
-
-        {/* Loading Skeleton */}
-        {loading && (
-          <div className="glass-panel animate-fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bot size={20} color="var(--primary)" />
+        {/* Scrollable Conversation Stream */}
+        <div className="chat-messages-scroll">
+          {/* Welcome Screen when Empty */}
+          {history.length === 0 && !loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: 'auto 0', padding: '2rem 1rem', textAlign: 'center', maxWidth: '680px', alignSelf: 'center' }}>
+              <div style={{ width: 56, height: 56, borderRadius: '16px', background: 'rgba(56, 189, 248, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                <Sparkles size={28} color="var(--primary)" />
               </div>
-              <div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>Retrieving & Reasoning with Context...</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Rewriting query antecedents, executing hybrid RRF scan & grounding via Groq Cloud</div>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 0.5rem 0' }}>
+                How can I assist your institutional inquiry today?
+              </h2>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
+                Ask questions about curriculum, passing rules, AI cluster ethics, or upload documents for grounded verification.
+              </p>
+
+              {/* Suggested Questions Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem', width: '100%' }}>
+                {sampleQuestions.slice(0, 4).map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => handlePromptClick(q)}
+                    style={{
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-light)',
+                      color: 'var(--text-main)',
+                      padding: '0.85rem 1rem',
+                      borderRadius: '12px',
+                      fontSize: '0.82rem',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.35rem',
+                      transition: 'all 0.2s ease',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontWeight: 600 }}>
+                      <Quote size={12} />
+                      <span>Suggested</span>
+                    </div>
+                    <span>{q}</span>
+                  </button>
+                ))}
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.5rem' }}>
-              <div style={{ height: '14px', width: '85%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
-              <div style={{ height: '14px', width: '92%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
-              <div style={{ height: '14px', width: '70%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Multi-Turn Conversation Thread Feed */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Dialogue Turns */}
           {history.map((turn, idx) => (
-            <div key={turn.id || idx} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* User Question Speech Bubble */}
+            <div key={turn.id || idx} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
+              {/* User Question */}
               <div className="chat-bubble-user">
                 {turn.query}
                 {turn.effective_query && turn.effective_query !== turn.query && (
@@ -639,12 +533,12 @@ export default function RAGAssistantView() {
                 )}
               </div>
 
-              {/* Assistant Answer Box with Citations */}
+              {/* Assistant Answer Box */}
               <div className="chat-bubble-assistant">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Bot size={17} color="var(--primary)" />
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Bot size={16} color="var(--primary)" />
                     </div>
                     <div>
                       <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>CONCORD Grounded Intelligence</span>
@@ -733,6 +627,141 @@ export default function RAGAssistantView() {
               </div>
             </div>
           ))}
+
+          {/* Loading Skeleton */}
+          {loading && (
+            <div className="glass-panel animate-fade-in" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Bot size={18} color="var(--primary)" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}>Synthesizing answer with verified citations...</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>Query contextualization, RRF retrieval & grounding via Groq Cloud</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.25rem' }}>
+                <div style={{ height: '14px', width: '85%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
+                <div style={{ height: '14px', width: '92%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
+                <div style={{ height: '14px', width: '70%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
+              </div>
+            </div>
+          )}
+
+          {/* Error Feedback */}
+          {error && (
+            <div className="glass-panel" style={{ padding: '1rem', borderLeft: '4px solid #ef4444', display: 'flex', alignItems: 'center', gap: '0.75rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
+              <AlertCircle size={20} color="#ef4444" />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{error}</span>
+            </div>
+          )}
+
+          {/* Auto-scroll Anchor */}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Bottom Pinned Input Area (ChatGPT Style) */}
+        <div className="chat-input-bottom-bar no-print">
+          <div className="chat-input-box-wrapper">
+            {/* Speech error indicator if any */}
+            {speechError && (
+              <div className="glass-panel animate-fade-in" style={{ padding: '0.65rem 1rem', borderLeft: '4px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', background: 'rgba(245, 158, 11, 0.1)', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <AlertCircle size={16} color="#f59e0b" />
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>{speechError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSpeechError(null)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem' }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <form onSubmit={handleAsk} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={isListening ? "Listening continuously... (Speak your inquiry)" : "Message CONCORD Grounded Intelligence (e.g. passing criteria, credits, or follow-up)..."}
+                  style={{
+                    paddingLeft: '1.25rem',
+                    paddingRight: '3.75rem',
+                    height: '54px',
+                    fontSize: '0.95rem',
+                    borderRadius: '16px',
+                    width: '100%',
+                    background: 'var(--bg-card)',
+                    borderColor: isListening ? '#ef4444' : 'var(--border-light)',
+                    boxShadow: isListening ? '0 0 16px rgba(239, 68, 68, 0.4)' : '0 4px 20px rgba(0, 0, 0, 0.25)'
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={toggleSpeechRecognition}
+                  className="btn btn-ghost"
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    padding: '0.5rem',
+                    borderRadius: '10px',
+                    color: isListening ? '#ef4444' : 'var(--text-dim)',
+                    background: isListening ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title={isListening ? "Click to stop voice listening" : "Click to speak inquiry via microphone"}
+                >
+                  {isListening ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }} />
+                      <Mic size={18} />
+                    </div>
+                  ) : (
+                    <Mic size={18} />
+                  )}
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !query.trim()}
+                className="btn btn-primary"
+                style={{
+                  height: '54px',
+                  width: '54px',
+                  borderRadius: '16px',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+                title="Send query"
+              >
+                {loading ? (
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />
+                ) : (
+                  <Send size={18} />
+                )}
+              </button>
+            </form>
+
+            <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+              Responses are strictly anchored to verified institutional documents with citation provenance.
+            </div>
+          </div>
         </div>
       </main>
 
