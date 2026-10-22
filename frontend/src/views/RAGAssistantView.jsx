@@ -25,10 +25,12 @@ export default function RAGAssistantView() {
   const [showCitationDrawer, setShowCitationDrawer] = useState(false);
 
   const sampleQuestions = [
-    "What is the passing criteria for end-semester examinations?",
+    "What is the passing criteria for Autonomous Exam under 2024 regulations?",
+    "Compare Autonomous Academic Regulations 2020 vs 2024 passing threshold",
     "What are the attendance requirements to appear in finals?",
-    "What is the institutional policy on internship credits?",
-    "Who is eligible for re-evaluation and grievance redressal?",
+    "What subjects and credits are offered in Semester 5 B.Tech CSE?",
+    "What is the policy regarding NVIDIA GPU cluster and AI ethics?",
+    "What are the laboratory safety protocols for ENTC VLSI Lab?",
   ];
 
   const handleAsk = (e) => {

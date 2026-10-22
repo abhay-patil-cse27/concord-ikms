@@ -191,10 +191,20 @@
   - [x] Unit & integration tests in `backend/tests/test_evaluation.py` (`test_get_benchmark_metrics`, `test_run_live_benchmark`).
   - [x] Complete test suite passing: 45/45 tests (`pytest backend/tests`).
 
-## Milestone 8: Multi-Department Institutional Demonstration (Ready for Evaluation)
-- [x] Pre-seeded cross-department data (Computer Science & Engineering, Electronics & Telecommunication, Mechanical Engineering).
-- [x] Multi-persona rapid demo switcher (Platform Admin, HOD CSE, Faculty, Student) with server-side RBAC enforcement.
-- [x] End-to-end institutional workflow: Ingestion -> Parsing & Chunking -> Governance Approval Queue -> ChromaDB Vector Sync -> Hybrid RRF + Cross-Encoder Reranking -> Grounded Groq Cloud RAG with Citations & Freshness Badges -> Live Benchmark Verification.
+## Milestone 8: Multi-Department Institutional Demonstration & Viva Defense Readiness (Completed)
+- [x] **Step 8.1: Pre-Seeding Rich Multi-Department Institutional Knowledge:**
+  - [x] Create standalone seeding script `backend/scripts/seed_demo_data.py`.
+  - [x] Embed canonical documents into DB seed: B.Tech CSE Autonomous Syllabus (2024–28), Exam Passing Regulations (2024), Superseded Regulations (2020), Computing Lab Safety & AI Ethics, and ENTC VLSI Lab Manual.
+  - [x] Automated ChromaDB vector index synchronization across departments.
+- [x] **Step 8.2: Interactive Evaluator Demo Mode & Prompt Presets:**
+  - [x] Enhanced `RAGAssistantView.jsx` with canonical scenario pills (exam passing threshold, 2020 vs 2024 comparative analysis, CSE course credits, lab GPU ethics).
+  - [x] Instant evaluator persona switcher pills (`Platform Admin`, `HOD CSE`, `Faculty`, `Student`).
+- [x] **Step 8.3: Evaluator Defense & Presentation Guide:**
+  - [x] Created `docs/VIVA_PRESENTATION_GUIDE.md` with 5-minute presentation script, architecture diagram, and deep technical defenses for anticipated viva questions.
+- [x] **Step 8.4: Verification, Automated Tests & Packaging:**
+  - [x] Integration tests for multi-department retrieval & superseded policy exclusion (`backend/tests/test_demo_scenarios.py`).
+  - [x] Complete test suite passing: 47/47 tests (`pytest backend/tests`).
+  - [x] Production build clean: `npm run build` succeeds in 2.9s.
 
 
 

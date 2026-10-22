@@ -122,7 +122,7 @@ Run the complete backend test suite:
 ```bash
 .\.venv\Scripts\pytest -v backend/tests
 ```
-- **Test Coverage Includes (45 Test Cases):**
+- **Test Coverage Includes (47 Test Cases):**
   - `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
   - Password login verification and invalid credential 401 rejections.
   - Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.
@@ -133,6 +133,7 @@ Run the complete backend test suite:
   - Hybrid Retrieval Engine: Neural ONNX transformer embeddings (384-d), BM25 lexical scoring, Reciprocal Rank Fusion (RRF), FlashRank Cross-Encoder re-ranking, lifecycle filtering, and search API queries.
   - Comparative Research Agent: Automated multi-query decomposition and Markdown comparison tables.
   - Evaluation & Benchmarking Suite: `/api/v1/evaluation/metrics` and `POST /api/v1/evaluation/run` calculating Hit Rate@K, MRR@K, latency percentiles, and cross-department security leakage rates.
+  - Multi-Department Institutional Scenarios: Canonical syllabus, exam rules, lab policies, and superseded version filtering tests.
 
 ---
 
@@ -148,7 +149,7 @@ Run the complete backend test suite:
 - **Milestone 5 (Trust, Freshness & Institutional Memory):** Completed (Document lifecycle state machine `active`/`superseded`/`archived`, version tracking, default current-policy search filtering, discrepancy and conflict detection prompts, and frontend Trust Badges).
 - **Milestone 6 (Agent Workflows & Human-in-the-Loop Governance):** Completed (Human-in-the-loop document approval queue and review endpoints, quarantined document retrieval protection, and Comparative Research Agent).
 - **Milestone 7 (Evaluation, Benchmarking & Hardening):** Completed (Automated benchmark runner, Hit Rate@5 = 100%, MRR@5 = 1.000, 0.0% RBAC security leakage rate, dedicated frontend `BenchmarkView.jsx` dashboard, and live test run execution).
-- **Milestone 8 (Institutional Demonstration & Viva Readiness):** Ready for multi-persona live demonstration across Admin, HOD CSE, Faculty, and Student roles with pre-seeded cross-department data.
+- **Milestone 8 (Institutional Demonstration & Viva Defense Readiness):** Completed (Pre-seeded multi-department data across CSE, ENTC, and Academic Examination Cell, interactive evaluator prompt presets, comprehensive `docs/VIVA_PRESENTATION_GUIDE.md`, and 47 passing tests).
 
 
 

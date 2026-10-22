@@ -173,4 +173,84 @@ async def seed_database(db: AsyncSession) -> None:
                 db.add(membership)
 
     await db.commit()
-    logger.info("Database seeding completed successfully.")
+    logger.info("Database base seeding completed successfully.")
+
+    # 5. Seed Institutional Demo Documents
+    from app.modules.documents.models import Document, DocumentChunk
+    import hashlib
+    import uuid
+
+    demo_docs = [
+        {
+            "filename": "KIT_Autonomous_Academic_Regulations_2024.pdf",
+            "title": "Autonomous Academic & Examination Regulations (2024 Curriculum)",
+            "dept_code": "EXAM",
+            "mime_type": "application/pdf",
+            "lifecycle_status": "active",
+            "version": "v2.0",
+            "content": "KOLHAPUR INSTITUTE OF TECHNOLOGY (AUTONOMOUS)\nACADEMIC REGULATIONS AND EVALUATION RULES (2024 BATCH ONWARDS)\n\nATTENDANCE & ELIGIBILITY:\nEvery registered student must maintain a minimum attendance of 75% in theory courses and 80% in laboratory practical courses. Condonation up to 10% may be granted on medical grounds.\n\nPASSING STANDARDS & EVALUATION:\nA student must secure at least 40% in ESE (minimum 24 out of 60) and 40% overall (CIE + ESE, minimum 40 out of 100) to pass a course.\n\nATKT & PROMOTION CRITERIA:\nA student can carry a maximum of 4 backlogs into the next academic year. Minimum CGPA of 5.0 is mandatory for the award of B.Tech Degree.",
+        },
+        {
+            "filename": "KIT_Academic_Regulations_2020_Superseded.pdf",
+            "title": "Autonomous Academic Regulations (2020 Curriculum - Superseded)",
+            "dept_code": "EXAM",
+            "mime_type": "application/pdf",
+            "lifecycle_status": "superseded",
+            "version": "v1.0",
+            "content": "KOLHAPUR INSTITUTE OF TECHNOLOGY (AUTONOMOUS)\nHISTORICAL ACADEMIC REGULATIONS (2020-2023) [SUPERSEDED]\n\nATTENDANCE RULES:\nMinimum attendance requirement was 70% with 15% discretionary medical allowance.\n\nPASSING STANDARDS:\nPassing standard required minimum 35% in End Semester Examination (21 out of 60) and 35% in aggregate. This policy is strictly superseded by Academic Regulations 2024.",
+        },
+        {
+            "filename": "BTech_CSE_Autonomous_Curriculum_2024_28.pdf",
+            "title": "B.Tech Computer Science & Engineering Structure & Syllabus (2024-2028)",
+            "dept_code": "CSE",
+            "mime_type": "application/pdf",
+            "lifecycle_status": "active",
+            "version": "v1.0",
+            "content": "DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING\nFOUR-YEAR B.TECH DEGREE PROGRAMME STRUCTURE (2024-2028)\n\nSEMESTER 5 (THIRD YEAR CSE):\n1. CS301: Advanced Data Structures & Algorithms (Credits: 4, L-T-P: 3-0-2)\nCovers graph algorithms, randomized algorithms, B-Trees, Fibonacci heaps, and amortized complexity.\n2. CS302: Database Management Systems & NoSQL (Credits: 4, L-T-P: 3-0-2)\nRelational algebra, ACID transaction management, indexing, distributed MongoDB, and vector databases.\n3. CS303: Artificial Intelligence & Cognitive Systems (Credits: 3, L-T-P: 3-0-0)\nSearch techniques, probabilistic reasoning, knowledge representation, neural networks, and RAG architectures.\n\nTOTAL CREDITS REQUIRED FOR B.TECH DEGREE: 160 Credits across 8 Semesters.",
+        },
+    ]
+
+    # Fetch admin user ID
+    res_admin = await db.execute(select(User).where(User.email == "admin@concord.kit.edu"))
+    admin_u = res_admin.scalar_one_or_none()
+
+    for d_meta in demo_docs:
+        res_existing = await db.execute(select(Document).where(Document.filename == d_meta["filename"]))
+        if not res_existing.scalar_one_or_none():
+            dept = dept_map.get(d_meta["dept_code"])
+            text_bytes = d_meta["content"].encode("utf-8")
+            doc = Document(
+                id=str(uuid.uuid4()),
+                title=d_meta["title"],
+                filename=d_meta["filename"],
+                file_path=f"demo/{d_meta['filename']}",
+                file_size_bytes=len(text_bytes),
+                mime_type=d_meta["mime_type"],
+                sha256_hash=hashlib.sha256(text_bytes).hexdigest(),
+                department_id=dept.id if dept else None,
+                uploader_id=admin_u.id if admin_u else None,
+                status="processed",
+                lifecycle_status=d_meta["lifecycle_status"],
+                version=d_meta["version"],
+                approval_status="approved",
+                chunk_count=0,
+            )
+            db.add(doc)
+            await db.flush()
+
+            paragraphs = [p.strip() for p in d_meta["content"].split("\n\n") if p.strip()]
+            for idx, p_text in enumerate(paragraphs):
+                chunk = DocumentChunk(
+                    id=str(uuid.uuid4()),
+                    document_id=doc.id,
+                    chunk_index=idx,
+                    content=p_text,
+                    char_count=len(p_text),
+                    metadata_={"heading": d_meta["title"], "page_number": 1},
+                )
+                db.add(chunk)
+            doc.chunk_count = len(paragraphs)
+            await db.flush()
+
+    await db.commit()
+    logger.info("Database seeding completed with institutional demo documents.")
