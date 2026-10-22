@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bot, 
   Send, 
@@ -19,7 +19,11 @@ import {
   Trash2,
   PanelLeftClose,
   PanelLeft,
-  Eye
+  Eye,
+  Mic,
+  MicOff,
+  Printer,
+  Download
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -46,6 +50,67 @@ export default function RAGAssistantView() {
   const [showCitationDrawer, setShowCitationDrawer] = useState(false);
   const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
   const [previewDocument, setPreviewDocument] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  // Initialize Web Speech Recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      setSpeechSupported(true);
+    }
+  }, []);
+
+  const toggleSpeechRecognition = () => {
+    if (!speechSupported) {
+      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setQuery(transcript);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.warn('Speech recognition start failed:', err);
+      setIsListening(false);
+    }
+  };
+
+  // Export current conversation report to formatted PDF / Print
+  const handleExportPDF = (turn = null) => {
+    window.print();
+  };
 
   const sampleQuestions = [
     "What is the passing criteria for Autonomous Exam under 2024 regulations?",
@@ -301,21 +366,56 @@ export default function RAGAssistantView() {
 
         {/* Input Form with Send Action */}
         <form onSubmit={handleAsk} style={{ display: 'flex', gap: '0.75rem' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
             <input
               type="text"
               className="input-field"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask anything (e.g. passing criteria) or follow-up ('What are the attendance rules for it?')..."
+              placeholder={isListening ? "Listening... Speak your question now..." : "Ask anything (e.g. passing criteria) or follow-up ('What are the attendance rules for it?')..."}
               style={{
                 paddingLeft: '1.25rem',
-                paddingRight: '2.5rem',
+                paddingRight: '3.5rem',
                 height: '54px',
                 fontSize: '0.95rem',
-                borderRadius: '12px'
+                borderRadius: '12px',
+                width: '100%',
+                borderColor: isListening ? '#ef4444' : undefined,
+                boxShadow: isListening ? '0 0 12px rgba(239, 68, 68, 0.35)' : undefined
               }}
             />
+
+            <button
+              type="button"
+              onClick={toggleSpeechRecognition}
+              className="btn btn-ghost"
+              style={{
+                position: 'absolute',
+                right: '0.65rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                padding: '0.45rem',
+                borderRadius: '8px',
+                color: isListening ? '#ef4444' : 'var(--text-dim)',
+                background: isListening ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              title={isListening ? "Click to stop listening" : "Click to speak your question aloud"}
+            >
+              {isListening ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }} />
+                  <Mic size={18} />
+                </div>
+              ) : (
+                <Mic size={18} />
+              )}
+            </button>
           </div>
 
           <button
@@ -440,9 +540,31 @@ export default function RAGAssistantView() {
                     </div>
                   </div>
 
-                  <span className={`badge ${turn.confidence === 'high' ? 'badge-success' : 'badge-warning'}`}>
-                    {turn.confidence === 'high' ? 'Verified Evidence' : 'Extracted Records'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleExportPDF(turn)}
+                      className="btn btn-ghost no-print"
+                      style={{
+                        padding: '0.35rem 0.65rem',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer'
+                      }}
+                      title="Print or export verified answer and citations to PDF"
+                    >
+                      <Printer size={13} />
+                      <span>Print / PDF</span>
+                    </button>
+                    <span className={`badge ${turn.confidence === 'high' ? 'badge-success' : 'badge-warning'}`}>
+                      {turn.confidence === 'high' ? 'Verified Evidence' : 'Extracted Records'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Formatted Markdown */}

@@ -496,6 +496,7 @@ table tbody tr:hover {
   box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
 }
 
+
 .chat-bubble-assistant {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
@@ -505,5 +506,55 @@ table tbody tr:hover {
   max-width: 100%;
   box-shadow: var(--shadow-sm);
   line-height: 1.65;
+}
+
+/* ==============================================================================
+   PRINT & REPORT EXPORT STYLING (@media print)
+   ============================================================================== */
+@media print {
+  /* Hide application chrome, sidebars, navigation, search boxes, and action buttons */
+  aside, 
+  nav, 
+  header, 
+  form, 
+  .no-print,
+  button,
+  .sidebar-nav-btn {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+  }
+
+  .glass-panel,
+  .chat-bubble-assistant {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    color: #0f172a !important;
+    page-break-inside: avoid;
+    margin-bottom: 1.5rem !important;
+    padding: 1.25rem !important;
+  }
+
+  .chat-bubble-user {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .badge {
+    border: 1px solid #94a3b8 !important;
+    color: #334155 !important;
+    background: transparent !important;
+  }
 }
 
