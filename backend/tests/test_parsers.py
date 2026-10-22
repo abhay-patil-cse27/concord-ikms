@@ -2,8 +2,8 @@ import io
 import pytest
 import docx
 import pypdf
-from app.modules.documents.parsers import PDFParser, DocxParser, TextParser, get_parser_for_mime_or_ext
-from app.modules.documents.chunker import TextChunker, ExtractedPage
+from app.modules.documents.parsers import PDFParser, DocxParser, TextParser, get_parser_for_mime_or_ext, ExtractedPage
+from app.modules.documents.chunker import SlidingWindowTextChunker, TabularChunker, SemanticParagraphChunker, get_chunker_for_document
 
 
 def test_text_parser():
@@ -46,7 +46,8 @@ def test_pdf_parser():
 
 
 def test_chunker_sliding_window():
-    chunker = TextChunker(chunk_size=100, chunk_overlap=20)
+    from app.modules.documents.chunker import SlidingWindowTextChunker
+    chunker = SlidingWindowTextChunker(chunk_size=100, chunk_overlap=20)
     long_text = (
         "Paragraph 1 contains some standard institutional background information that is quite extensive. "
         "Paragraph 2 continues with guidelines for attendance, assignments, and semester lab credits. "
@@ -60,6 +61,43 @@ def test_chunker_sliding_window():
     assert chunks[1].index == 1
     assert all(c.char_count <= 110 for c in chunks)
     assert all(c.metadata["page_number"] == 1 for c in chunks)
+
+
+def test_tabular_chunker_preserves_table_structure():
+    from app.modules.documents.chunker import TabularChunker
+    table_text = (
+        "=== Sheet: CSE_Faculty ===\n"
+        "FacultyID | Name | Designation | Specialization\n"
+        "F01 | Dr. R. Deshmukh | Professor | AI & NLP\n"
+        "F02 | Prof. S. Patil | Asst. Professor | Cloud Systems\n"
+        "F03 | Dr. M. Joshi | Assoc. Professor | Cyber Security\n"
+    )
+    pages = [ExtractedPage(text=table_text, page_number=1, metadata={"sheet_name": "CSE_Faculty"})]
+    chunker = TabularChunker(rows_per_chunk=2)
+    chunks = chunker.chunk_pages(pages)
+
+    assert len(chunks) == 2
+    assert "Columns: FacultyID" in chunks[0].content
+    assert "Dr. R. Deshmukh" in chunks[0].content
+    assert chunks[0].metadata["chunk_type"] == "tabular"
+    assert chunks[1].metadata["row_start"] == 3
+
+
+def test_chunker_factory():
+    from app.modules.documents.chunker import (
+        get_chunker_for_document,
+        TabularChunker,
+        SemanticParagraphChunker,
+        SlidingWindowTextChunker
+    )
+
+    c_excel = get_chunker_for_document("grades.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    c_docx = get_chunker_for_document("curriculum.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    c_pdf = get_chunker_for_document("notice.pdf", "application/pdf")
+
+    assert isinstance(c_excel, TabularChunker)
+    assert isinstance(c_docx, SemanticParagraphChunker)
+    assert isinstance(c_pdf, SlidingWindowTextChunker)
 
 
 def test_parser_factory():

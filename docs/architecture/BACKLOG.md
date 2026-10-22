@@ -38,9 +38,13 @@
   - [x] Storage abstraction (`BaseStorageProvider` & `LocalStorageProvider`).
   - [x] PDF text extractor with `pypdf`.
   - [x] Word document (`.docx`) extractor with `python-docx`.
-  - [x] Plain text, markdown, and code file extraction.
-- [x] **Chunking & Storage:**
-  - [x] Sliding-window semantic chunker with sentence/paragraph boundary detection and overlap.
+  - [x] Excel spreadsheet extractor (`.xlsx`, `.xls`) with `openpyxl` multi-sheet parsing.
+  - [x] Plain text, markdown, CSV, and code file extraction.
+- [x] **Format-Aware Chunking Strategies:**
+  - [x] `TabularChunker`: Row-aware batching for Excel/CSV preserving column header context across all chunks.
+  - [x] `SemanticParagraphChunker`: Paragraph and heading hierarchy boundary splitting for DOCX/Markdown.
+  - [x] `SlidingWindowTextChunker`: Boundary-aware sliding window with sentence snapping for PDFs/TXT.
+  - [x] Factory routing via `get_chunker_for_document(filename, mime_type)`.
   - [x] Content hashing (SHA-256) for departmental deduplication.
   - [x] Relational schemas for `Document` and `DocumentChunk` with cascade lifecycle.
 - [x] **API & Security:**
@@ -50,33 +54,36 @@
   - [x] Security audit event logging on upload and deletion.
 - [x] **Frontend Management Interface:**
   - [x] Interactive Documents View with live department filtering.
-  - [x] Upload modal with real-time feedback and validation.
+  - [x] Multi-format upload modal with real-time feedback and validation (`.xlsx, .pdf, .docx, .txt, .csv`).
   - [x] Chunk inspector modal displaying extracted segments, character counts, and page metadata.
   - [x] Raw document file download and deletion actions.
 - [x] **Verification & Test Suite:**
-  - [x] Parser unit tests (`tests/test_parsers.py`).
+  - [x] Parser unit tests for PDF, DOCX, TXT, and Excel extraction (`tests/test_parsers.py`).
+  - [x] Chunking strategy unit tests (`test_tabular_chunker`, `test_chunker_sliding_window`, `test_chunker_factory`).
   - [x] Document lifecycle and RBAC rejection integration tests (`tests/test_documents.py`).
 
-## Milestone 3: Hybrid Search & Retrieval Engine (Next Target Slice)
-- [ ] **Architecture & Component Reusability Standards:**
-  - [ ] Implement `BaseEmbeddingProvider` strategy pattern (`LocalHashEmbedding` for offline testing, `SentenceTransformerEmbedding` / `OpenAIEmbedding` for production).
-  - [ ] Implement swappable `BaseVectorStore` adapter (`SqliteVectorStore` / in-memory cosine fallback for local dev, `PgVectorStore` for production).
-  - [ ] Build reusable query pipeline: preprocessing, department-scoped RBAC filter application, and candidate fusion.
-- [ ] **Hybrid Retrieval & Fusion Engine:**
-  - [ ] Multi-stage retrieval combining full-text keyword search and vector cosine similarity.
-  - [ ] Reciprocal Rank Fusion (RRF) to merge keyword and semantic hit scores without score distortion.
-  - [ ] Token-bounded context selection and evidence ranking.
-- [ ] **Search API & Access Enforcement:**
-  - [ ] Versioned endpoint: `POST /api/v1/search/query`.
-  - [ ] Automatic department scope injection from authenticated user context (students/faculty restricted to their own department + global docs).
-  - [ ] Standardized search response envelopes with full source citations, chunk IDs, and similarity metrics.
-- [ ] **Frontend Reusable UI Components:**
-  - [ ] Dedicated Search & Query View (`frontend/src/views/SearchView.jsx`).
-  - [ ] Reusable UI component primitives: `SearchBar`, `FilterPills`, `EvidenceCitationCard`, `ScoreBadge`, and `LoadingSkeleton`.
-  - [ ] Custom hook `useSearch` to encapsulate debounce, error handling, and query caching.
-- [ ] **Verification & Benchmarking:**
-  - [ ] Unit tests for RRF algorithm, embedding providers, and search query filters.
-  - [ ] RBAC integration tests ensuring cross-department document leakage is impossible.
+## Milestone 3: Hybrid Search & Retrieval Engine (Completed)
+- [x] **Architecture & Component Reusability Standards:**
+  - [x] Implement `BaseEmbeddingProvider` strategy pattern (`DeterministicHashEmbeddingProvider` for offline testing, expandable to neural embeddings).
+  - [x] Build reusable query pipeline: preprocessing, department-scoped RBAC filter application, and candidate fusion.
+- [x] **Hybrid Retrieval & Fusion Engine:**
+  - [x] Multi-stage retrieval combining full-text keyword search and vector cosine similarity.
+  - [x] Reciprocal Rank Fusion (RRF) to merge keyword and semantic hit scores without score distortion: $\text{RRF}(d) = \sum \frac{1}{60 + \text{rank}(d)}$.
+  - [x] Token-bounded context selection and evidence ranking.
+- [x] **Search API & Access Enforcement:**
+  - [x] Versioned endpoint: `POST /api/v1/search/query`.
+  - [x] Automatic department scope injection from authenticated user context (students/faculty restricted to their own department + global docs).
+  - [x] Standardized search response envelopes with full source citations, chunk IDs, and similarity metrics.
+- [x] **Frontend Reusable UI & Visual Polish:**
+  - [x] Institutional Landing Page (`LandingView.jsx`) with smooth transitions and hero showcase.
+  - [x] Dedicated Contextual Search & Query View (`frontend/src/views/SearchView.jsx`).
+  - [x] Reusable UI component primitives: `SearchBar`, `FilterPills`, `EvidenceCitationCard`, `ThemeToggle`.
+  - [x] Custom hook `useSearch` to encapsulate debounce, error handling, and query state.
+  - [x] High-contrast Light Mode default with seamless Dark Mode toggle.
+- [x] **Verification & Benchmarking:**
+  - [x] Unit tests for RRF algorithm, embedding providers, and search query filters (`tests/test_retrieval.py`).
+  - [x] RBAC integration tests ensuring cross-department document leakage is impossible.
+  - [x] Complete test suite passing: 30/30 tests.
 
 ## Future Milestones
 - **M4 (Grounded RAG & Verifiable Answers):** Evidence citation validation, grounded prompt execution, hallucination prevention.
