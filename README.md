@@ -122,14 +122,16 @@ Run the complete backend test suite:
 ```bash
 .\.venv\Scripts\pytest -v backend/tests
 ```
-- **Test Coverage Includes (41 Test Cases):**
+- **Test Coverage Includes (43 Test Cases):**
   - `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
   - Password login verification and invalid credential 401 rejections.
   - Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.
   - Document ingestion lifecycle: multipart file upload, SHA-256 deduplication, raw file download, document deletion, and lifecycle version transitions (`PATCH /api/v1/documents/{id}/lifecycle`).
+  - Governance review queue: `GET /api/v1/governance/pending-documents` and `POST /api/v1/governance/documents/{id}/review` approval endpoints.
   - Multi-format parsers: PDF (`pypdf`), DOCX (`python-docx`), Excel (`openpyxl`), Markdown, and plain text.
   - Format-aware chunking strategies: `TabularChunker` (preserves rows & headers), `SemanticParagraphChunker` (preserves headings & paragraphs), and `SlidingWindowTextChunker` (boundary-aware sentence sliding).
-  - Hybrid Retrieval Engine: Neural ONNX transformer embeddings (384-d), BM25 lexical scoring, Reciprocal Rank Fusion (RRF), FlashRank Cross-Encoder re-ranking, lifecycle filtering, search API queries, and unauthorized request rejections.
+  - Hybrid Retrieval Engine: Neural ONNX transformer embeddings (384-d), BM25 lexical scoring, Reciprocal Rank Fusion (RRF), FlashRank Cross-Encoder re-ranking, lifecycle filtering, and search API queries.
+  - Comparative Research Agent: Automated multi-query decomposition and Markdown comparison tables.
 
 ---
 
@@ -143,7 +145,9 @@ Run the complete backend test suite:
 - **Phase 4b (Embedded Local Vector Store — ChromaDB Integration):** Completed (Embedded `PersistentClient` in `backend/data/chroma`, index-level RBAC filtering with `where={"department_id": dept_id}`, automated ingestion sync & deletion hooks, and hybrid RRF search optimization).
 - **Phase 4c (Optimal RAG Architecture & Algorithmic Hardening):** Completed (Query normalization & acronym expansion, unified 384-d `NeuralONNXEmbeddingProvider`, and FlashRank cross-encoder deep contextual re-ranking).
 - **Milestone 5 (Trust, Freshness & Institutional Memory):** Completed (Document lifecycle state machine `active`/`superseded`/`archived`, version tracking, default current-policy search filtering, discrepancy and conflict detection prompts, and frontend Trust Badges).
-- **Next Milestone (Milestone 6):** Agent Workflows (Human-in-the-loop document approval and multi-step reasoning).
+- **Milestone 6 (Agent Workflows & Human-in-the-Loop Governance):** Completed (Human-in-the-loop document approval queue and review endpoints, quarantined document retrieval protection, and Comparative Research Agent).
+- **Next Milestone (Milestone 7):** Evaluation & Hardening (Retrieval benchmarks and security verification).
+
 
 
 

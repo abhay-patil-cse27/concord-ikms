@@ -285,3 +285,103 @@ class DocumentService:
         except Exception as audit_exc:
             logger.warning(f"Failed to log lifecycle audit: {audit_exc}")
         return doc
+
+    async def list_pending_documents(
+        self,
+        department_id: Optional[str] = None
+    ) -> List[Document]:
+        """Lists all documents awaiting human approval."""
+        query = (
+            select(Document)
+            .where(Document.approval_status == "pending_approval")
+            .order_by(Document.created_at.desc())
+        )
+        if department_id:
+            query = query.where(Document.department_id == str(department_id))
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    async def review_document_approval(
+        self,
+        document_id: str,
+        decision: str,  # "approved" or "rejected"
+        reviewer_id: str,
+        notes: Optional[str] = None,
+        ip_address: Optional[str] = None
+    ) -> Document:
+        """Processes an HOD / Admin approval or rejection decision."""
+        if decision not in {"approved", "rejected"}:
+            raise ValidationError(f"Invalid decision '{decision}'. Allowed: 'approved', 'rejected'")
+
+        from datetime import datetime, timezone
+        query = select(Document).options(selectinload(Document.chunks)).where(Document.id == str(document_id))
+        res = await self.db.execute(query)
+        doc = res.scalar_one_or_none()
+        if not doc:
+            raise NotFoundError(f"Document with ID {document_id} not found")
+
+        doc.approval_status = decision
+        doc.approved_by_id = str(reviewer_id)
+        doc.approval_notes = notes
+        doc.approved_at = datetime.now(timezone.utc)
+
+        if decision == "approved":
+            doc.lifecycle_status = "active"
+            # Sync vectors into ChromaDB embedded store upon approval
+            try:
+                from app.modules.retrieval.chroma_store import get_vector_store
+                chroma_chunks = []
+                for chunk_obj in doc.chunks:
+                    meta = chunk_obj.metadata_.copy() if chunk_obj.metadata_ else {}
+                    meta.update({
+                        "document_id": doc.id,
+                        "document_title": doc.title,
+                        "document_filename": doc.filename,
+                        "department_id": str(doc.department_id),
+                        "lifecycle_status": doc.lifecycle_status,
+                        "version": doc.version,
+                        "chunk_index": chunk_obj.chunk_index,
+                        "page_number": meta.get("page_number", 1)
+                    })
+                    chroma_chunks.append({
+                        "id": str(chunk_obj.id),
+                        "content": chunk_obj.content,
+                        "metadata": meta
+                    })
+                get_vector_store().upsert_chunks(chroma_chunks)
+            except Exception as chroma_exc:
+                logger.warning(f"ChromaDB sync on approval warning: {chroma_exc}")
+        else:
+            # If rejected, ensure vectors are purged if any were indexed
+            try:
+                from app.modules.retrieval.chroma_store import get_vector_store
+                get_vector_store().delete_document_chunks(str(doc.id))
+            except Exception:
+                pass
+
+        await self.db.commit()
+        await self.db.refresh(doc)
+
+        # Audit event
+        try:
+            await AuditService.log_event(
+                self.db,
+                AuditEventCreate(
+                    user_id=str(reviewer_id),
+                    action=f"document.{decision}",
+                    resource_type="document",
+                    resource_id=str(document_id),
+                    status="SUCCESS",
+                    details={
+                        "filename": doc.filename,
+                        "decision": decision,
+                        "notes": notes,
+                    },
+                    ip_address=ip_address,
+                ),
+            )
+        except Exception as audit_exc:
+            logger.warning(f"Failed to log approval audit: {audit_exc}")
+
+        return doc
+

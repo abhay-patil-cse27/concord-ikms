@@ -135,3 +135,48 @@ async def test_document_lifecycle_version_update(client: AsyncClient):
     )
     assert del_res.status_code == 204
 
+
+@pytest.mark.asyncio
+async def test_governance_approval_workflow(client: AsyncClient):
+    # 1. Admin login
+    login_res = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = login_res.json()["access_token"]
+    user_dept_id = login_res.json()["user"]["primary_department_id"]
+
+    # 2. Upload document
+    content = b"Proposed academic regulation pending committee review."
+    files = {"file": ("proposed_reg.txt", content, "text/plain")}
+    data = {"department_id": user_dept_id, "title": "Proposed Regulation"}
+
+    upload_res = await client.post(
+        "/api/v1/documents/upload",
+        files=files,
+        data=data,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert upload_res.status_code == 201
+    doc_id = upload_res.json()["document"]["id"]
+
+    # 3. Transition to pending_approval via lifecycle endpoint
+    await client.patch(
+        f"/api/v1/documents/{doc_id}/lifecycle",
+        json={"lifecycle_status": "draft"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+
+    # 4. Approve via governance endpoint
+    approve_res = await client.post(
+        f"/api/v1/governance/documents/{doc_id}/review",
+        json={"decision": "approved", "notes": "Approved by HOD"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert approve_res.status_code == 200
+    approved_doc = approve_res.json()
+    assert approved_doc["approval_status"] == "approved"
+    assert approved_doc["lifecycle_status"] == "active"
+    assert approved_doc["approval_notes"] == "Approved by HOD"
+
+    # Cleanup
+    await client.delete(f"/api/v1/documents/{doc_id}", headers={"Authorization": f"Bearer {admin_token}"})
+
+

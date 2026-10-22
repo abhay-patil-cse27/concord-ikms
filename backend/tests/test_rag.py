@@ -76,3 +76,21 @@ async def test_rag_unauthorized_rejection(client: AsyncClient):
         json={"query": "Can students apply for re-evaluation?"}
     )
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_comparative_research_agent(client: AsyncClient):
+    login_res = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = login_res.json()["access_token"]
+
+    # Comparative trigger query
+    response = await client.post(
+        "/api/v1/rag/ask",
+        json={"query": "compare the attendance rules versus old regulations", "top_k": 3},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["retrieval_mode"] == "multi_step_comparative"
+    assert "answer" in data
+

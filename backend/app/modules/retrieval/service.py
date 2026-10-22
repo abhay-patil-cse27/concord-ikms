@@ -72,6 +72,9 @@ class RetrievalService:
         if lifecycle_status and lifecycle_status != "all":
             stmt = stmt.where(Document.lifecycle_status == lifecycle_status)
 
+        # Milestone 6 (Governance): Only approved documents can be retrieved by search and RAG
+        stmt = stmt.where(Document.approval_status == "approved")
+
         result = await db.execute(stmt)
         chunks: List[DocumentChunk] = result.scalars().all()
 

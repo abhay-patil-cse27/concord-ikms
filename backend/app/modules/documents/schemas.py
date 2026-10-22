@@ -32,6 +32,10 @@ class DocumentRead(BaseModel):
     effective_date: Optional[datetime] = None
     expiration_date: Optional[datetime] = None
     superseded_by_id: Optional[str] = None
+    approval_status: str = "approved"
+    approved_by_id: Optional[str] = None
+    approval_notes: Optional[str] = None
+    approved_at: Optional[datetime] = None
     error_message: Optional[str] = None
     chunk_count: int
     created_at: datetime
@@ -41,6 +45,13 @@ class DocumentRead(BaseModel):
 class DocumentDetailRead(DocumentRead):
     chunks: List[DocumentChunkRead] = []
     superseded_by_title: Optional[str] = None
+    approved_by_email: Optional[str] = None
+
+
+class DocumentApprovalDecision(BaseModel):
+    decision: str  # "approved" or "rejected"
+    notes: Optional[str] = None
+
 
 
 class DocumentLifecycleUpdate(BaseModel):

@@ -35,6 +35,29 @@ class RAGService:
     ) -> RAGAskResponse:
         start_time = time.perf_counter()
 
+        # Step 0: Check if query requires multi-step comparative research
+        from app.modules.workflows.research_agent import ComparativeResearchAgent
+        comp_agent = ComparativeResearchAgent(self.retrieval_service, self.llm_provider)
+
+        if comp_agent.is_comparative_query(request.query):
+            comp_res = await comp_agent.execute_research(
+                db=db,
+                query=request.query,
+                current_user=current_user,
+                target_department_id=request.department_id
+            )
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            citations = [CitationItem(**c) for c in comp_res.get("citations", [])]
+            return RAGAskResponse(
+                query=request.query,
+                answer=comp_res.get("answer", ""),
+                citations=citations,
+                confidence=comp_res.get("confidence", "high"),
+                model_used=comp_res.get("model_used", "groq:comparative_agent"),
+                latency_ms=round(latency_ms, 2),
+                retrieval_mode="multi_step_comparative"
+            )
+
         # Step 1: Execute authorized hybrid search to get verified evidence
         # By default (include_superseded=False), search only active current-policy documents.
         lifecycle_filter = "all" if request.include_superseded else "active"

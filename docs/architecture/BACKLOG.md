@@ -153,10 +153,29 @@
   - [x] Superseded policy disclaimer notice banner in Grounded Q&A answers.
 
 
+## Milestone 6: Agent Workflows & Human-in-the-Loop Governance (Completed)
+- [x] **Step 6.1: Document Governance & Approval Schema:**
+  - [x] Add `approval_status` (`approved`, `pending_approval`, `rejected`), `approved_by_id`, `approval_notes`, and `approved_at` to `Document` model.
+  - [x] Quarantined retrieval: unapproved documents are strictly excluded from search and RAG until verified.
+- [x] **Step 6.2: Approval Queue & HOD Review Endpoints:**
+  - [x] Implement `GET /api/v1/governance/pending-documents` review queue for HODs and Platform Admins.
+  - [x] Implement `POST /api/v1/governance/documents/{id}/review` approval endpoint.
+  - [x] Atomic ChromaDB sync: vectors are upserted into active collection upon approval and purged if rejected.
+  - [x] Audit trail recording approval decisions and feedback notes.
+- [x] **Step 6.3: Multi-Step Research & Comparative Query Agent:**
+  - [x] Implement `ComparativeResearchAgent` in `backend/app/modules/workflows/research_agent.py`.
+  - [x] Automated detection of comparative triggers (`vs`, `compare`, `difference between`).
+  - [x] Multi-scope evidence gathering across current and historical records.
+  - [x] Structured Markdown comparison tables with verifiable citations.
+- [x] **Step 6.4: Verification & Suite Expansion:**
+  - [x] Integration tests for governance approval workflow (`test_governance_approval_workflow`).
+  - [x] Integration tests for comparative agent routing (`test_comparative_research_agent`).
+  - [x] Full test suite passing with 43/43 tests (`pytest backend/tests`).
+
 ## Future Milestones
-- **M6 (Agent Workflows):** Human-in-the-loop approval workflows with LangGraph.
 - **M7 (Evaluation & Hardening):** Retrieval benchmarks (Hit Rate, MRR), security verification (OWASP ASVS).
 - **M8 (Deployment & Demonstration):** End-to-end multi-department institutional scenario demonstration.
+
 
 
 

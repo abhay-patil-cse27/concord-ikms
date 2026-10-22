@@ -32,6 +32,13 @@ class Document(Base):
     expiration_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     superseded_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
 
+    # Governance & Human Approval (Milestone 6)
+    # approval_status: approved, pending_approval, rejected
+    approval_status: Mapped[str] = mapped_column(String(32), default="approved", index=True, nullable=False)
+    approved_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    approval_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     chunk_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
@@ -41,6 +48,7 @@ class Document(Base):
     # Relationships
     department = relationship("Department", foreign_keys=[department_id])
     uploader = relationship("User", foreign_keys=[uploader_id])
+    approved_by = relationship("User", foreign_keys=[approved_by_id])
     superseded_by = relationship("Document", remote_side="Document.id", foreign_keys=[superseded_by_id])
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan", order_by="DocumentChunk.chunk_index")
 
