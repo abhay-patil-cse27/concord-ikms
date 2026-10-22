@@ -208,6 +208,25 @@ This starts:
 
 For rapid viva and evaluator demonstration, the system automatically initializes with pre-seeded institutional personas:
 
+---
+
+## 4. One-Click Quick Launch
+
+For immediate institutional demonstrations on Windows or Unix machines:
+
+- **Windows:** Double-click or run:
+  ```cmd
+  run_demo.bat
+  ```
+- **macOS / Linux:** Run:
+  ```bash
+  chmod +x run_demo.sh && ./run_demo.sh
+  ```
+
+This automatically initializes Python virtual environments, launches the FastAPI backend (:8000), starts the React Vite frontend (:5173), and opens `http://localhost:5173` in your default browser.
+
+### Pre-Seeded Evaluator Personas
+
 | Persona | Role Code | Email | Password | Primary Scope |
 | :--- | :--- | :--- | :--- | :--- |
 | **Platform Administrator** | `platform_admin` | `admin@concord.kit.edu` | `Admin@12345` | Global Institutional Oversight |
@@ -225,7 +244,7 @@ Run the complete backend test suite:
 ```bash
 .\.venv\Scripts\pytest -v backend/tests
 ```
-- **Test Coverage Includes (47 Test Cases):**
+- **Test Coverage Includes (49 Test Cases):**
   - `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
   - Password login verification and invalid credential 401 rejections.
   - Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.

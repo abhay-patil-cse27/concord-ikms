@@ -157,5 +157,23 @@ export const api = {
     apiRequest('/evaluation/run', {
       method: 'POST',
     }),
+
+  // Conversational Multi-Turn Memory & Sessions
+  listConversations: () => apiRequest('/conversations'),
+  createConversation: (payload = {}) =>
+    apiRequest('/conversations', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getConversation: (id) => apiRequest(`/conversations/${id}`),
+  deleteConversation: (id) =>
+    apiRequest(`/conversations/${id}`, {
+      method: 'DELETE',
+    }),
+  askConversational: (payload) =>
+    apiRequest('/conversations/ask', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 

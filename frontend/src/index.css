@@ -452,3 +452,58 @@ table tbody tr:hover {
   transform: scale(1.04);
 }
 
+/* ==============================================================================
+   CONVERSATIONAL MULTI-TURN SESSIONS & BREATHABLE CHAT BUBBLES
+   ============================================================================== */
+.chat-session-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  text-align: left;
+}
+
+.chat-session-item:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+  border-color: var(--border-light);
+  transform: translateX(2px);
+}
+
+.chat-session-item.active {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--primary);
+  border-color: rgba(56, 189, 248, 0.3);
+  font-weight: 600;
+}
+
+.chat-bubble-user {
+  background: var(--primary);
+  color: #ffffff;
+  padding: 0.85rem 1.25rem;
+  border-radius: 16px 16px 4px 16px;
+  max-width: 80%;
+  margin-left: auto;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+}
+
+.chat-bubble-assistant {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  color: var(--text-main);
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px 16px 16px 4px;
+  max-width: 100%;
+  box-shadow: var(--shadow-sm);
+  line-height: 1.65;
+}
+

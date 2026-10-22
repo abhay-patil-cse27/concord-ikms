@@ -9,6 +9,7 @@ from app.api.v1.search import router as search_router
 from app.api.v1.rag import router as rag_router
 from app.api.v1.governance import router as governance_router
 from app.api.v1.evaluation import router as evaluation_router
+from app.api.v1.conversations import router as conversations_router
 
 api_v1_router = APIRouter()
 
@@ -22,6 +23,7 @@ api_v1_router.include_router(search_router)
 api_v1_router.include_router(rag_router)
 api_v1_router.include_router(governance_router)
 api_v1_router.include_router(evaluation_router)
+api_v1_router.include_router(conversations_router)
 
 
 
