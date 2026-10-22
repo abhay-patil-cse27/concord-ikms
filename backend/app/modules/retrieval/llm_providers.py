@@ -118,6 +118,10 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                     import re
                     answer_text = re.sub(r'【(\d+)】', r'[\1]', answer_text)
                     answer_text = re.sub(r'\[Evidence\s*(\d+)\]', r'[\1]', answer_text, flags=re.IGNORECASE)
+                    # Clean out raw HTML break tags (<br>, <br/>, <br />) that degrade markdown rendering
+                    answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.IGNORECASE)
+                    # Clean repeated blank lines
+                    answer_text = re.sub(r'\n{3,}', '\n\n', answer_text).strip()
                     return {
                         "answer": answer_text,
                         "citations": citations_metadata,

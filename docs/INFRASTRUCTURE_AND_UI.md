@@ -123,5 +123,19 @@ The frontend is built with **React + Vite** and uses a bespoke Institutional Des
   - `DashboardView.jsx`: System overview, permissions breakdown, and evaluator demo controls.
   - `DocumentsView.jsx`: Ingestion, chunk inspector, and HOD governance review queue.
   - `SearchView.jsx`: Contextual search with department filter and RRF score breakdowns.
-  - `RAGAssistantView.jsx`: Grounded Q&A assistant with Groq Cloud streaming, clickable citations `[1]`, and discrepancy reports.
+  - `RAGAssistantView.jsx`: Grounded Q&A assistant in a unified single-card layout with continuous Web Speech voice dictation, multi-turn conversational session persistence, slide-in animations, generating typing indicator dots, sanitized markdown rendering without raw `<br>` tags, and institutional PDF/print reporting.
+  - `ui/ThreadSidebar.jsx`: Reusable collapsible session thread sidebar grouping inquiries into Recents, Yesterday, and Previous 7 Days with instant search filtering.
   - `BenchmarkView.jsx`: Empirical evaluation matrix (Hit Rate@5, MRR@5, latency) and live benchmark runner.
+
+---
+
+## 5. Conversational UI & Animations System
+
+The RAG Assistant uses modern interactive animations and chronological layout:
+- **Chronological Flow:** Questions and synthesized answers flow top-to-bottom with smooth automatic scrolling (`messagesEndRef.current.scrollIntoView`).
+- **Entrance Transitions:**
+  - `.animate-user-msg`: Fluid slide-up transition from bottom right with scale pop (`userMsgSlide 0.28s`).
+  - `.animate-assistant-msg`: Smooth fade-and-lift elevation (`assistantMsgSlide 0.35s`).
+  - `.typing-dot`: Staggered wave animation (`pulseDot 1.4s`) while Groq Cloud synthesizes evidence chunks.
+- **Sanitized Markdown Rendering:** Strips out raw `<br>` and HTML artifacts, rendering clean typography, tables, and clickable evidence citation badges `[1]`, `[2]`.
+- **Institutional Single-Card Surface:** Side panel threads and conversation stream unified in a clean, elevated card with zero disjointed borders.

@@ -263,7 +263,10 @@ export default function RAGAssistantView() {
     let cleaned = rawText
       .replace(/【(\d+)】/g, '[$1]')
       .replace(/\[Evidence\s*(\d+)\]/gi, '[$1]')
-      .replace(/\n\s*\n\s*\n+/g, '\n\n');
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&lt;br\s*\/?&gt;/gi, '\n')
+      .replace(/\n\s*\n\s*\n+/g, '\n\n')
+      .trim();
 
     return (
       <div className="markdown-body">
@@ -459,9 +462,9 @@ export default function RAGAssistantView() {
 
           {/* Dialogue Turns */}
           {history.map((turn, idx) => (
-            <div key={turn.id || idx} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
-              {/* User Question */}
-              <div className="chat-bubble-user">
+            <div key={turn.id || idx} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
+              {/* User Question with slide-in animation */}
+              <div className="chat-bubble-user animate-user-msg">
                 {turn.query}
                 {turn.effective_query && turn.effective_query !== turn.query && (
                   <div style={{ fontSize: '0.72rem', opacity: 0.85, marginTop: '4px', fontStyle: 'italic' }}>
@@ -470,11 +473,11 @@ export default function RAGAssistantView() {
                 )}
               </div>
 
-              {/* Assistant Answer Box */}
-              <div className="chat-bubble-assistant">
+              {/* Assistant Answer Box with smooth slide-up animation */}
+              <div className="chat-bubble-assistant animate-assistant-msg">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Bot size={16} color="var(--primary)" />
                     </div>
                     <div>
@@ -543,7 +546,7 @@ export default function RAGAssistantView() {
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary)', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary)', background: 'rgba(2, 132, 199, 0.08)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
                               Source [{c.citation_index}]
                             </span>
                             <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
@@ -565,22 +568,31 @@ export default function RAGAssistantView() {
             </div>
           ))}
 
-          {/* Loading Skeleton */}
+          {/* Loading / Generating State with Animated Typing Indicator */}
           {loading && (
-            <div className="glass-panel animate-fade-in" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Bot size={18} color="var(--primary)" />
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}>Synthesizing answer with verified citations...</div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>Query contextualization, RRF retrieval & grounding via Groq Cloud</div>
+            <div className="glass-panel animate-assistant-msg" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '860px', width: '100%', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Bot size={16} color="var(--primary)" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>Synthesizing answer with verified citations</span>
+                      <span style={{ display: 'inline-flex', gap: '4px', alignItems: 'center', marginLeft: '4px' }}>
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>Query contextualization, RRF retrieval & grounding via Groq Cloud</div>
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.25rem' }}>
-                <div style={{ height: '14px', width: '85%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
-                <div style={{ height: '14px', width: '92%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
-                <div style={{ height: '14px', width: '70%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.25rem' }}>
+                <div style={{ height: '12px', width: '85%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
+                <div style={{ height: '12px', width: '92%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out', animationDelay: '0.2s' }} />
+                <div style={{ height: '12px', width: '65%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out', animationDelay: '0.4s' }} />
               </div>
             </div>
           )}
