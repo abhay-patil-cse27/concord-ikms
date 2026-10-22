@@ -1,0 +1,81 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: concord-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: concord_user
+      POSTGRES_PASSWORD: concord_password
+      POSTGRES_DB: concord_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - concord_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U concord_user -d concord_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: pgsty/silo:latest
+    container_name: concord-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: concord_minio
+      MINIO_ROOT_PASSWORD: concord_minio_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - concord_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    container_name: concord-backend
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://concord_user:concord_password@postgres:5432/concord_db
+      - DATABASE_SYNC_URL=postgresql+psycopg://concord_user:concord_password@postgres:5432/concord_db
+      - SECRET_KEY=concord-dev-secret-key-32-character-minimum-string
+      - DEMO_MODE_ENABLED=true
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+    container_name: concord-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+
+volumes:
+  concord_pg_data:
+  concord_minio_data:
