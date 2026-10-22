@@ -2,19 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { FileText, UploadCloud, Filter } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { uiCache } from '../utils/uiCache';
 import UploadModal from '../components/documents/UploadModal';
 import ChunkInspectorModal from '../components/documents/ChunkInspectorModal';
 import DocumentTable from '../components/documents/DocumentTable';
 
 export default function DocumentsView() {
+  const cached = uiCache.get(uiCache.KEYS.DOCUMENTS, {});
+
   const { user, hasPermission } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [selectedDept, setSelectedDept] = useState('');
-  const [activeFilterTab, setActiveFilterTab] = useState('all'); // 'all' | 'pending'
+  const [selectedDept, setSelectedDept] = useState(cached.selectedDept || '');
+  const [activeFilterTab, setActiveFilterTab] = useState(cached.activeFilterTab || 'all'); // 'all' | 'pending'
   const [pendingDocs, setPendingDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    uiCache.set(uiCache.KEYS.DOCUMENTS, {
+      selectedDept,
+      activeFilterTab,
+    });
+  }, [selectedDept, activeFilterTab]);
 
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);

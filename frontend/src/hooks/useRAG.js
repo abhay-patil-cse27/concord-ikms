@@ -1,12 +1,24 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { api } from '../api/client';
+import { uiCache } from '../utils/uiCache';
 
 export function useRAG() {
-  const [query, setQuery] = useState('');
+  const cached = uiCache.get(uiCache.KEYS.RAG, {});
+
+  const [query, setQuery] = useState(cached.query || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [response, setResponse] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [response, setResponse] = useState(cached.response || null);
+  const [history, setHistory] = useState(cached.history || []);
+
+  // Sync to cache on updates
+  useEffect(() => {
+    uiCache.set(uiCache.KEYS.RAG, {
+      query,
+      response,
+      history,
+    });
+  }, [query, response, history]);
 
   const ask = useCallback(async (customQuery = null, options = {}) => {
     const q = customQuery !== null ? customQuery : query;
@@ -45,6 +57,7 @@ export function useRAG() {
     setQuery('');
     setResponse(null);
     setError(null);
+    uiCache.remove(uiCache.KEYS.RAG);
   }, []);
 
   return {

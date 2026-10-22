@@ -1,13 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import { uiCache } from '../utils/uiCache';
 
 export function useSearch() {
-  const [query, setQuery] = useState('');
-  const [mode, setMode] = useState('hybrid');
+  const cached = uiCache.get(uiCache.KEYS.SEARCH, {});
+
+  const [query, setQuery] = useState(cached.query || '');
+  const [mode, setMode] = useState(cached.mode || 'hybrid');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [results, setResults] = useState([]);
-  const [searchMeta, setSearchMeta] = useState(null);
+  const [results, setResults] = useState(cached.results || []);
+  const [searchMeta, setSearchMeta] = useState(cached.searchMeta || null);
+
+  useEffect(() => {
+    uiCache.set(uiCache.KEYS.SEARCH, {
+      query,
+      mode,
+      results,
+      searchMeta,
+    });
+  }, [query, mode, results, searchMeta]);
 
   const executeSearch = async (overrideQuery = null, overrideDept = null) => {
     const q = overrideQuery !== null ? overrideQuery : query;
@@ -41,6 +53,7 @@ export function useSearch() {
     setResults([]);
     setError(null);
     setSearchMeta(null);
+    uiCache.remove(uiCache.KEYS.SEARCH);
   };
 
   return {

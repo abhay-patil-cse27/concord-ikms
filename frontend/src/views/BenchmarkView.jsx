@@ -14,13 +14,23 @@ import {
   Database
 } from 'lucide-react';
 import { api } from '../api/client';
+import { uiCache } from '../utils/uiCache';
 
 export default function BenchmarkView() {
-  const [metricsData, setMetricsData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cached = uiCache.get(uiCache.KEYS.BENCHMARK, {});
+
+  const [metricsData, setMetricsData] = useState(cached.metricsData || null);
+  const [loading, setLoading] = useState(!cached.metricsData);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState(null);
-  const [liveResult, setLiveResult] = useState(null);
+  const [liveResult, setLiveResult] = useState(cached.liveResult || null);
+
+  useEffect(() => {
+    uiCache.set(uiCache.KEYS.BENCHMARK, {
+      metricsData,
+      liveResult,
+    });
+  }, [metricsData, liveResult]);
 
   const fetchMetrics = async () => {
     try {
@@ -39,7 +49,9 @@ export default function BenchmarkView() {
   };
 
   useEffect(() => {
-    fetchMetrics();
+    if (!cached.metricsData) {
+      fetchMetrics();
+    }
   }, []);
 
   const handleRunLiveBenchmark = async () => {
