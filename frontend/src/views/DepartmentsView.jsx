@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Plus, CheckCircle, ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { uiCache } from '../utils/uiCache';
 
 export default function DepartmentsView() {
+  const cached = uiCache.get(uiCache.KEYS.DEPARTMENTS, {});
   const { hasPermission } = useAuth();
-  const [departments, setDepartments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [departments, setDepartments] = useState(() => cached.departments || []);
+  const [loading, setLoading] = useState(() => !cached.departments?.length);
   const [error, setError] = useState(null);
 
   // Form state
@@ -15,6 +17,12 @@ export default function DepartmentsView() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
+
+  useEffect(() => {
+    if (departments.length > 0) {
+      uiCache.set(uiCache.KEYS.DEPARTMENTS, { departments });
+    }
+  }, [departments]);
 
   const fetchDepartments = async () => {
     setLoading(true);
@@ -30,7 +38,9 @@ export default function DepartmentsView() {
   };
 
   useEffect(() => {
-    fetchDepartments();
+    if (!cached.departments?.length) {
+      fetchDepartments();
+    }
   }, []);
 
   const handleCreate = async (e) => {

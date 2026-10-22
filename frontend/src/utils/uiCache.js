@@ -10,6 +10,9 @@ const CACHE_KEYS = {
   SEARCH: 'concord_cache_search',
   BENCHMARK: 'concord_cache_benchmark',
   DOCUMENTS: 'concord_cache_documents',
+  AUDIT: 'concord_cache_audit',
+  DEPARTMENTS: 'concord_cache_departments',
+  USERS: 'concord_cache_users',
 };
 
 export const uiCache = {
@@ -37,6 +40,14 @@ export const uiCache = {
       sessionStorage.removeItem(key);
     } catch (e) {
       console.warn('uiCache remove error:', e);
+    }
+  },
+
+  clearAll: () => {
+    try {
+      Object.values(CACHE_KEYS).forEach((k) => sessionStorage.removeItem(k));
+    } catch (e) {
+      console.warn('uiCache clearAll error:', e);
     }
   },
 

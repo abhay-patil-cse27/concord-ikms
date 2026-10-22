@@ -2,11 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ShieldAlert, RefreshCw, KeyRound, Clock } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { uiCache } from '../utils/uiCache';
 
 export default function AuditLogsView() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cached = uiCache.get(uiCache.KEYS.AUDIT, {});
+  const [events, setEvents] = useState(() => cached.events || []);
+  const [loading, setLoading] = useState(() => !cached.events?.length);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (events.length > 0) {
+      uiCache.set(uiCache.KEYS.AUDIT, { events });
+    }
+  }, [events]);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -22,7 +30,9 @@ export default function AuditLogsView() {
   };
 
   useEffect(() => {
-    fetchLogs();
+    if (!cached.events?.length) {
+      fetchLogs();
+    }
   }, []);
 
   return (

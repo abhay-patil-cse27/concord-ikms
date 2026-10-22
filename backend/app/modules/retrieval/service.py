@@ -123,16 +123,18 @@ class RetrievalService:
                 lexical_candidates.append(item_lex)
 
         # 3b. Vector candidate evaluation via ChromaDB using expanded query
+        # Restrict ChromaDB hits to authorized/eligible document IDs from the SQL query (lifecycle and approval status)
+        valid_doc_ids = {c.document_id for c in chunks}
         vector_candidates: List[Dict[str, Any]] = []
         try:
             from app.modules.retrieval.chroma_store import get_vector_store
             chroma_hits = get_vector_store().query_similarity(
                 query=expanded_query,
-                top_k=top_k * 3,
+                top_k=top_k * 5,
                 department_id=allowed_dept_id
             )
             if chroma_hits:
-                vector_candidates = chroma_hits
+                vector_candidates = [hit for hit in chroma_hits if hit.get("document_id") in valid_doc_ids]
         except Exception:
             pass
 

@@ -2,12 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { uiCache } from '../utils/uiCache';
 
 export default function UsersView() {
+  const cached = uiCache.get(uiCache.KEYS.USERS, {});
   const { hasPermission } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState(() => cached.users || []);
+  const [loading, setLoading] = useState(() => !cached.users?.length);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      uiCache.set(uiCache.KEYS.USERS, { users });
+    }
+  }, [users]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -23,7 +31,9 @@ export default function UsersView() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    if (!cached.users?.length) {
+      fetchUsers();
+    }
   }, []);
 
   return (

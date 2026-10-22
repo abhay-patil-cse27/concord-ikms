@@ -80,6 +80,7 @@ class DocumentService:
             chunker = get_chunker_for_document(filename, mime_type)
             chunk_results = chunker.chunk_pages(extracted_pages)
             
+            chunk_models = []
             for chunk_data in chunk_results:
                 chunk = DocumentChunk(
                     id=str(uuid.uuid4()),
@@ -90,6 +91,7 @@ class DocumentService:
                     metadata_=chunk_data.metadata,
                 )
                 self.db.add(chunk)
+                chunk_models.append(chunk)
 
             document.chunk_count = len(chunk_results)
             document.status = "processed"
@@ -102,7 +104,7 @@ class DocumentService:
             try:
                 from app.modules.retrieval.chroma_store import get_vector_store
                 chroma_chunks = []
-                for chunk_obj in document.chunks:
+                for chunk_obj in chunk_models:
                     meta = chunk_obj.metadata_.copy() if chunk_obj.metadata_ else {}
                     meta.update({
                         "document_id": document.id,

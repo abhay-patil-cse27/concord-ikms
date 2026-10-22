@@ -19,20 +19,23 @@ import { uiCache } from '../utils/uiCache';
 export default function BenchmarkView() {
   const cached = uiCache.get(uiCache.KEYS.BENCHMARK, {});
 
-  const [metricsData, setMetricsData] = useState(cached.metricsData || null);
-  const [loading, setLoading] = useState(!cached.metricsData);
+  const [metricsData, setMetricsData] = useState(() => cached.metricsData || null);
+  const [loading, setLoading] = useState(() => !cached.metricsData);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState(null);
-  const [liveResult, setLiveResult] = useState(cached.liveResult || null);
+  const [liveResult, setLiveResult] = useState(() => cached.liveResult || null);
 
+  // Sync to uiCache whenever metrics or liveResult change
   useEffect(() => {
-    uiCache.set(uiCache.KEYS.BENCHMARK, {
-      metricsData,
-      liveResult,
-    });
+    if (metricsData || liveResult) {
+      uiCache.set(uiCache.KEYS.BENCHMARK, {
+        metricsData,
+        liveResult,
+      });
+    }
   }, [metricsData, liveResult]);
 
-  const fetchMetrics = async () => {
+  const fetchMetrics = async (isManualRefresh = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -49,6 +52,7 @@ export default function BenchmarkView() {
   };
 
   useEffect(() => {
+    // Only fetch if there is no cached data
     if (!cached.metricsData) {
       fetchMetrics();
     }
