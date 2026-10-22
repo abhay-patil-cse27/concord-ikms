@@ -381,3 +381,74 @@ input:focus, select:focus, textarea:focus {
   font-family: monospace;
   color: var(--primary);
 }
+
+/* ==============================================================================
+   PREMIUM CUSTOM SCROLLBAR & INTERACTIVE HOVER POLISH
+   ============================================================================== */
+
+/* Modern Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
+}
+
+/* Global Interactive Hover Effects */
+.glass-panel {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(56, 189, 248, 0.28);
+}
+
+/* Smooth Interactive Nav Button Hover */
+.sidebar-nav-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-nav-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.08) !important;
+  color: var(--text-main) !important;
+  transform: translateX(3px);
+}
+
+.sidebar-nav-btn.active {
+  background: rgba(56, 189, 248, 0.14) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.1);
+}
+
+/* Table Row Hover Lift */
+table tr {
+  transition: background-color 0.18s ease;
+}
+
+table tbody tr:hover {
+  background: rgba(56, 189, 248, 0.04) !important;
+}
+
+/* Interactive Pill Badges Hover */
+.badge {
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.badge:hover {
+  transform: scale(1.04);
+}
+
