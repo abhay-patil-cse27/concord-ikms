@@ -10,6 +10,7 @@ import AuditLogsView from './views/AuditLogsView';
 import DocumentsView from './views/DocumentsView';
 import SearchView from './views/SearchView';
 import RAGAssistantView from './views/RAGAssistantView';
+import BenchmarkView from './views/BenchmarkView';
 import { FileText, Search, Clock } from 'lucide-react';
 
 
@@ -76,6 +77,8 @@ export default function App() {
         return <SearchView />;
       case 'rag':
         return <RAGAssistantView />;
+      case 'benchmarks':
+        return <BenchmarkView />;
       default:
         return <DashboardView />;
     }

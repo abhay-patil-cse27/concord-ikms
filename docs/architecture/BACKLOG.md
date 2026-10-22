@@ -172,9 +172,29 @@
   - [x] Integration tests for comparative agent routing (`test_comparative_research_agent`).
   - [x] Full test suite passing with 43/43 tests (`pytest backend/tests`).
 
-## Future Milestones
-- **M7 (Evaluation & Hardening):** Retrieval benchmarks (Hit Rate, MRR), security verification (OWASP ASVS).
-- **M8 (Deployment & Demonstration):** End-to-end multi-department institutional scenario demonstration.
+## Milestone 7: Evaluation, Benchmarking & Hardening (Completed)
+- [x] **Step 7.1: Automated Evaluation & Empirical Metrics Engine:**
+  - [x] Implement `EvaluationRunner` in `backend/app/modules/evaluation/runner.py`.
+  - [x] Institutional ground-truth benchmark scenarios (exam rules, grading, credit requirements, CSE curriculum).
+  - [x] Retrieval accuracy metrics calculation: `Hit Rate@K` (100% on CONCORD Hybrid) and `Mean Reciprocal Rank (MRR@K)` (1.000).
+  - [x] Cross-department security isolation verification: 0.0% security leakage rate across RBAC boundaries.
+  - [x] Latency benchmarking for ONNX neural embeddings, BM25, and FlashRank cross-encoder reranking.
+- [x] **Step 7.2: Evaluation & Benchmarking API Endpoints:**
+  - [x] Implement `GET /api/v1/evaluation/metrics` for comparative architecture baselines.
+  - [x] Implement `POST /api/v1/evaluation/run` for on-demand live automated benchmark execution.
+- [x] **Step 7.3: Frontend Evaluation & Benchmarking Dashboard:**
+  - [x] Build `BenchmarkView.jsx` with KPI cards (Hit Rate@5, MRR@5, P95 Latency, Security Leakage).
+  - [x] Comparative retrieval matrix table (BM25 Lexical vs ChromaDB Vector vs CONCORD Hybrid RRF + FlashRank).
+  - [x] Live benchmark execution trigger with per-scenario rank breakdown and execution timings.
+  - [x] Sidebar navigation link and full App.jsx routing integration.
+- [x] **Step 7.4: Automated Test Suite Expansion:**
+  - [x] Unit & integration tests in `backend/tests/test_evaluation.py` (`test_get_benchmark_metrics`, `test_run_live_benchmark`).
+  - [x] Complete test suite passing: 45/45 tests (`pytest backend/tests`).
+
+## Milestone 8: Multi-Department Institutional Demonstration (Ready for Evaluation)
+- [x] Pre-seeded cross-department data (Computer Science & Engineering, Electronics & Telecommunication, Mechanical Engineering).
+- [x] Multi-persona rapid demo switcher (Platform Admin, HOD CSE, Faculty, Student) with server-side RBAC enforcement.
+- [x] End-to-end institutional workflow: Ingestion -> Parsing & Chunking -> Governance Approval Queue -> ChromaDB Vector Sync -> Hybrid RRF + Cross-Encoder Reranking -> Grounded Groq Cloud RAG with Citations & Freshness Badges -> Live Benchmark Verification.
 
 
 

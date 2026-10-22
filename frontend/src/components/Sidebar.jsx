@@ -7,6 +7,7 @@ import {
   FileText, 
   Search,
   Bot,
+  BarChart3,
   Lock,
   ExternalLink
 } from 'lucide-react';
@@ -63,6 +64,14 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       icon: Bot,
       accessible: true,
       milestone: 'M4',
+    },
+    {
+      id: 'benchmarks',
+      label: 'Evaluation & Benchmarks',
+      icon: BarChart3,
+      accessible: true,
+      milestone: 'M7',
+      badge: 'Metrics',
     },
   ];
 

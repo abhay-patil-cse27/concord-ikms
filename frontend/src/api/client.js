@@ -146,5 +146,12 @@ export const api = {
         include_superseded: options.includeSuperseded || false,
       }),
     }),
+
+  // Evaluation & Benchmarking (M7)
+  getBenchmarkMetrics: () => apiRequest('/evaluation/metrics'),
+  runLiveBenchmark: () =>
+    apiRequest('/evaluation/run', {
+      method: 'POST',
+    }),
 };
 
