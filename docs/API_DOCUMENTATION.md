@@ -7,6 +7,7 @@
 [← Back to Main Documentation Index](../README.md#📚-documentation-index)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'actorBkg': '#1e293b', 'actorBorder': '#0284c7', 'actorTextColor': '#ffffff', 'signalColor': '#38bdf8', 'signalTextColor': '#f8fafc', 'labelBoxBkgColor': '#0f172a', 'labelBoxBorderColor': '#334155', 'labelTextColor': '#f8fafc', 'loopTextColor': '#f8fafc', 'noteBorderColor': '#0284c7', 'noteBkgColor': '#0f172a', 'noteTextColor': '#f8fafc', 'fontFamily': 'Inter, sans-serif'}}}%%
 sequenceDiagram
     autonumber
     actor Client as Frontend Client (React)
@@ -15,7 +16,7 @@ sequenceDiagram
     participant Search as /search & /rag API
     participant Bench as /benchmarks API
     participant PG as PostgreSQL (pgvector)
-    participant LLM as Ollama / Mock LLM
+    participant LLM as Groq Cloud LLM
 
     Note over Client,Auth: 1. Identity & RBAC Session
     Client->>Auth: POST /auth/login (or /demo-login)
@@ -27,16 +28,16 @@ sequenceDiagram
     Docs-->>Client: 201 Created (document_id, chunk_count)
 
     Note over Client,Search: 3. Intelligent Query Execution
-    Client->>Search: POST /rag/query (query, strategy, filters)
-    Search->>PG: Hybrid Search (HNSW Vector + TSVector Fulltext)
+    Client->>Search: POST /rag/ask (query, department_id)
+    Search->>PG: Hybrid Search (ChromaDB + BM25 Lexical)
     PG-->>Search: Matched Chunks + Provenance
     Search->>LLM: Augmented Prompt Generation
-    LLM-->>Search: Contextual Synthesized Answer
-    Search-->>Client: Answer + Cited Source Cards + Latency
+    LLM-->>Search: Grounded Synthesized Answer
+    Search-->>Client: Answer + Cited Source Cards [1] + Latency
 
     Note over Client,Bench: 4. Verification & Benchmarking
-    Client->>Bench: POST /benchmarks/run
-    Bench-->>Client: Execution Metrics (P95 Latency, MRR, Context Relevance)
+    Client->>Bench: POST /evaluation/run
+    Bench-->>Client: Execution Metrics (P95 Latency, MRR, Hit Rate@5)
 ```
 
 ---

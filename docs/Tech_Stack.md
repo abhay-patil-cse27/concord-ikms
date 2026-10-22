@@ -3,21 +3,22 @@
 [← Back to Main Documentation Index](../README.md#📚-documentation-index)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph TD
-    Client["Frontend: React 18 + Vite + Tailwind/Modern CSS\n- Responsive Institutional UI (Light/Dark)\n- UI Caching & Hash Routing (#/rag, #/documents)"]
+    Client["Frontend: React 18 + Vite<br/>- Responsive Institutional UI (Light/Dark)<br/>- UI Caching & Hash Routing (#/rag, #/benchmarks)"]
     
-    API["Backend: Python 3.12 + FastAPI ASGI\n- Auth & RBAC (OWASP ASVS 4.1)\n- Async SQLAlchemy 2.0 Engine\n- Pydantic v2 Contracts"]
+    API["Backend: Python 3.12 + FastAPI ASGI<br/>- Auth & RBAC (OWASP ASVS 4.1)<br/>- Async SQLAlchemy 2.0 Engine<br/>- Pydantic v2 Contracts"]
     
     subgraph Storage_Databases ["Data & Vector Storage"]
-        PG[("PostgreSQL 16 + pgvector / SQLite Dev\n(Users, Documents, Chunks, Audit Logs)")]
-        Chroma[("ChromaDB Embedded Vector Store\n(384-d Cosine Embeddings + Dept Metadata)")]
-        MinIO[("MinIO S3 Object Storage\n(Raw PDF, DOCX, XLSX, CSV Blobs)")]
+        PG[("PostgreSQL 16 + pgvector / SQLite Dev<br/>(Users, Documents, Chunks, Audit Logs)")]
+        Chroma[("ChromaDB Embedded Vector Store<br/>(384-d Cosine Embeddings + Dept Metadata)")]
+        MinIO[("MinIO S3 Object Storage<br/>(Raw PDF, DOCX, XLSX, CSV Blobs)")]
     end
     
     subgraph AI_Intelligence ["AI Engine & Orchestration"]
-        Embed["Embedding: ONNX fast-bge-small-en-v1.5 / MiniLM-L6-v2"]
+        Embed["Embedding: ONNX MiniLM-L6-v2 (384-d)"]
         Rerank["Cross-Encoder Reranker: FlashRank ms-marco-TinyBERT"]
-        LLM["Generative LLM: Groq Cloud API / Ollama / Mock Evaluator"]
+        LLM["Generative LLM: Groq Cloud API (Llama 3.3)"]
     end
 
     Client -->|REST API / JWT| API
@@ -27,6 +28,10 @@ graph TD
     API -->|Direct Tokenizer Inference| Embed
     API -->|Top-K Scoring| Rerank
     API -->|Prompt Completion| LLM
+
+    classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
+    classDef clientClass fill:#0284c7,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    class Client clientClass;
 ```
 
 ---

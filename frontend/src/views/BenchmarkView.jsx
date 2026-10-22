@@ -17,13 +17,17 @@ import { api } from '../api/client';
 import { uiCache } from '../utils/uiCache';
 
 export default function BenchmarkView() {
-  const cached = uiCache.get(uiCache.KEYS.BENCHMARK, {});
-
-  const [metricsData, setMetricsData] = useState(() => cached.metricsData || null);
-  const [loading, setLoading] = useState(() => !cached.metricsData);
+  const [metricsData, setMetricsData] = useState(() => {
+    const cached = uiCache.get(uiCache.KEYS.BENCHMARK, null);
+    return cached?.metricsData || null;
+  });
+  const [liveResult, setLiveResult] = useState(() => {
+    const cached = uiCache.get(uiCache.KEYS.BENCHMARK, null);
+    return cached?.liveResult || null;
+  });
+  const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState(null);
-  const [liveResult, setLiveResult] = useState(() => cached.liveResult || null);
 
   // Sync to uiCache whenever metrics or liveResult change
   useEffect(() => {
@@ -42,6 +46,10 @@ export default function BenchmarkView() {
       const res = await api.getBenchmarkMetrics();
       if (res.success) {
         setMetricsData(res.data);
+        uiCache.set(uiCache.KEYS.BENCHMARK, {
+          metricsData: res.data,
+          liveResult,
+        });
       }
     } catch (err) {
       console.error('Failed to load benchmark metrics:', err);
@@ -52,8 +60,9 @@ export default function BenchmarkView() {
   };
 
   useEffect(() => {
-    // Only fetch if there is no cached data
-    if (!cached.metricsData) {
+    // Only fetch if there is no cached data in memory or session storage
+    const currentCached = uiCache.get(uiCache.KEYS.BENCHMARK, null);
+    if (!currentCached?.metricsData && !metricsData) {
       fetchMetrics();
     }
   }, []);
@@ -100,7 +109,7 @@ export default function BenchmarkView() {
               <ShieldCheck size={12} /> Institutional Hardening
             </span>
           </div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', margin: 0 }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', margin: 0 }}>
             Evaluation & Retrieval Benchmarks
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0.4rem 0 0 0' }}>

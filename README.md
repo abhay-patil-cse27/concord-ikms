@@ -9,16 +9,15 @@
 
 ## 📚 Documentation Index
 
-Quick links to all dedicated technical specifications, guides, and architectural decisions:
-
-- 📋 [**Viva Defense & Examiner Presentation Guide**](docs/VIVA_PRESENTATION_GUIDE.md) — 5-minute walkthrough, high-probability examiner questions, and metric defenses.
-- 🔌 [**API Documentation & Endpoints**](docs/API_DOCUMENTATION.md) — Complete endpoint reference (`/auth`, `/documents`, `/governance`, `/search`, `/rag`, `/evaluation`).
-- 🏗️ [**Infrastructure, Database & Docker Setup**](docs/INFRASTRUCTURE_AND_UI.md) — Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system.
-- 🛠️ [**Technology Stack & Decisions**](docs/Tech_Stack.md) — Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams.
-- 📘 [**Master Project Information & Rules**](docs/Project_Info.md) — Product identity, mission, non-functional requirements, and institutional boundaries.
-- 🗺️ [**Engineering Implementation Roadmap**](docs/PROJECT_BRIEF.md) — Phased milestones, design goals, and core system differentiation.
-- 🎯 [**Engineering Backlog & Milestones**](docs/architecture/BACKLOG.md) — Granular implementation status for Milestones 0 to 8.
-- 📐 [**System Architecture & Decisions (ADRs)**](docs/decisions/) — ADR-0001 (Modular Monolith) through ADR-0005 (ChromaDB Vector Store).
+| Specification | Document | Core Focus & Coverage |
+| :--- | :--- | :--- |
+| **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/governance`, `/search`, `/rag`, `/evaluation`). |
+| **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
+| **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
+| **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
+| **Engineering Roadmap** | [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md) | Phased milestones, design goals, and core system differentiation. |
+| **Implementation Backlog** | [docs/architecture/BACKLOG.md](docs/architecture/BACKLOG.md) | Granular implementation status for Milestones 0 to 8. |
+| **Architectural Decisions** | [docs/decisions/](docs/decisions/) | ADR-0001 (Modular Monolith) through ADR-0005 (ChromaDB Vector Store). |
 
 ---
 
@@ -26,21 +25,22 @@ Quick links to all dedicated technical specifications, guides, and architectural
 
 CONCORD is built as a high-integrity institutional knowledge platform designed to unify scattered institutional policies, circulars, department records, and syllabi, providing verifiable, auditable answers with cryptographic provenance.
 
-### End-to-End System Architecture (GitHub Mermaid)
+### End-to-End System Architecture (GitHub Parsable Mermaid)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph TD
-    Client["React (Vite) Presentation Layer\nInstitutional Light/Dark Theme\nFixed Collapsible Dock • URL Routing • uiCache"]
+    Client["React (Vite) Presentation Layer<br/>Institutional Light/Dark Theme<br/>Single Card Dock • URL Routing • uiCache"]
     
     subgraph FastAPI_Backend ["FastAPI Core Layer (Modular Monolith)"]
         Router["/api/v1 REST Router"]
-        RBAC["OWASP ASVS 4.1 RBAC Dependency Guards"]
+        RBAC["OWASP ASVS 4.1 RBAC Guards"]
         Audit["Tamper-Evident Audit Logger"]
     end
     
     subgraph Ingestion_Pipeline ["Ingestion & Governance Pipeline"]
         Parsers["Multi-Format Parsers (PDF, DOCX, XLSX, TXT)"]
-        Chunkers["Format-Aware Chunkers\n(Tabular, SemanticParagraph, SlidingWindow)"]
+        Chunkers["Format-Aware Chunkers<br/>(Tabular, SemanticParagraph, SlidingWindow)"]
         GovQueue["Human-in-the-Loop HOD Approval Queue"]
     end
 
@@ -49,13 +49,13 @@ graph TD
         BM25["BM25 Lexical Keyword Engine"]
         RRF["Reciprocal Rank Fusion (RRF)"]
         Rerank["FlashRank Cross-Encoder Contextual Re-Ranker"]
-        Groq["Groq Cloud LLM (openai/gpt-oss-120b)\nInline Verified Citations"]
+        Groq["Groq Cloud LLM (openai/gpt-oss-120b)<br/>Inline Clickable Citations"]
         Fallback["Deterministic Offline Synthesizer Fallback"]
     end
 
     subgraph Storage_Layer ["Data & Storage Layer"]
-        DB[("Relational Store\nSQLite (Dev/Test) / PostgreSQL 16")]
-        Chroma[("Embedded ChromaDB Vector Store\nIndex-Level RBAC Filtering")]
+        DB[("Relational Store<br/>SQLite (Dev/Test) / PostgreSQL 16")]
+        Chroma[("Embedded ChromaDB Vector Store<br/>Index-Level RBAC Filtering")]
         Storage[("Local File Storage / MinIO S3")]
     end
 
@@ -77,11 +77,16 @@ graph TD
     RRF --> Rerank --> Groq
     Groq -.->|Fallback on Disconnect| Fallback
     Groq -->|Grounded Answer + Citations| Client
+
+    classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
+    classDef clientClass fill:#0284c7,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    class Client clientClass;
 ```
 
 ### End-to-End Lifecycle & Query Workflow
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'actorBkg': '#1e293b', 'actorBorder': '#0284c7', 'actorTextColor': '#ffffff', 'signalColor': '#38bdf8', 'signalTextColor': '#f8fafc', 'labelBoxBkgColor': '#0f172a', 'labelBoxBorderColor': '#334155', 'labelTextColor': '#f8fafc', 'loopTextColor': '#f8fafc', 'noteBorderColor': '#0284c7', 'noteBkgColor': '#0f172a', 'noteTextColor': '#f8fafc', 'fontFamily': 'Inter, sans-serif'}}}%%
 sequenceDiagram
     autonumber
     actor User as Student / Faculty
@@ -92,7 +97,7 @@ sequenceDiagram
     participant Vec as Embedded ChromaDB
     participant LLM as Groq Cloud LLM
 
-    rect rgb(240, 249, 255)
+    rect rgba(2, 132, 199, 0.12)
     note over User,Vec: Phase 1: Ingestion & Governance Flow
     User->>FE: Upload Circular / Syllabus (.pdf, .docx, .xlsx)
     FE->>API: POST /api/v1/documents/upload
@@ -104,7 +109,7 @@ sequenceDiagram
     API->>Vec: Sync Chunk Vectors (with department metadata)
     end
 
-    rect rgb(245, 243, 255)
+    rect rgba(14, 165, 233, 0.08)
     note over User,LLM: Phase 2: Grounded Adaptive Query Flow
     User->>FE: Ask: "What is passing criteria for 2024 Exam?"
     FE->>API: POST /api/v1/rag/ask

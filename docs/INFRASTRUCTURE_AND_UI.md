@@ -20,14 +20,15 @@ CONCORD uses a **dual-database strategy** adhering to the Strategy Pattern:
 ### C. Containerized Docker Deployment Topology (GitHub Mermaid)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph LR
-    subgraph Docker_Compose_Network ["Docker Compose Isolated Bridge Network"]
+    subgraph Docker_Compose_Network ["Docker Compose Network"]
         direction TB
-        FE_Container["concord-frontend\nReact (Vite) :5173"]
-        BE_Container["concord-backend\nFastAPI ASGI :8000"]
-        PG_Container[("concord-postgres\nPostgreSQL 16 + pgvector :5432")]
-        MinIO_Container[("concord-minio\nMinIO S3 Storage :9000/:9001")]
-        Chroma_Vol[("Embedded ChromaDB\nLocal Volume ./data/chroma")]
+        FE_Container["concord-frontend<br/>React (Vite) :5173"]
+        BE_Container["concord-backend<br/>FastAPI ASGI :8000"]
+        PG_Container[("concord-postgres<br/>PostgreSQL 16 + pgvector :5432")]
+        MinIO_Container[("concord-minio<br/>MinIO S3 Storage :9000/:9001")]
+        Chroma_Vol[("Embedded ChromaDB<br/>Local Volume ./data/chroma")]
         
         FE_Container -->|HTTP Proxy / API| BE_Container
         BE_Container -->|asyncpg pool| PG_Container
@@ -35,8 +36,12 @@ graph LR
         BE_Container -->|Persistent Client| Chroma_Vol
     end
 
-    Browser["Web Browser\n(Evaluator / Student)"] -->|:5173| FE_Container
+    Browser["Web Browser<br/>(Student / Faculty / Admin)"] -->|:5173| FE_Container
     Browser -.->|Direct API / Swagger| BE_Container
+
+    classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
+    classDef browserClass fill:#0284c7,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    class Browser browserClass;
 ```
 
 ---

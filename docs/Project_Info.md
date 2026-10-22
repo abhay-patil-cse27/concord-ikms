@@ -3,24 +3,25 @@
 [← Back to Main Documentation Index](../README.md#📚-documentation-index)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph LR
     subgraph Multi_Source_Inputs ["Institutional Knowledge Sources"]
-        PDF["Academic Syllabi & Schemes\n(.pdf)"]
-        Forms["Exam Forms & Circulars\n(.docx / .txt)"]
-        Sheets["Staff & Lab Timetables\n(.xlsx / .csv)"]
+        PDF["Academic Syllabi & Schemes<br/>(.pdf)"]
+        Forms["Exam Forms & Circulars<br/>(.docx / .txt)"]
+        Sheets["Staff & Lab Timetables<br/>(.xlsx / .csv)"]
     end
 
     subgraph Trust_Grounded_Core ["CONCORD Cognitive Core"]
-        AuthZ["RBAC Multi-Tenancy\n(OWASP ASVS 4.1)"]
-        Hybrid["Hybrid Search (Dense + Sparse)\n+ Cross-Encoder Reranking"]
-        Grounding["Grounded Answer Synthesizer\n(Zero-Hallucination Guardrails)"]
-        Audit["Tamper-Evident SHA-256\nProvenance & Audit Ledger"]
+        AuthZ["RBAC Multi-Tenancy<br/>(OWASP ASVS 4.1)"]
+        Hybrid["Hybrid Search (Dense + Sparse)<br/>+ Cross-Encoder Reranking"]
+        Grounding["Grounded Answer Synthesizer<br/>(Zero-Hallucination Guardrails)"]
+        Audit["Tamper-Evident SHA-256<br/>Provenance & Audit Ledger"]
     end
 
     subgraph Institutional_Consumers ["Authorized Stakeholders"]
-        Students["Students\n(Curriculum, Fees, Rules)"]
-        Faculty["Faculty\n(Department Minutes, Research)"]
-        Admin["HOD / Admin\n(Audit Trails, Overrides)"]
+        Students["Students<br/>(Curriculum, Fees, Rules)"]
+        Faculty["Faculty<br/>(Department Minutes, Research)"]
+        Admin["HOD / Admin<br/>(Audit Trails, Overrides)"]
     end
 
     PDF --> AuthZ
@@ -34,6 +35,8 @@ graph LR
     Audit --> Students
     Audit --> Faculty
     Audit --> Admin
+
+    classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
 ```
 
 ---

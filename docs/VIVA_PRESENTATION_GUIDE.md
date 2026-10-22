@@ -14,21 +14,22 @@ CONCORD is an enterprise-grade Institutional Knowledge Management System (IKMS) 
 ### 1.1 Architecture Diagram (Modular Monolith)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph TD
-    UI["React (Vite) Presentation Layer\n- Light/Dark Institutional Theme\n- Click-to-Verify Citations\n- Live Benchmark Dashboard"]
+    UI["React (Vite) Presentation Layer<br/>- Light/Dark Institutional Theme<br/>- Click-to-Verify Citations<br/>- Live Benchmark Dashboard"]
     
-    API["FastAPI Core (Modular Monolith)\n- OWASP ASVS 4.1 RBAC Guards\n- Tamper-Evident Audit Logging"]
+    API["FastAPI Core (Modular Monolith)<br/>- OWASP ASVS 4.1 RBAC Guards<br/>- Tamper-Evident Audit Logging"]
     
     subgraph Core_Pipelines ["Core Intelligence Pipelines"]
-        Ingest["Ingestion & Parsing\nPDF • DOCX • XLSX • CSV\nTabular & Semantic Chunkers"]
-        Retrieval["Hybrid Retrieval Engine\nONNX 384-d MiniLM + BM25 Lexical\nReciprocal Rank Fusion (RRF)"]
-        Rerank["FlashRank Deep Cross-Encoder\n(ms-marco-TinyBERT-L-2-v2)"]
-        Groq["Groq Cloud LLM\n(openai/gpt-oss-120b)\n+ Offline Fallback Synthesizer"]
+        Ingest["Ingestion & Parsing<br/>PDF • DOCX • XLSX • CSV<br/>Tabular & Semantic Chunkers"]
+        Retrieval["Hybrid Retrieval Engine<br/>ONNX 384-d MiniLM + BM25 Lexical<br/>Reciprocal Rank Fusion (RRF)"]
+        Rerank["FlashRank Deep Cross-Encoder<br/>(ms-marco-TinyBERT-L-2-v2)"]
+        Groq["Groq Cloud LLM (Llama 3.3)<br/>+ Offline Fallback Synthesizer"]
     end
     
     subgraph Data_Storage ["Data & Storage Layer"]
-        DB[("Relational Store\nSQLite / PostgreSQL 16")]
-        Chroma[("Embedded ChromaDB\nIndex-Level RBAC Filtering")]
+        DB[("Relational Store<br/>SQLite / PostgreSQL 16")]
+        Chroma[("Embedded ChromaDB<br/>Index-Level RBAC Filtering")]
     end
 
     UI -->|HTTP / JSON| API
@@ -40,18 +41,25 @@ graph TD
     Retrieval --> DB
     Retrieval --> Rerank --> Groq
     Groq -->|Verified Citations [1]| UI
+
+    classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
+    classDef uiClass fill:#0284c7,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    class UI uiClass;
 ```
 
 ### 1.2 Five-Stage RAG Execution Flow
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'fontFamily': 'Inter, sans-serif'}}}%%
 flowchart LR
-    Q["Student / Faculty\nQuestion"] --> N["Query Normalizer\n& Acronym Expansion"]
-    N --> H["Hybrid Search\n(ChromaDB + BM25)"]
-    H --> RRF["Reciprocal Rank\nFusion (RRF)"]
-    RRF --> CE["FlashRank\nCross-Encoder"]
-    CE --> LLM["Groq Cloud LLM\n(Grounding Prompt)"]
-    LLM --> A["Verifiable Answer\nwith Trust Badges"]
+    Q["Student / Faculty<br/>Question"] --> N["Query Normalizer<br/>& Acronym Expansion"]
+    N --> H["Hybrid Search<br/>(ChromaDB + BM25)"]
+    H --> RRF["Reciprocal Rank<br/>Fusion (RRF)"]
+    RRF --> CE["FlashRank<br/>Cross-Encoder"]
+    CE --> LLM["Groq Cloud LLM<br/>(Grounding Prompt)"]
+    LLM --> A["Verifiable Answer<br/>with Trust Badges"]
+
+    classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
 ```
 
 ---

@@ -3,6 +3,7 @@
 [← Back to Main Documentation Index](../README.md#📚-documentation-index)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph TD
     subgraph Phase1 ["Phase 1: Ingestion & RBAC Multi-Tenancy"]
         P1A["Multi-Format Extractors (PDF/Word/Excel)"] --> P1B["Format-Aware Chunkers (Tabular & Paragraph)"]
@@ -29,6 +30,8 @@ graph TD
     Phase1 --> Phase2
     Phase2 --> Phase3
     Phase3 --> Phase4
+
+    classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
 ```
 
 ---
