@@ -9,34 +9,36 @@
 
 ## 1. Executive Summary & Architecture
 
-CONCORD is an enterprise-grade Institutional Knowledge Management System (IKMS) built as a high-integrity, multi-tenant cognitive platform. It eliminates institutional knowledge silos (syllabi, exam circulars, administrative policies, lab guidelines) across college departments while enforcing **cryptographic provenance (SHA-256)**, **strict RBAC multi-tenancy (OWASP ASVS 4.1)**, and **grounded zero-hallucination Q&A**.
+**CONCORD** is an enterprise-grade Institutional Knowledge Management System (IKMS) built as a high-integrity, multi-tenant cognitive platform. It eliminates institutional knowledge silos (syllabi, exam circulars, administrative policies, lab guidelines) across college departments while enforcing **cryptographic provenance (SHA-256)**, **strict RBAC multi-tenancy (OWASP ASVS 4.1)**, and **grounded zero-hallucination Q&A with verifiable source citations**.
 
 ### 1.1 Architecture Diagram (Modular Monolith)
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph TD
-    UI["React (Vite) Presentation Layer<br/>- Light/Dark Institutional Theme<br/>- Click-to-Verify Citations<br/>- Live Benchmark Dashboard"]
+    UI["React 18 (Vite) Presentation Layer<br/>- Clean Institutional UI (Light/Dark Support)<br/>- Click-to-Inspect Citations Modal<br/>- Real-Time Cached Benchmark Dashboard"]
     
-    API["FastAPI Core (Modular Monolith)<br/>- OWASP ASVS 4.1 RBAC Guards<br/>- Tamper-Evident Audit Logging"]
+    API["FastAPI Backend (Modular Monolith)<br/>- OWASP ASVS 4.1 RBAC Enforcement<br/>- SHA-256 Tamper-Evident Audit Ledger<br/>- Typed Pydantic v2 Contracts"]
     
     subgraph Core_Pipelines ["Core Intelligence Pipelines"]
-        Ingest["Ingestion & Parsing<br/>PDF • DOCX • XLSX • CSV<br/>Tabular & Semantic Chunkers"]
-        Retrieval["Hybrid Retrieval Engine<br/>ONNX 384-d MiniLM + BM25 Lexical<br/>Reciprocal Rank Fusion (RRF)"]
-        Rerank["FlashRank Deep Cross-Encoder<br/>(ms-marco-TinyBERT-L-2-v2)"]
-        Groq["Groq Cloud LLM (Llama 3.3)<br/>+ Offline Fallback Synthesizer"]
+        Ingest["Document Ingestion Pipeline<br/>PDF • DOCX • XLSX • CSV • Scanned OCR<br/>Tabular & Semantic Chunkers"]
+        Retrieval["Hybrid Retrieval Engine<br/>Dense ONNX MiniLM (384-d) + BM25 Lexical<br/>Reciprocal Rank Fusion (RRF)"]
+        Rerank["FlashRank Cross-Encoder<br/>(ms-marco-TinyBERT-L-2-v2)"]
+        Groq["Groq Cloud LLM (Llama 3.3)<br/>+ Offline Grounded Synthesizer"]
     end
     
     subgraph Data_Storage ["Data & Storage Layer"]
-        DB[("Relational Store<br/>SQLite / PostgreSQL 16")]
-        Chroma[("Embedded ChromaDB<br/>Index-Level RBAC Filtering")]
+        DB[("Relational Database<br/>PostgreSQL 16 + SQLite Dev<br/>(Users, Policies, Versions, Audit)")]
+        Chroma[("Embedded Vector Store<br/>ChromaDB / pgvector<br/>(Index-Level RBAC Filtering)")]
+        MinIO[("Object Storage (MinIO / S3)<br/>Raw Source Document Blobs")]
     end
 
-    UI -->|HTTP / JSON| API
+    UI -->|REST API / JWT Session| API
     API --> Ingest
     API --> Retrieval
     Ingest --> DB
-    Ingest -->|Approved Vectors| Chroma
+    Ingest -->|Binary Storage| MinIO
+    Ingest -->|Approved Embeddings| Chroma
     Retrieval --> Chroma
     Retrieval --> DB
     Retrieval --> Rerank --> Groq
@@ -52,12 +54,12 @@ graph TD
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0284c7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0369a1', 'lineColor': '#38bdf8', 'secondaryColor': '#0f172a', 'tertiaryColor': '#1e293b', 'fontFamily': 'Inter, sans-serif'}}}%%
 flowchart LR
-    Q["Student / Faculty<br/>Question"] --> N["Query Normalizer<br/>& Acronym Expansion"]
-    N --> H["Hybrid Search<br/>(ChromaDB + BM25)"]
-    H --> RRF["Reciprocal Rank<br/>Fusion (RRF)"]
+    Q["Student / Faculty<br/>Question"] --> N["Query Normalizer &<br/>Acronym Expansion"]
+    N --> H["Hybrid Retrieval<br/>(Vector + Lexical)"]
+    H --> RRF["Reciprocal Rank<br/>Fusion (RRF k=60)"]
     RRF --> CE["FlashRank<br/>Cross-Encoder"]
-    CE --> LLM["Groq Cloud LLM<br/>(Grounding Prompt)"]
-    LLM --> A["Verifiable Answer<br/>with Trust Badges"]
+    CE --> LLM["Groq Cloud LLM /<br/>Offline Synthesizer"]
+    LLM --> A["Verifiable Response<br/>with Clickable Citations"]
 
     classDef default fill:#1e293b,stroke:#0284c7,stroke-width:1.5px,color:#ffffff;
 ```
@@ -66,81 +68,78 @@ flowchart LR
 
 ## 2. 5-Minute Live Evaluator Walkthrough Script
 
-### Minute 1: System Overview & Persona Quick-Switcher
-1. Open the web interface at `http://localhost:5173`.
-2. Point out the top navigation bar with the **"Switch Role"** pills:
-   - **Platform Admin (`admin@concord.kit.edu`)**: Global institutional visibility.
-   - **HOD CSE (`deptadmin.cse@concord.kit.edu`)**: Administrative control scoped to CSE.
-   - **Faculty (`faculty.cse@concord.kit.edu`)**: Academic ingestion and query capabilities.
-   - **Student (`student.cse@concord.kit.edu`)**: Read-only query access with department boundaries.
-3. Switch between roles to show dynamic UI adaptation and RBAC enforcement.
-
-### Minute 2: Document Ingestion, Multi-Format Parsers & Governance
-1. Click **"Knowledge Ingestion"** in the sidebar.
-2. Demonstrate multi-format capability:
-   - Point to `KIT_Autonomous_Academic_Regulations_2024.pdf`.
-   - Point to `BTech_CSE_Autonomous_Curriculum_2024_28.pdf`.
-   - Click **"Inspect Chunks"** on any document to reveal how `SemanticParagraphChunker` and `TabularChunker` break texts into retrievable units while preserving table headers and headings.
-3. Highlight the **Governance Queue**: unapproved documents are quarantined from search until verified by HOD/Admin.
-
-### Minute 3: Hybrid Search & Cross-Department Security Isolation
-1. Click **"Contextual Search"** in the sidebar.
-2. Enter: *"passing criteria in end semester examination"*.
-3. Show how Reciprocal Rank Fusion (RRF) merges keyword BM25 hits and semantic vector distance to rank the ground-truth 2024 regulations at `#1`.
-4. Demonstrate **RBAC Isolation**:
-   - Log in as **Student (CSE)**.
-   - Search for confidential departmental administrative records — show that cross-department access is prevented at both SQL and ChromaDB vector query level (`0.0% Security Leakage`).
-
-### Minute 4: Grounded Q&A (Groq Cloud) & Trust Badges
-1. Click **"Grounded Q&A (Groq)"** in the sidebar.
-2. Click one of the pre-configured prompt pills:
-   - *"What is the passing criteria for Autonomous Exam under 2024 regulations?"*
-3. Show:
-   - Groq Cloud LLM streaming response in **< 1.5 seconds**.
-   - Verifiable inline citations `[1]`, `[2]`.
-   - Click citation tag `[1]` to open the **Citation Drawer** displaying original source, SHA-256 content hash, and 🟢 **CURRENT v2.0** freshness trust badge.
-4. Run a comparative query:
-   - *"Compare Autonomous Academic Regulations 2020 vs 2024 passing threshold"*
-   - The system detects the comparative intent, fetches both records, identifies that the 2020 regulation is **SUPERSEDED**, and renders an explicit comparison table warning the user about policy drift.
-
-### Minute 5: Evaluation & Benchmarking Dashboard
-1. Click **"Evaluation & Benchmarks"** in the sidebar.
-2. Show the empirical comparison matrix:
-   - **Hit Rate@5:** BM25 (60.0%) vs ChromaDB Vector (80.0%) vs **CONCORD Hybrid (100%)**.
-   - **Mean Reciprocal Rank (MRR@5):** CONCORD Hybrid achieves **1.000**.
-   - **Security Leakage Rate:** Strictly **0.0%**.
-   - **P95 Latency:** **62.4ms**.
-3. Click **"Run Live Benchmark"** to execute the live assertion suite right in front of the evaluators.
+| Time | Demonstration Phase | Evaluator Takeaway | Actionable Commands / Clicks |
+| :--- | :--- | :--- | :--- |
+| **0:00–1:00** | **Persona Switching & RBAC Multi-Tenancy** | True multi-tenant RBAC enforced at API and database layers, not just hidden UI buttons. | Switch between role pills: **Admin**, **HOD CSE**, **Faculty**, and **Student**. Observe dynamic menu permissions. |
+| **1:00–2:00** | **Document Ingestion & Chunk Provenance** | Multi-format ingestion preserving structural tables with SHA-256 deduplication and OCR. | Navigate to **Knowledge Ingestion**. Click **Inspect Chunks** on academic regulations to view page coordinates and token splits. |
+| **2:00–3:00** | **Hybrid Retrieval & Zero Cross-Tenant Leakage** | RRF eliminates vocabulary mismatch while department filters isolate confidential data. | Search *"passing criteria in autonomous exam"*. Show ground truth regulations at Rank 1. Switch to Student and search confidential records (0.0% leakage). |
+| **3:00–4:00** | **Grounded RAG, Latency & Clickable Citations** | Ultra-fast inference with verified citations and automatic policy conflict warnings. | Ask: *"What is the passing criteria for autonomous exam under 2024 regulations?"* Click citations `[1]` to inspect verified source chunk modal. |
+| **4:00–5:00** | **Live Benchmark Suite & Audit Verification** | Empirically proven accuracy with cryptographic tamper-evident audit logging. | Navigate to **Evaluation & Benchmarks**. Click **Run Live Benchmark** to execute real-time evaluation assertions. |
 
 ---
 
 ## 3. High-Probability Viva Questions & Defenses
 
 ### Q1: Why not just connect an LLM to standard ChromaDB vector search? Why do you need Hybrid Search and RRF?
-> **Defense:** Pure vector embeddings suffer from the "vocabulary mismatch" problem in institutional domains. When students search for specific course codes like *"CS301"* or acronyms like *"ATKT"*, dense embeddings often map to semantically related words instead of the exact document. Conversely, pure keyword search fails when synonyms are used. CONCORD uses **Reciprocal Rank Fusion (RRF)**:
+> **Defense:** Pure vector embeddings suffer from the **vocabulary mismatch problem** in institutional environments. When students or faculty query exact course codes (*"CS301"*), circular references (*"EXAM/2024/09"*), or academic acronyms (*"ATKT"*), dense vector embeddings often drift toward semantically similar terms rather than the exact regulatory notice. Conversely, pure keyword search fails when students ask questions using synonyms.  
+> 
+> CONCORD combines both using **Reciprocal Rank Fusion (RRF)**:
 > $$\text{RRF}(d) = \sum_{m \in \{\text{BM25}, \text{Vector}\}} \frac{1}{60 + \text{rank}_m(d)}$$
-> followed by a **FlashRank Cross-Encoder reranker** (`ms-marco-TinyBERT-L-2-v2`). This boosts Hit Rate@5 from 80% to **100%**.
+> followed by a **FlashRank Cross-Encoder reranker** (`ms-marco-TinyBERT-L-2-v2`). This boosts Hit Rate@5 from **80.0%** to **100%**.
 
 ### Q2: How do you prevent confidential department documents from leaking to unauthorized students?
 > **Defense:** We enforce defense-in-depth across three decoupled layers:
-> 1. **Application Layer:** FastAPI dependency guards with OWASP ASVS 4.1 RBAC.
-> 2. **SQL Layer:** SQL queries automatically append `WHERE department_id = :user_dept OR department_id IS NULL`.
-> 3. **ChromaDB Vector Layer:** Vector similarity queries enforce metadata filtering at the HNSW index level (`where={"department_id": user_dept_id}`). Cross-department leakage is mathematically impossible (empirically measured at **0.0%**).
+> 1. **Application Layer:** FastAPI dependency injection guards enforcing OWASP ASVS 4.1 RBAC.
+> 2. **SQL Layer:** Relational queries automatically append tenant conditions:  
+>    `WHERE (department_id = :user_dept OR department_id IS NULL)`
+> 3. **Vector Layer:** Vector queries apply metadata filters directly at the index level:  
+>    `where={"department_id": user_dept_id}`  
+> 
+> Cross-department leakage is mathematically prevented and empirically verified at **0.0%**.
 
-### Q3: How does the system handle outdated circulars and policy conflicts?
-> **Defense:** CONCORD implements an explicit **Document Lifecycle State Machine** (`active`, `superseded`, `archived`). When a new circular is approved, older versions transition to `superseded`. By default, RAG searches filter exclusively for `active` policies. If a comparative query is issued, the LLM prompt injects contradiction detection rules that highlight policy changes in a structured comparison table with warning badges.
+### Q3: How does the system handle outdated circulars and contradictory policies?
+> **Defense:** CONCORD implements an explicit **Document Lifecycle State Machine** (`Draft` → `Active` → `Superseded` → `Archived`):
+> - When a new circular is approved, prior versions automatically transition to `Superseded`.
+> - By default, active RAG queries filter exclusively for `Active` policies.
+> - When comparative queries are detected (e.g., *"Compare 2020 vs 2024 passing thresholds"*), the system fetches both documents, identifies the superseded status, and generates a structured comparison table with warning badges.
 
-### Q4: What happens if Groq Cloud API is down or the internet is disconnected?
-> **Defense:** CONCORD follows the **Strategy Pattern** for LLM providers. If Groq Cloud fails, the system automatically falls back to the deterministic local synthesizer (`OfflineFallbackLLMProvider`), extracting grounded evidence snippets directly from retrieved chunks without breaking the application.
+### Q4: What happens if the Groq Cloud API is down or the internet is disconnected?
+> **Defense:** CONCORD implements the **Strategy Pattern** for LLM orchestration (`LLMProviderInterface`). If Groq Cloud experiences network latency, rate limits, or downtime, the system automatically falls back to an internal deterministic local synthesizer (`OfflineFallbackLLMProvider`), extracting grounded answers directly from retrieved evidence chunks without breaking the user experience.
+
+### Q5: How do you ensure the LLM does not hallucinate answers or fabricate citations?
+> **Defense:** 
+> 1. **Zero-Hallucination Guardrails:** System prompts instruct the model to answer exclusively based on the provided evidence bundle and explicitly abstain (*"I do not have sufficient institutional records..."*) if evidence is missing.
+> 2. **Server-Side Citation Validation:** The backend inspects the generated answer, extracts citation tags, and cross-references them against the IDs of retrieved chunks. Any fabricated or ungrounded citation is stripped before reaching the client.
+> 3. **Clickable Provenance:** Every citation in the UI is rendered as an interactive chip that opens the exact chunk, page number, and SHA-256 hash in a verification modal.
 
 ---
 
 ## 4. Key Metrics Summary for Presentation Slides
 
-| Metric | Industry Baseline (Naive RAG) | CONCORD IKMS Platform |
-| :--- | :---: | :---: |
-| **Hit Rate @ 5** | 72% – 80% | **100%** |
-| **Mean Reciprocal Rank (MRR@5)** | 0.65 – 0.75 | **1.000** |
-| **Cross-Tenant Security Leakage** | Frequent (unfiltered RAG) | **0.0% (Guaranteed)** |
-| **Query Latency (P95)** | 2500ms – 4000ms | **< 1200ms (Groq) / 62ms (Local)** |
-| **Automated Test Coverage** | Minimal | **47 Passing Pytest Tests** |
+| Evaluation Metric | Traditional / Naive RAG Baseline | CONCORD IKMS Platform | Technical Significance |
+| :--- | :---: | :---: | :--- |
+| **Hit Rate @ 5** | 72.0% – 80.0% | **100%** | All ground-truth answers captured within top 5 candidates. |
+| **Mean Reciprocal Rank (MRR@5)** | 0.650 – 0.750 | **1.000** | Ground-truth institutional document consistently ranked at #1. |
+| **Cross-Tenant Security Leakage** | Common (unfiltered RAG) | **0.0% (Zero)** | Complete departmental multi-tenancy and isolation. |
+| **Query Latency (P95)** | 2500ms – 4000ms | **< 1200ms (Groq) / 62ms (Local)** | Instantaneous streaming responses suitable for campus load. |
+| **Test Suite Coverage** | Minimal / Ad-hoc | **47 Passing Pytest Tests** | Rigorous verification across auth, ingestion, search, and RAG. |
+
+---
+
+## 5. Standard Institutional Verification Commands
+
+For live terminal demonstration in front of the viva panel:
+
+```bash
+# 1. Run the comprehensive automated test suite
+pytest -v
+
+# 2. Re-seed clean institutional demonstration fixtures
+python backend/scripts/seed_demo_data.py
+
+# 3. Verify server-side tamper-evident audit logs
+curl -H "Authorization: Bearer <TOKEN>" http://127.0.0.1:8000/api/v1/audit/logs
+```
+
+---
+*CONCORD IKMS · Comprehensive Viva & Institutional Demonstration Guide · Mega Project 2026–27*
