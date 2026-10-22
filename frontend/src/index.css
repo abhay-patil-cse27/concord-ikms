@@ -488,6 +488,18 @@ table tbody tr:hover {
   transform: scale(1.04);
 }
 
+.citation-badge-btn:hover {
+  background: rgba(2, 132, 199, 0.2) !important;
+  border-color: #0284c7 !important;
+  color: #0369a1 !important;
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.22) !important;
+}
+
+.citation-badge-btn:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
 /* ==============================================================================
    CONVERSATIONAL MULTI-TURN SESSIONS & BREATHABLE CHAT BUBBLES
    ============================================================================== */

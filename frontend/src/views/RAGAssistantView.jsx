@@ -285,6 +285,23 @@ export default function RAGAssistantView() {
                 {renderChildrenWithCitations(children, citations)}
               </li>
             ),
+            blockquote: ({ node, children, ...props }) => (
+              <blockquote {...props} style={{ borderLeft: '3px solid var(--primary)', paddingLeft: '0.85rem', margin: '0.85rem 0', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                {renderChildrenWithCitations(children, citations)}
+              </blockquote>
+            ),
+            strong: ({ node, children, ...props }) => (
+              <strong {...props} style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                {renderChildrenWithCitations(children, citations)}
+              </strong>
+            ),
+            em: ({ node, children, ...props }) => (
+              <em {...props}>{renderChildrenWithCitations(children, citations)}</em>
+            ),
+            h1: ({ node, children, ...props }) => <h1 {...props}>{renderChildrenWithCitations(children, citations)}</h1>,
+            h2: ({ node, children, ...props }) => <h2 {...props}>{renderChildrenWithCitations(children, citations)}</h2>,
+            h3: ({ node, children, ...props }) => <h3 {...props}>{renderChildrenWithCitations(children, citations)}</h3>,
+            h4: ({ node, children, ...props }) => <h4 {...props}>{renderChildrenWithCitations(children, citations)}</h4>,
             td: ({ node, children, ...props }) => (
               <td {...props}>{renderChildrenWithCitations(children, citations)}</td>
             )
@@ -299,13 +316,21 @@ export default function RAGAssistantView() {
   const renderChildrenWithCitations = (children, citations) => {
     if (!children) return null;
     return React.Children.map(children, (child) => {
+      // Recurse into nested React elements (like <strong>, <em>) so inner text citations are caught
+      if (React.isValidElement(child)) {
+        return React.cloneElement(child, {
+          children: renderChildrenWithCitations(child.props.children, citations)
+        });
+      }
+
       if (typeof child !== 'string') return child;
 
-      const parts = child.split(/(\[\d+\])/g);
+      // Match [1], [2], [Evidence 1], Source [1], etc.
+      const parts = child.split(/(\[(?:Evidence\s*)?\d+\])/gi);
       if (parts.length === 1) return child;
 
       return parts.map((part, i) => {
-        const match = part.match(/\[(\d+)\]/);
+        const match = part.match(/\[(?:Evidence\s*)?(\d+)\]/i);
         if (match) {
           const index = parseInt(match[1], 10);
           const citation = citations.find((c) => c.citation_index === index);
@@ -314,26 +339,37 @@ export default function RAGAssistantView() {
             <button
               key={i}
               type="button"
-              onClick={() => citation && handleCitationClick(citation)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (citation) {
+                  handleCitationClick(citation);
+                } else if (citations.length > 0) {
+                  // Fallback to first citation if index mismatch
+                  handleCitationClick(citations[0]);
+                }
+              }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 2px',
-                padding: '1px 6px',
-                borderRadius: '4px',
-                fontSize: '0.75rem',
+                gap: '3px',
+                margin: '0 3px',
+                padding: '2px 7px',
+                borderRadius: '6px',
+                fontSize: '0.74rem',
                 fontWeight: 700,
-                color: '#38bdf8',
-                background: 'rgba(56, 189, 248, 0.12)',
-                border: '1px solid rgba(56, 189, 248, 0.35)',
-                cursor: citation ? 'pointer' : 'default',
+                color: '#0284c7',
+                background: 'rgba(2, 132, 199, 0.1)',
+                border: '1px solid rgba(2, 132, 199, 0.35)',
+                cursor: 'pointer',
                 transform: 'translateY(-1px)',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.1)'
               }}
-              title={citation ? `${citation.document_title} (Page ${citation.page_number})` : 'Citation'}
+              className="citation-badge-btn"
+              title={citation ? `Click to inspect: ${citation.document_title} (Page ${citation.page_number})` : `Inspect evidence source [${index}]`}
             >
-              {match[1]}
+              <FileText size={11} />
+              <span>[{index}]</span>
             </button>
           );
         }
