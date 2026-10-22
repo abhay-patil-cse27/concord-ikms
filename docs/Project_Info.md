@@ -1,5 +1,43 @@
 # CONCORD — Master Engineering Brief and Implementation Instructions
 
+[← Back to Main Documentation Index](../README.md#📚-documentation-index)
+
+```mermaid
+graph LR
+    subgraph Multi_Source_Inputs ["Institutional Knowledge Sources"]
+        PDF["Academic Syllabi & Schemes\n(.pdf)"]
+        Forms["Exam Forms & Circulars\n(.docx / .txt)"]
+        Sheets["Staff & Lab Timetables\n(.xlsx / .csv)"]
+    end
+
+    subgraph Trust_Grounded_Core ["CONCORD Cognitive Core"]
+        AuthZ["RBAC Multi-Tenancy\n(OWASP ASVS 4.1)"]
+        Hybrid["Hybrid Search (Dense + Sparse)\n+ Cross-Encoder Reranking"]
+        Grounding["Grounded Answer Synthesizer\n(Zero-Hallucination Guardrails)"]
+        Audit["Tamper-Evident SHA-256\nProvenance & Audit Ledger"]
+    end
+
+    subgraph Institutional_Consumers ["Authorized Stakeholders"]
+        Students["Students\n(Curriculum, Fees, Rules)"]
+        Faculty["Faculty\n(Department Minutes, Research)"]
+        Admin["HOD / Admin\n(Audit Trails, Overrides)"]
+    end
+
+    PDF --> AuthZ
+    Forms --> AuthZ
+    Sheets --> AuthZ
+
+    AuthZ --> Hybrid
+    Hybrid --> Grounding
+    Grounding --> Audit
+
+    Audit --> Students
+    Audit --> Faculty
+    Audit --> Admin
+```
+
+---
+
 ## 1. Your role
 
 Act as the principal software architect, senior full-stack engineer, AI/ML engineer, application security engineer, and technical lead for a major academic software project.

@@ -1,3 +1,36 @@
+# CONCORD IKMS — Technology Stack & Architectural Decision Reference
+
+[← Back to Main Documentation Index](../README.md#📚-documentation-index)
+
+```mermaid
+graph TD
+    Client["Frontend: React 18 + Vite + Tailwind/Modern CSS\n- Responsive Institutional UI (Light/Dark)\n- UI Caching & Hash Routing (#/rag, #/documents)"]
+    
+    API["Backend: Python 3.12 + FastAPI ASGI\n- Auth & RBAC (OWASP ASVS 4.1)\n- Async SQLAlchemy 2.0 Engine\n- Pydantic v2 Contracts"]
+    
+    subgraph Storage_Databases ["Data & Vector Storage"]
+        PG[("PostgreSQL 16 + pgvector / SQLite Dev\n(Users, Documents, Chunks, Audit Logs)")]
+        Chroma[("ChromaDB Embedded Vector Store\n(384-d Cosine Embeddings + Dept Metadata)")]
+        MinIO[("MinIO S3 Object Storage\n(Raw PDF, DOCX, XLSX, CSV Blobs)")]
+    end
+    
+    subgraph AI_Intelligence ["AI Engine & Orchestration"]
+        Embed["Embedding: ONNX fast-bge-small-en-v1.5 / MiniLM-L6-v2"]
+        Rerank["Cross-Encoder Reranker: FlashRank ms-marco-TinyBERT"]
+        LLM["Generative LLM: Groq Cloud API / Ollama / Mock Evaluator"]
+    end
+
+    Client -->|REST API / JWT| API
+    API -->|Async ORM| PG
+    API -->|Persistent Chroma Client| Chroma
+    API -->|boto3 S3 Client| MinIO
+    API -->|Direct Tokenizer Inference| Embed
+    API -->|Top-K Scoring| Rerank
+    API -->|Prompt Completion| LLM
+```
+
+---
+
 For CONCORD, I would choose a stack that balances three things: your existing skills, the AI capabilities the project genuinely needs, and industry-grade architecture.
 You do not need to learn five frameworks simultaneously to build a strong major project. Since you're comfortable with React and JavaScript, know Python, and are learning LangChain, LangGraph, and MCP, we can make those skills work together rather than forcing you into an unfamiliar stack everywhere.
 My recommendation is to use React + JavaScript for the frontend, Python + FastAPI for the core backend and AI, and LangChain/LangGraph selectively. Node.js is optional, and MCP should be added when the project has a real need for standardized tool integration.

@@ -1,5 +1,7 @@
 # CONCORD IKMS — Infrastructure, Database & Docker Setup Guide
 
+[← Back to Main Documentation Index](../README.md#📚-documentation-index)
+
 ## 1. Databases Employed in CONCORD
 
 CONCORD uses a **dual-database strategy** adhering to the Strategy Pattern:
@@ -12,6 +14,30 @@ CONCORD uses a **dual-database strategy** adhering to the Strategy Pattern:
 - **Engine:** **ChromaDB (`PersistentClient`)** located at `backend/data/chroma`.
 - **Space:** Cosine Distance (`hnsw:space: cosine`).
 - **Index-Level RBAC Filtering:** Every document vector is stored with its `department_id` and `lifecycle_status`. Queries enforce `where={"department_id": user_dept_id}`, preventing cross-department document leakage at the vector index level (0.0% leakage rate).
+
+---
+
+### C. Containerized Docker Deployment Topology (GitHub Mermaid)
+
+```mermaid
+graph LR
+    subgraph Docker_Compose_Network ["Docker Compose Isolated Bridge Network"]
+        direction TB
+        FE_Container["concord-frontend\nReact (Vite) :5173"]
+        BE_Container["concord-backend\nFastAPI ASGI :8000"]
+        PG_Container[("concord-postgres\nPostgreSQL 16 + pgvector :5432")]
+        MinIO_Container[("concord-minio\nMinIO S3 Storage :9000/:9001")]
+        Chroma_Vol[("Embedded ChromaDB\nLocal Volume ./data/chroma")]
+        
+        FE_Container -->|HTTP Proxy / API| BE_Container
+        BE_Container -->|asyncpg pool| PG_Container
+        BE_Container -->|S3 API| MinIO_Container
+        BE_Container -->|Persistent Client| Chroma_Vol
+    end
+
+    Browser["Web Browser\n(Evaluator / Student)"] -->|:5173| FE_Container
+    Browser -.->|Direct API / Swagger| BE_Container
+```
 
 ---
 

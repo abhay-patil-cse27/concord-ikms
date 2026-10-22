@@ -3,41 +3,55 @@
 > **Context-Oriented Cognitive Memory Layer for Multi-Source Knowledge Integration, Adaptive Retrieval, and Trust-Aware Institutional Intelligence**  
 > *Mega Project 2026–27 — Kolhapur Institute of Technology (KIT)*
 
+[← Back to Main Documentation Index](../README.md#📚-documentation-index)
+
 ---
 
 ## 1. Executive Summary & Architecture
 
 CONCORD is an enterprise-grade Institutional Knowledge Management System (IKMS) built as a high-integrity, multi-tenant cognitive platform. It eliminates institutional knowledge silos (syllabi, exam circulars, administrative policies, lab guidelines) across college departments while enforcing **cryptographic provenance (SHA-256)**, **strict RBAC multi-tenancy (OWASP ASVS 4.1)**, and **grounded zero-hallucination Q&A**.
 
-### Architecture Diagram (Modular Monolith)
+### 1.1 Architecture Diagram (Modular Monolith)
+
+```mermaid
+graph TD
+    UI["React (Vite) Presentation Layer\n- Light/Dark Institutional Theme\n- Click-to-Verify Citations\n- Live Benchmark Dashboard"]
+    
+    API["FastAPI Core (Modular Monolith)\n- OWASP ASVS 4.1 RBAC Guards\n- Tamper-Evident Audit Logging"]
+    
+    subgraph Core_Pipelines ["Core Intelligence Pipelines"]
+        Ingest["Ingestion & Parsing\nPDF • DOCX • XLSX • CSV\nTabular & Semantic Chunkers"]
+        Retrieval["Hybrid Retrieval Engine\nONNX 384-d MiniLM + BM25 Lexical\nReciprocal Rank Fusion (RRF)"]
+        Rerank["FlashRank Deep Cross-Encoder\n(ms-marco-TinyBERT-L-2-v2)"]
+        Groq["Groq Cloud LLM\n(openai/gpt-oss-120b)\n+ Offline Fallback Synthesizer"]
+    end
+    
+    subgraph Data_Storage ["Data & Storage Layer"]
+        DB[("Relational Store\nSQLite / PostgreSQL 16")]
+        Chroma[("Embedded ChromaDB\nIndex-Level RBAC Filtering")]
+    end
+
+    UI -->|HTTP / JSON| API
+    API --> Ingest
+    API --> Retrieval
+    Ingest --> DB
+    Ingest -->|Approved Vectors| Chroma
+    Retrieval --> Chroma
+    Retrieval --> DB
+    Retrieval --> Rerank --> Groq
+    Groq -->|Verified Citations [1]| UI
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        React (Vite) Presentation Layer                 │
-│  - Light/Dark Institutional Theme      - Interactive Inline Citations  │
-│  - Fast Persona Switcher Pills         - Live Benchmark & Metric Cards │
-└────────────────────────────────────┬───────────────────────────────────┘
-                                     │ JSON API (HTTP/REST)
-┌────────────────────────────────────▼───────────────────────────────────┐
-│                    FastAPI Backend & Security Core                     │
-│  - OWASP ASVS 4.1 RBAC Guards          - Tamper-Evident Audit Logging  │
-│  - JWT Bearer Authentication           - Correlation IDs (X-Request-ID)│
-└──────────┬─────────────────────────┬─────────────────────────┬─────────┘
-           │                         │                         │
-┌──────────▼──────────┐   ┌──────────▼──────────┐   ┌──────────▼─────────┐
-│ Ingestion & Parsing │   │   Hybrid Retrieval  │   │  Grounded RAG Core │
-│ - PDF (pypdf)       │   │ - Neural Embeddings │   │ - Groq Cloud LLM   │
-│ - DOCX (python-docx)│   │   (384-d MiniLM)    │   │   (gpt-oss-120b)   │
-│ - Excel (openpyxl)  │   │ - BM25 Lexical      │   │ - Strict System    │
-│ - Tabular Chunking  │   │ - Reciprocal Rank   │   │   Prompt Guardrail │
-│ - Sliding Snapping  │   │   Fusion (RRF)      │   │ - Offline Fallback │
-│ - SHA-256 Hashing   │   │ - FlashRank Re-rank │   │   Synthesizer      │
-└──────────┬──────────┘   └──────────┬──────────┘   └──────────┬─────────┘
-           │                         │                         │
-┌──────────▼─────────────────────────▼─────────────────────────▼─────────┐
-│                      Data & Embedded Storage Layer                     │
-│ - Relational Store: SQLite / PostgreSQL 16 (Documents, Users, RBAC)   │
-│ - Vector Store: Embedded ChromaDB (Index-level Department Isolation)  │
-└────────────────────────────────────────────────────────────────────────┘
+
+### 1.2 Five-Stage RAG Execution Flow
+
+```mermaid
+flowchart LR
+    Q["Student / Faculty\nQuestion"] --> N["Query Normalizer\n& Acronym Expansion"]
+    N --> H["Hybrid Search\n(ChromaDB + BM25)"]
+    H --> RRF["Reciprocal Rank\nFusion (RRF)"]
+    RRF --> CE["FlashRank\nCross-Encoder"]
+    CE --> LLM["Groq Cloud LLM\n(Grounding Prompt)"]
+    LLM --> A["Verifiable Answer\nwith Trust Badges"]
 ```
 
 ---

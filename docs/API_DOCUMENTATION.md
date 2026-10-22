@@ -4,6 +4,41 @@
 > Interactive OpenAPI / Swagger UI: `http://localhost:8000/docs`  
 > ReDoc Documentation: `http://localhost:8000/redoc`
 
+[← Back to Main Documentation Index](../README.md#📚-documentation-index)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Frontend Client (React)
+    participant Auth as /auth API
+    participant Docs as /documents API
+    participant Search as /search & /rag API
+    participant Bench as /benchmarks API
+    participant PG as PostgreSQL (pgvector)
+    participant LLM as Ollama / Mock LLM
+
+    Note over Client,Auth: 1. Identity & RBAC Session
+    Client->>Auth: POST /auth/login (or /demo-login)
+    Auth-->>Client: JWT Bearer Token + Role Scopes
+
+    Note over Client,Docs: 2. Document Ingestion
+    Client->>Docs: POST /documents/upload (Multipart)
+    Docs->>PG: Deduplicate SHA-256 + Save Chunks & Embeddings
+    Docs-->>Client: 201 Created (document_id, chunk_count)
+
+    Note over Client,Search: 3. Intelligent Query Execution
+    Client->>Search: POST /rag/query (query, strategy, filters)
+    Search->>PG: Hybrid Search (HNSW Vector + TSVector Fulltext)
+    PG-->>Search: Matched Chunks + Provenance
+    Search->>LLM: Augmented Prompt Generation
+    LLM-->>Search: Contextual Synthesized Answer
+    Search-->>Client: Answer + Cited Source Cards + Latency
+
+    Note over Client,Bench: 4. Verification & Benchmarking
+    Client->>Bench: POST /benchmarks/run
+    Bench-->>Client: Execution Metrics (P95 Latency, MRR, Context Relevance)
+```
+
 ---
 
 ## 1. Authentication & Identity (`/auth`)

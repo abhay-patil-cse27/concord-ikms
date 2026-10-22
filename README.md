@@ -5,17 +5,118 @@
 
 ---
 
+---
+
+## 📚 Documentation Index
+
+Quick links to all dedicated technical specifications, guides, and architectural decisions:
+
+- 📋 [**Viva Defense & Examiner Presentation Guide**](docs/VIVA_PRESENTATION_GUIDE.md) — 5-minute walkthrough, high-probability examiner questions, and metric defenses.
+- 🔌 [**API Documentation & Endpoints**](docs/API_DOCUMENTATION.md) — Complete endpoint reference (`/auth`, `/documents`, `/governance`, `/search`, `/rag`, `/evaluation`).
+- 🏗️ [**Infrastructure, Database & Docker Setup**](docs/INFRASTRUCTURE_AND_UI.md) — Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system.
+- 🛠️ [**Technology Stack & Decisions**](docs/Tech_Stack.md) — Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams.
+- 📘 [**Master Project Information & Rules**](docs/Project_Info.md) — Product identity, mission, non-functional requirements, and institutional boundaries.
+- 🗺️ [**Engineering Implementation Roadmap**](docs/PROJECT_BRIEF.md) — Phased milestones, design goals, and core system differentiation.
+- 🎯 [**Engineering Backlog & Milestones**](docs/architecture/BACKLOG.md) — Granular implementation status for Milestones 0 to 8.
+- 📐 [**System Architecture & Decisions (ADRs)**](docs/decisions/) — ADR-0001 (Modular Monolith) through ADR-0005 (ChromaDB Vector Store).
+
+---
+
 ## 1. Overview & Architecture
 
 CONCORD is built as a high-integrity institutional knowledge platform designed to unify scattered institutional policies, circulars, department records, and syllabi, providing verifiable, auditable answers with cryptographic provenance.
 
-### Core Architecture (Modular Monolith)
+### End-to-End System Architecture (GitHub Mermaid)
 
-- **Presentation Layer:** React (Vite) + Vanilla CSS bespoke institutional design system with Inter & Outfit typography, primary Light Theme with seamless Dark Theme toggle, live health monitoring, and evaluator demo role quick-switcher.
-- **Application & API Layer:** Python 3.11/3.12 + FastAPI with versioned routes (`/api/v1`), Pydantic Settings, structured JSON logging, correlation IDs (`X-Request-ID`), and standardized error envelopes.
-- **Security & RBAC:** Native Bcrypt password hashing, stateless HMAC-SHA256 JWT tokens, and server-enforced role and permission dependency injection guards adhering to **OWASP ASVS 4.1**.
-- **Data & Migration Layer:** SQLAlchemy 2.0 Async engine with Alembic schema migrations, supporting PostgreSQL 16 + pgvector for production/Docker Compose and lightweight SQLite for local/offline unit test isolation.
-- **Dynamic Ingestion & Search:** Multi-format parser factory (PDF, DOCX, XLSX/XLS, TXT, MD, CSV) with sliding-window chunking, SHA-256 provenance, and hybrid Reciprocal Rank Fusion (RRF) search.
+```mermaid
+graph TD
+    Client["React (Vite) Presentation Layer\nInstitutional Light/Dark Theme\nFixed Collapsible Dock • URL Routing • uiCache"]
+    
+    subgraph FastAPI_Backend ["FastAPI Core Layer (Modular Monolith)"]
+        Router["/api/v1 REST Router"]
+        RBAC["OWASP ASVS 4.1 RBAC Dependency Guards"]
+        Audit["Tamper-Evident Audit Logger"]
+    end
+    
+    subgraph Ingestion_Pipeline ["Ingestion & Governance Pipeline"]
+        Parsers["Multi-Format Parsers (PDF, DOCX, XLSX, TXT)"]
+        Chunkers["Format-Aware Chunkers\n(Tabular, SemanticParagraph, SlidingWindow)"]
+        GovQueue["Human-in-the-Loop HOD Approval Queue"]
+    end
+
+    subgraph Intelligence_Pipeline ["Adaptive Retrieval & RAG Pipeline"]
+        Embed["384-d Neural MiniLM Embeddings (ONNX)"]
+        BM25["BM25 Lexical Keyword Engine"]
+        RRF["Reciprocal Rank Fusion (RRF)"]
+        Rerank["FlashRank Cross-Encoder Contextual Re-Ranker"]
+        Groq["Groq Cloud LLM (openai/gpt-oss-120b)\nInline Verified Citations"]
+        Fallback["Deterministic Offline Synthesizer Fallback"]
+    end
+
+    subgraph Storage_Layer ["Data & Storage Layer"]
+        DB[("Relational Store\nSQLite (Dev/Test) / PostgreSQL 16")]
+        Chroma[("Embedded ChromaDB Vector Store\nIndex-Level RBAC Filtering")]
+        Storage[("Local File Storage / MinIO S3")]
+    end
+
+    Client -->|HTTP / JSON| Router
+    Router --> RBAC
+    RBAC --> Audit
+    
+    Router --> Ingestion_Pipeline
+    Parsers --> Chunkers --> GovQueue
+    GovQueue -->|Approved Sync| Chroma
+    GovQueue -->|Metadata| DB
+    Parsers -->|Store Files| Storage
+
+    Router --> Intelligence_Pipeline
+    Intelligence_Pipeline -->|Query Vector| Embed --> Chroma
+    Intelligence_Pipeline -->|Query Lexical| BM25 --> DB
+    Chroma --> RRF
+    DB --> RRF
+    RRF --> Rerank --> Groq
+    Groq -.->|Fallback on Disconnect| Fallback
+    Groq -->|Grounded Answer + Citations| Client
+```
+
+### End-to-End Lifecycle & Query Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Student / Faculty
+    actor HOD as HOD / Admin
+    participant FE as React Vite Frontend
+    participant API as FastAPI Backend
+    participant DB as SQLite / PostgreSQL
+    participant Vec as Embedded ChromaDB
+    participant LLM as Groq Cloud LLM
+
+    rect rgb(240, 249, 255)
+    note over User,Vec: Phase 1: Ingestion & Governance Flow
+    User->>FE: Upload Circular / Syllabus (.pdf, .docx, .xlsx)
+    FE->>API: POST /api/v1/documents/upload
+    API->>API: SHA-256 Hash Deduplication & Format Chunker
+    API->>DB: Save Document (status='pending_approval')
+    HOD->>FE: Review Pending Document Queue
+    FE->>API: POST /api/v1/governance/documents/{id}/review (Approved)
+    API->>DB: Update status='approved', lifecycle='active'
+    API->>Vec: Sync Chunk Vectors (with department metadata)
+    end
+
+    rect rgb(245, 243, 255)
+    note over User,LLM: Phase 2: Grounded Adaptive Query Flow
+    User->>FE: Ask: "What is passing criteria for 2024 Exam?"
+    FE->>API: POST /api/v1/rag/ask
+    API->>Vec: Dense Vector Search (where={"department_id": user_dept})
+    API->>DB: BM25 Lexical Keyword Search
+    API->>API: Reciprocal Rank Fusion (RRF) + FlashRank Re-rank
+    API->>LLM: Grounded System Prompt + Top Evidence Chunks
+    LLM-->>API: Stream Answer with Inline Citations [1]
+    API-->>FE: Return Verified Answer + Citation Metadata
+    FE-->>User: Interactive Answer with Clickable Trust Badges
+    end
+```
 
 ---
 

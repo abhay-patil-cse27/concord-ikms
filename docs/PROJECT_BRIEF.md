@@ -1,5 +1,38 @@
-CONCORD — Mega Project 2026–27
-Complete implementation roadmap + master coding-agent prompt
+# CONCORD — Mega Project 2026–27: Engineering Master Brief
+
+[← Back to Main Documentation Index](../README.md#📚-documentation-index)
+
+```mermaid
+graph TD
+    subgraph Phase1 ["Phase 1: Ingestion & RBAC Multi-Tenancy"]
+        P1A["Multi-Format Extractors (PDF/Word/Excel)"] --> P1B["Format-Aware Chunkers (Tabular & Paragraph)"]
+        P1B --> P1C["SHA-256 Checksums & Department RBAC"]
+    end
+
+    subgraph Phase2 ["Phase 2: Hybrid Retrieval & FlashRank"]
+        P2A["ONNX MiniLM Dense Embeddings"] --> P2C["Reciprocal Rank Fusion (RRF)"]
+        P2B["PostgreSQL TSVector Lexical Search"] --> P2C
+        P2C --> P2D["FlashRank Cross-Encoder Deep Scoring"]
+    end
+
+    subgraph Phase3 ["Phase 3: Grounded Answer Synthesis & Citations"]
+        P3A["Strict System Guardrails (Zero-Hallucination)"] --> P3B["Exact Chunk Provenance & Page Citations"]
+        P3B --> P3C["Fallback Offline Synthesizer for High Reliability"]
+    end
+
+    subgraph Phase4 ["Phase 4: Automated Evaluation & Security Hardening"]
+        P4A["Live Benchmark Suite (MRR, P95 Latency, Faithfulness)"]
+        P4B["Multi-Role Switching (Student / Faculty / Admin)"]
+        P4C["Cryptographic Tamper-Evident Audit Ledger"]
+    end
+
+    Phase1 --> Phase2
+    Phase2 --> Phase3
+    Phase3 --> Phase4
+```
+
+---
+
 The most important decision at this stage is to build CONCORD as a real institutional knowledge platform, not merely a chatbot connected to PDFs.
 Your project combines the core ideas of enterprise knowledge discovery and persistent contextual memory into a system designed for an educational institution such as KIT. It must bring scattered institutional information together, retrieve the right evidence for a particular user and situation, and generate answers that can be verified, audited, and trusted.
 The implementation should be ambitious enough for a major project, but every feature must have a clear purpose, a feasible development path, and measurable acceptance criteria.
