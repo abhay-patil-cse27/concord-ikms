@@ -33,3 +33,34 @@ class SearchQueryResponse(BaseModel):
     retrieval_mode: str
     latency_ms: float
     results: List[SearchEvidenceItem]
+
+
+# ==============================================================================
+# Milestone 4: Grounded RAG Schemas
+# ==============================================================================
+
+class RAGAskRequest(BaseModel):
+    query: str = Field(..., min_length=2, max_length=500, description="Natural language question")
+    department_id: Optional[str] = Field(None, description="Optional target department scope")
+    top_k: int = Field(5, ge=1, le=10, description="Maximum number of evidence sources to ground against")
+
+
+class CitationItem(BaseModel):
+    citation_index: int
+    chunk_id: str
+    document_id: str
+    document_title: str
+    document_filename: str
+    page_number: Optional[int] = 1
+    snippet: str
+    score: Optional[float] = None
+
+
+class RAGAskResponse(BaseModel):
+    query: str
+    answer: str
+    citations: List[CitationItem]
+    confidence: str
+    model_used: str
+    latency_ms: float
+    retrieval_mode: str = "hybrid_rrf"

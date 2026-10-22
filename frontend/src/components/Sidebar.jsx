@@ -6,6 +6,7 @@ import {
   ShieldAlert, 
   FileText, 
   Search,
+  Bot,
   Lock,
   ExternalLink
 } from 'lucide-react';
@@ -55,6 +56,13 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       icon: Search,
       accessible: true,
       milestone: 'M3',
+    },
+    {
+      id: 'rag',
+      label: 'Grounded Q&A (Groq)',
+      icon: Bot,
+      accessible: true,
+      milestone: 'M4',
     },
   ];
 

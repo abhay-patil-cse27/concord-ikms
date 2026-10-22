@@ -119,5 +119,16 @@ export const api = {
         mode: options.mode || 'hybrid',
       }),
     }),
+
+  // Grounded RAG with Groq Cloud (M4)
+  askQuestion: (query, options = {}) =>
+    apiRequest('/rag/ask', {
+      method: 'POST',
+      body: JSON.stringify({
+        query,
+        department_id: options.departmentId || null,
+        top_k: options.topK || 5,
+      }),
+    }),
 };
 
