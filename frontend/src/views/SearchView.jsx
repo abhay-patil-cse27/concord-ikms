@@ -1,9 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearch } from '../hooks/useSearch';
 import SearchBar from '../components/ui/SearchBar';
 import EvidenceCitationCard from '../components/ui/EvidenceCitationCard';
+import { BrutalBadge, BrutalTabs, BrutalSkeleton, BrutalEmptyState } from '../components/brutal';
 import { Search as SearchIcon, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 
+const SUGGESTIONS = [
+  'Syllabus and course outcomes',
+  'Examination rules and regulations',
+  'Internship policy guidelines',
+  'Attendance threshold requirements',
+];
+
+/**
+ * SearchView
+ * Yellow Brutalist contextual search view powered by hybrid RRF.
+ */
 export default function SearchView() {
   const {
     query,
@@ -18,28 +30,44 @@ export default function SearchView() {
     clearSearch,
   } = useSearch();
 
+  const [activeTab, setActiveTab] = useState('all');
+
   const handleQuickPrompt = (promptText) => {
     setQuery(promptText);
     executeSearch(promptText);
   };
 
+  const tabs = [
+    { id: 'all', label: `All Candidates (${results.length})` },
+    { id: 'high_score', label: 'Top Scoring RRF' },
+  ];
+
+  const displayedResults = activeTab === 'high_score'
+    ? results.filter((r) => (r.score || 0) >= 0.5)
+    : results;
+
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-          <span className="badge badge-primary">Milestone 3</span>
-          <span className="badge badge-neutral">Reciprocal Rank Fusion</span>
+    <div className="w-full flex flex-col gap-6">
+      
+      {/* View Masthead */}
+      <div className="pb-6 border-b-3 border-brutal-black dark:border-brutal-yellow">
+        <div className="flex items-center gap-2 mb-2">
+          <BrutalBadge tone="yellow" size="sm">
+            HYBRID RETRIEVAL
+          </BrutalBadge>
+          <BrutalBadge tone="black" size="sm">
+            RECIPROCAL RANK FUSION
+          </BrutalBadge>
         </div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+        <h1 className="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-brutal-black dark:text-brutal-white">
           Contextual Search & Retrieval
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-          Multi-stage hybrid retrieval across institutional circulars, department syllabi, and academic policies.
+        <p className="font-mono text-xs text-brutal-black/70 dark:text-brutal-white/70 mt-1 max-w-2xl">
+          Multi-stage lexical and dense vector search across institutional circulars, department syllabi, and administrative regulations.
         </p>
       </div>
 
-      {/* Reusable Search Bar */}
+      {/* Brutal Search Bar */}
       <SearchBar
         value={query}
         onChange={setQuery}
@@ -50,97 +78,79 @@ export default function SearchView() {
         onModeChange={setMode}
       />
 
-      {/* Quick Prompts */}
+      {/* Suggested Quick Queries on Initial State */}
       {!results.length && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Suggested Queries
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {[
-              'Syllabus and course outcomes',
-              'Examination rules and regulations',
-              'Internship policy guidelines',
-              'Attendance threshold requirements',
-            ].map((prompt) => (
+        <div className="flex flex-col gap-3">
+          <span className="font-mono text-xs font-black uppercase tracking-wider text-brutal-muted dark:text-brutal-muted-dark">
+            Suggested Research Queries:
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {SUGGESTIONS.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 onClick={() => handleQuickPrompt(prompt)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: 'var(--text-muted)',
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '20px',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  transition: 'all 0.2s ease',
-                }}
+                className="px-3 py-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-white dark:bg-brutal-dark-surface font-mono text-xs font-bold text-brutal-black dark:text-brutal-white shadow-brutal-sm hover:bg-brutal-yellow hover:text-brutal-black transition-colors flex items-center gap-1.5"
               >
-                <Sparkles size={13} color="var(--primary)" />
-                {prompt}
+                <Sparkles size={13} className="text-brutal-yellow group-hover:text-brutal-black" />
+                <span>{prompt}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error Alert */}
       {error && (
-        <div className="glass-panel" style={{ padding: '1rem', borderLeft: '4px solid var(--danger)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <AlertCircle size={20} color="var(--danger)" />
-          <span style={{ fontSize: '0.9rem', color: '#fff' }}>{error}</span>
+        <div className="p-4 bg-brutal-accent/15 border-3 border-brutal-accent text-brutal-black dark:text-brutal-white font-mono text-xs flex items-center gap-2">
+          <AlertCircle size={18} className="text-brutal-accent flex-shrink-0" />
+          <span className="font-bold">{error}</span>
         </div>
       )}
 
-      {/* Search Diagnostics */}
+      {/* Diagnostics Strip */}
       {searchMeta && !loading && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '0.825rem',
-            color: 'var(--text-muted)',
-            borderBottom: '1px solid var(--border-light)',
-            paddingBottom: '0.75rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CheckCircle2 size={16} color="var(--success)" />
-            <span>Retrieved <strong>{results.length}</strong> matching evidence segments</span>
+        <div className="p-3 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-brutal-success" />
+            <span className="font-bold">
+              Retrieved {results.length} matching evidence chunks
+            </span>
           </div>
-          <div>
-            Scanned {searchMeta.totalCandidates} candidates in <strong>{searchMeta.latencyMs} ms</strong> ({searchMeta.retrievalMode} mode)
+          <div className="text-brutal-muted dark:text-brutal-muted-dark uppercase text-[11px]">
+            Scanned {searchMeta.totalCandidates || 0} candidates in {searchMeta.latencyMs || 0}ms ({searchMeta.retrievalMode || mode} mode)
           </div>
         </div>
       )}
 
-      {/* Results List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid rgba(56, 189, 248, 0.2)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
-            <span>Executing hybrid rank fusion retrieval...</span>
-          </div>
-        )}
+      {/* Results View */}
+      {results.length > 0 && (
+        <div className="mb-2">
+          <BrutalTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+          />
+        </div>
+      )}
 
-        {!loading && results.length > 0 && results.map((item) => (
-          <EvidenceCitationCard key={item.chunk_id} item={item} />
-        ))}
-
-        {!loading && searchMeta && results.length === 0 && (
-          <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <SearchIcon size={32} style={{ margin: '0 auto 1rem', opacity: 0.4 }} />
-            <div style={{ fontWeight: 600, color: '#fff', marginBottom: '0.25rem' }}>No matching records found</div>
-            <div style={{ fontSize: '0.85rem' }}>Try refining your keywords or query intent.</div>
+      <div className="space-y-4">
+        {loading ? (
+          <div className="space-y-4">
+            <BrutalSkeleton count={4} height="h-28" />
           </div>
-        )}
+        ) : displayedResults.length > 0 ? (
+          displayedResults.map((item) => (
+            <EvidenceCitationCard key={item.chunk_id || item.id} item={item} />
+          ))
+        ) : searchMeta && results.length === 0 ? (
+          <BrutalEmptyState
+            title="No Matching Records Found"
+            description="The hybrid RRF engine scanned the vector space and exact lexical index, but found zero high-confidence matches. Try broadening your query terms."
+          />
+        ) : null}
       </div>
+
     </div>
   );
 }

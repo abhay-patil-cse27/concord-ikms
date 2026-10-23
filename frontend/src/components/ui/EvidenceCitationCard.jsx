@@ -1,7 +1,16 @@
 import React from 'react';
-import { FileText, Award, Layers } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { FileText, Award, Layers, Hash } from 'lucide-react';
+import { BrutalCard, BrutalBadge } from '../brutal';
+import { cn } from '../../lib/utils';
+import { variants } from '../../motion/presets';
 
-export default function EvidenceCitationCard({ item }) {
+/**
+ * EvidenceCitationCard
+ * Architectural card displaying verified ground-truth chunk citations,
+ * RRF fusion score, rank pills, and monospaced content.
+ */
+export default function EvidenceCitationCard({ item, onClick, className = '' }) {
   const {
     rank,
     document_title,
@@ -15,83 +24,58 @@ export default function EvidenceCitationCard({ item }) {
   } = item;
 
   return (
-    <div
-      className="glass-panel animate-fade-in"
-      style={{
-        padding: '1.25rem',
-        borderRadius: '12px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        background: 'rgba(15, 23, 42, 0.5)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
-        position: 'relative',
-        transition: 'all 0.2s ease',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <span
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              background: 'rgba(56, 189, 248, 0.15)',
-              color: 'var(--primary)',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-            }}
-          >
-            #{rank}
-          </span>
-          <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
-            {document_title}
-          </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-            ({document_filename})
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem' }}>
-          <span className="badge badge-info" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Award size={12} /> Score: {score}
-          </span>
-          {page_number && (
-            <span className="badge badge-neutral" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <FileText size={12} /> Page {page_number}
-            </span>
-          )}
-          <span className="badge badge-neutral" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Layers size={12} /> Chunk #{chunk_index}
-          </span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: 'rgba(0, 0, 0, 0.25)',
-          padding: '0.85rem 1rem',
-          borderRadius: '8px',
-          fontSize: '0.875rem',
-          color: 'var(--text-main)',
-          lineHeight: 1.6,
-          fontFamily: 'inherit',
-          borderLeft: '3px solid var(--primary)',
-        }}
+    <motion.div variants={variants.staggerItem}>
+      <BrutalCard
+        hoverable={Boolean(onClick)}
+        onClick={onClick}
+        className={cn('p-5 border-3 transition-all', className)}
       >
-        {content}
-      </div>
+        {/* Header Metadata */}
+        <div className="flex items-center justify-between gap-3 flex-wrap pb-3 mb-3 border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-7 h-7 bg-brutal-yellow text-brutal-black font-display font-black text-xs flex items-center justify-center border-2 border-brutal-black flex-shrink-0 shadow-brutal-sm">
+              #{rank}
+            </span>
+            <div className="min-w-0">
+              <h4 className="font-display font-black text-sm uppercase text-brutal-black dark:text-brutal-white truncate max-w-xs sm:max-w-md">
+                {document_title || 'Institutional Document'}
+              </h4>
+              <div className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark truncate">
+                {document_filename}
+              </div>
+            </div>
+          </div>
 
-      {(lexical_rank || vector_rank) && (
-        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-          {lexical_rank && <span>Lexical Rank: #{lexical_rank}</span>}
-          {vector_rank && <span>Vector Rank: #{vector_rank}</span>}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {score !== undefined && (
+              <BrutalBadge tone="yellow" size="sm">
+                RRF SCORE: {score}
+              </BrutalBadge>
+            )}
+            {page_number && (
+              <BrutalBadge tone="paper" size="sm">
+                PAGE {page_number}
+              </BrutalBadge>
+            )}
+            <BrutalBadge tone="black" size="sm">
+              CHUNK #{chunk_index}
+            </BrutalBadge>
+          </div>
         </div>
-      )}
-    </div>
+
+        {/* Content Box */}
+        <div className="bg-brutal-paper dark:bg-brutal-dark p-4 border-2 border-brutal-black/30 dark:border-brutal-yellow/30 font-mono text-xs text-brutal-black dark:text-brutal-white leading-relaxed select-text">
+          {content}
+        </div>
+
+        {/* Rank Diagnostics Footer */}
+        {(lexical_rank || vector_rank) && (
+          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-brutal-black/10 dark:border-brutal-yellow/10 font-mono text-[10px] font-bold text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wider">
+            {lexical_rank && <span>BM25 Lexical Rank: #{lexical_rank}</span>}
+            {vector_rank && <span>Dense Vector Rank: #{vector_rank}</span>}
+          </div>
+        )}
+      </BrutalCard>
+    </motion.div>
   );
 }

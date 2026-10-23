@@ -4,13 +4,16 @@ import {
   Search, 
   Trash2, 
   PanelLeftClose, 
+  MessageSquare,
   Sparkles
 } from 'lucide-react';
+import { BrutalButton, BrutalBadge } from '../brutal';
+import { cn } from '../../lib/utils';
 
 /**
- * Reusable ChatGPT-style ThreadSidebar component
- * Groups chat threads into "Recents", "Yesterday", "Previous 7 Days", and "Older",
- * with search filter, new chat shortcut, and active state indicators.
+ * ThreadSidebar
+ * Yellow Brutalist inquiry thread list with recency groupings,
+ * search filter, new chat shortcut, and active selection state.
  */
 export default function ThreadSidebar({
   conversations = [],
@@ -63,208 +66,117 @@ export default function ThreadSidebar({
 
   const initials = userName
     ? userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
-    : 'FA';
+    : 'US';
 
   return (
-    <aside
-      className="chatgpt-sidebar animate-fade-in no-print"
-      style={{
-        width: '260px',
-        flexShrink: 0,
-        background: 'var(--bg-card)',
-        borderRight: '1px solid var(--border-light)',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        position: 'relative',
-        borderRadius: '16px 0 0 16px',
-        overflow: 'hidden'
-      }}
-    >
-      {/* Sidebar Header: Brand / Toggle */}
-      <div
-        style={{
-          padding: '0.85rem 0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid var(--border-light)',
-          background: 'var(--bg-subtle)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)' }}>
-          <div style={{ width: 24, height: 24, borderRadius: '6px', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={14} color="var(--primary)" />
+    <aside className="w-72 flex-shrink-0 bg-brutal-white dark:bg-brutal-dark border-r-3 border-brutal-black dark:border-brutal-yellow flex flex-col h-full select-none">
+      
+      {/* Header */}
+      <div className="p-3 border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20 flex items-center justify-between gap-2 bg-brutal-paper dark:bg-brutal-dark-surface">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-brutal-yellow border border-brutal-black flex items-center justify-center">
+            <MessageSquare size={13} className="text-brutal-black" />
           </div>
-          <span style={{ letterSpacing: '-0.01em' }}>Inquiry Threads</span>
+          <span className="font-mono text-xs font-black uppercase tracking-wider text-brutal-black dark:text-brutal-white">
+            Inquiry Threads
+          </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => setShowSearch(!showSearch)}
-            className="btn btn-ghost"
-            style={{ padding: '6px', borderRadius: '6px', color: 'var(--text-muted)' }}
+            className="p-1.5 border border-brutal-black/30 dark:border-brutal-yellow/30 hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
             title="Search threads"
           >
-            <Search size={15} />
+            <Search size={14} />
           </button>
 
           {onCloseSidebar && (
             <button
               type="button"
               onClick={onCloseSidebar}
-              className="btn btn-ghost"
-              style={{ padding: '6px', borderRadius: '6px', color: 'var(--text-muted)' }}
+              className="p-1.5 border border-brutal-black/30 dark:border-brutal-yellow/30 hover:bg-brutal-yellow hover:text-brutal-black transition-colors md:hidden"
               title="Close sidebar"
             >
-              <PanelLeftClose size={15} />
+              <PanelLeftClose size={14} />
             </button>
           )}
         </div>
       </div>
 
-      {/* New Chat Button */}
-      <div style={{ padding: '0.75rem 0.85rem 0.4rem 0.85rem' }}>
+      {/* New Inquiry Button & Search Bar */}
+      <div className="p-3 border-b-2 border-brutal-black/10 dark:border-brutal-yellow/10 flex flex-col gap-2">
         <button
           type="button"
           onClick={onCreateNewSession}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.65rem 0.85rem',
-            background: 'var(--bg-primary)',
-            border: '1px solid var(--border-light)',
-            borderRadius: '10px',
-            color: 'var(--text-main)',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          className="chatgpt-new-btn"
+          className="w-full py-2.5 px-3 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-yellow text-brutal-black font-mono text-xs font-black uppercase tracking-wider shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-between"
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-            <SquarePen size={15} color="var(--primary)" />
-            <span>New inquiry</span>
+          <div className="flex items-center gap-2">
+            <SquarePen size={14} strokeWidth={2.5} />
+            <span>New Inquiry</span>
           </div>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>⌘N</span>
+          <span className="text-[10px] bg-brutal-black text-brutal-yellow px-1 py-0.2">
+            +
+          </span>
         </button>
 
-        {/* Filter input */}
         {showSearch && (
-          <div style={{ marginTop: '0.5rem', position: 'relative' }}>
-            <input
-              type="text"
-              value={filterQuery}
-              onChange={(e) => setFilterQuery(e.target.value)}
-              placeholder="Search chat history..."
-              style={{
-                width: '100%',
-                padding: '0.45rem 0.75rem',
-                fontSize: '0.8rem',
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                borderRadius: '8px',
-                color: 'var(--text-main)',
-                outline: 'none'
-              }}
-              autoFocus
-            />
-          </div>
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Filter threads..."
+            className="w-full p-1.5 font-mono text-xs bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow text-brutal-black dark:text-brutal-white outline-none"
+            autoFocus
+          />
         )}
       </div>
 
       {/* Thread list grouped by Recents */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '0.4rem 0.65rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem'
-        }}
-        className="chatgpt-scrollable-threads"
-      >
+      <div className="flex-1 overflow-y-auto p-2 space-y-4">
         {conversations.length === 0 ? (
-          <div style={{ padding: '2rem 0.75rem', textAlign: 'center', color: '#64748b', fontSize: '0.78rem' }}>
-            No recent chats. Start asking questions to preserve history.
+          <div className="p-6 text-center font-mono text-xs text-brutal-muted dark:text-brutal-muted-dark uppercase leading-relaxed">
+            No active inquiry sessions. Ask a question to anchor thread history.
           </div>
         ) : (
           Object.entries(groupedThreads).map(([heading, items]) => {
             if (items.length === 0) return null;
+
             return (
-              <div key={heading} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div
-                  style={{
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    color: '#64748b',
-                    padding: '0.35rem 0.55rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em'
-                  }}
-                >
+              <div key={heading} className="space-y-1">
+                <div className="px-2 py-1 font-mono text-[10px] font-black uppercase text-brutal-muted dark:text-brutal-muted-dark tracking-widest">
                   {heading === 'Today' ? 'Recents' : heading}
                 </div>
 
                 {items.map((c) => {
                   const isActive = activeConversationId === c.id;
+
                   return (
                     <div
                       key={c.id}
                       onClick={() => onSelectConversation(c.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.55rem 0.65rem',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '0.84rem',
-                        fontWeight: isActive ? 600 : 400,
-                        color: isActive ? 'var(--primary)' : 'var(--text-main)',
-                        background: isActive ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
-                        border: isActive ? '1px solid rgba(2, 132, 199, 0.25)' : '1px solid transparent',
-                        transition: 'all 0.15s ease'
-                      }}
-                      className="chatgpt-thread-row"
+                      className={cn(
+                        'flex items-center justify-between p-2 border-2 cursor-pointer font-mono text-xs transition-all group',
+                        isActive
+                          ? 'bg-brutal-yellow text-brutal-black border-brutal-black shadow-brutal-sm font-black'
+                          : 'bg-transparent text-brutal-black dark:text-brutal-white border-transparent hover:border-brutal-black dark:hover:border-brutal-yellow hover:bg-brutal-paper dark:hover:bg-brutal-dark-surface'
+                      )}
                     >
-                      <div
-                        style={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          flex: 1,
-                          paddingRight: '0.4rem'
-                        }}
-                        title={c.title}
-                      >
+                      <span className="truncate pr-2" title={c.title}>
                         {c.title || 'Untitled Session'}
-                      </div>
+                      </span>
 
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onDeleteSession(c.id);
+                          if (window.confirm('Delete this conversation thread?')) {
+                            onDeleteSession(c.id);
+                          }
                         }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-dim)',
-                          cursor: 'pointer',
-                          padding: '2px 4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          borderRadius: '4px',
-                          opacity: 0.6
-                        }}
-                        title="Delete chat thread"
-                        className="chatgpt-thread-delete"
+                        className="opacity-0 group-hover:opacity-100 p-1 text-brutal-accent hover:bg-brutal-accent hover:text-brutal-white transition-all flex-shrink-0"
+                        title="Delete session"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -277,43 +189,21 @@ export default function ThreadSidebar({
         )}
       </div>
 
-      {/* Footer Profile Section */}
-      <div
-        style={{
-          padding: '0.75rem 0.95rem',
-          borderTop: '1px solid var(--border-light)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.65rem',
-          background: 'var(--bg-subtle)'
-        }}
-      >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            background: 'var(--primary)',
-            color: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            fontSize: '0.8rem',
-            flexShrink: 0
-          }}
-        >
+      {/* Footer Profile Strip */}
+      <div className="p-3 border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20 bg-brutal-paper dark:bg-brutal-dark-surface flex items-center gap-2.5">
+        <div className="w-7 h-7 bg-brutal-black text-brutal-yellow font-display font-black text-xs flex items-center justify-center border border-brutal-black flex-shrink-0">
           {initials}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <span style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div className="min-w-0">
+          <div className="font-mono text-xs font-bold text-brutal-black dark:text-brutal-white truncate">
             {userName}
-          </span>
-          <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>
+          </div>
+          <div className="font-mono text-[9px] text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wide truncate">
             {userRole}
-          </span>
+          </div>
         </div>
       </div>
+
     </aside>
   );
 }

@@ -1,65 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Bot, 
-  Send, 
-  Sparkles, 
-  FileText, 
-  CheckCircle2, 
-  AlertCircle, 
-  Cpu, 
-  Clock, 
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-  RefreshCw,
-  Quote,
-  ShieldCheck,
-  MessageSquare,
-  Plus,
-  Trash2,
-  PanelLeftClose,
-  PanelLeft,
-  Eye,
-  Mic,
-  MicOff,
-  Printer,
-  Download
-} from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRAG } from '../hooks/useRAG';
+import { useAuth } from '../context/AuthContext';
 import ThreadSidebar from '../components/ui/ThreadSidebar';
+import ChatHeader from '../components/rag/ChatHeader';
+import SuggestedPrompts from '../components/rag/SuggestedPrompts';
+import MessageBlock from '../components/rag/MessageBlock';
+import Composer from '../components/rag/Composer';
+import CitationDrawer from '../components/rag/CitationDrawer';
+import { BrutalToast } from '../components/brutal';
 
+/**
+ * RAGAssistantView
+ * Yellow Brutalist grounded conversational assistant.
+ * Powered by Groq LLM inference, RRF vector evidence, and multi-turn inquiry sessions.
+ */
 export default function RAGAssistantView() {
-  const { 
-    query, 
-    setQuery, 
-    loading, 
-    error, 
-    response, 
-    history, 
-    conversations, 
-    activeConversationId, 
-    selectConversation, 
-    createNewSession, 
-    deleteSession, 
-    ask, 
-    clear 
+  const { user } = useAuth();
+  const {
+    query,
+    setQuery,
+    loading,
+    error,
+    response,
+    history,
+    conversations,
+    activeConversationId,
+    selectConversation,
+    createNewSession,
+    deleteSession,
+    ask,
+    clear,
   } = useRAG();
 
   const [activeCitation, setActiveCitation] = useState(null);
+  const [activeCitationIndex, setActiveCitationIndex] = useState(1);
   const [showCitationDrawer, setShowCitationDrawer] = useState(false);
   const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
-  const [previewDocument, setPreviewDocument] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  const messagesEndRef = React.useRef(null);
-  const recognitionRef = React.useRef(null);
-  const silenceTimerRef = React.useRef(null);
-  const transcriptAccumulatorRef = React.useRef('');
-  const shouldKeepListeningRef = React.useRef(false);
-  const [speechError, setSpeechError] = useState(null);
+  const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+  const transcriptAccumulatorRef = useRef('');
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -68,330 +52,115 @@ export default function RAGAssistantView() {
     }
   }, [history, loading]);
 
-  // Initialize Web Speech Recognition
+  // Setup Web Speech Recognition
   useEffect(() => {
-    const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+    const SpeechRecognition = typeof window !== 'undefined'
+      ? (window.SpeechRecognition || window.webkitSpeechRecognition)
+      : null;
+
     if (SpeechRecognition) {
       setSpeechSupported(true);
       try {
         const recognition = new SpeechRecognition();
-        // continuous: true prevents the browser from automatically killing the mic after a brief 1-second pause
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
-        recognition.onstart = () => {
-          setIsListening(true);
-          setSpeechError(null);
-        };
-
         recognition.onresult = (event) => {
-          // Reset silence timer on every spoken syllable
-          if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-          }
-
-          let interimTranscript = '';
-          let finalTranscript = transcriptAccumulatorRef.current;
-
+          let currentInterim = '';
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              finalTranscript += (finalTranscript ? ' ' : '') + transcript.trim();
-              transcriptAccumulatorRef.current = finalTranscript;
+              transcriptAccumulatorRef.current = (transcriptAccumulatorRef.current + ' ' + transcript).trim();
             } else {
-              interimTranscript += transcript;
+              currentInterim += transcript;
             }
           }
 
-          const combined = (finalTranscript + (interimTranscript ? ' ' + interimTranscript : '')).trim();
+          const combined = (transcriptAccumulatorRef.current + ' ' + currentInterim).trim();
           if (combined) {
             setQuery(combined);
           }
 
-          // Give a generous 3-second grace period of complete silence before auto-stopping
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
           silenceTimerRef.current = setTimeout(() => {
-            if (shouldKeepListeningRef.current && recognitionRef.current) {
-              try {
-                recognitionRef.current.stop();
-              } catch (e) {
-                // ignore
-              }
+            if (recognitionRef.current && isListening) {
+              try { recognitionRef.current.stop(); } catch (e) {}
+              setIsListening(false);
             }
-          }, 3000);
+          }, 3500);
         };
 
         recognition.onerror = (event) => {
-          console.warn('Speech recognition error:', event.error);
-          if (event.error === 'not-allowed') {
-            setSpeechError('Microphone permission was denied. Please allow microphone access in your browser address bar.');
-            shouldKeepListeningRef.current = false;
-            setIsListening(false);
-          } else if (event.error === 'no-speech') {
-            // Under continuous mode, no-speech is non-fatal; don't terminate immediately unless user clicked off
-          } else if (event.error === 'network') {
-            setSpeechError('Network error connecting to speech recognition service.');
-            shouldKeepListeningRef.current = false;
-            setIsListening(false);
-          } else {
-            setSpeechError(`Speech status: ${event.error}`);
-          }
+          console.warn('Speech recognition warning:', event.error);
+          setIsListening(false);
         };
 
         recognition.onend = () => {
-          // If browser closed the socket automatically but user is still speaking/waiting, auto-restart
-          if (shouldKeepListeningRef.current) {
-            try {
-              recognition.start();
-              return;
-            } catch (err) {
-              // restart failed
-            }
-          }
           setIsListening(false);
-          shouldKeepListeningRef.current = false;
         };
 
         recognitionRef.current = recognition;
-      } catch (err) {
-        console.warn('SpeechRecognition init failed:', err);
+      } catch (e) {
+        console.error('Speech initialization failed', e);
       }
     }
-
-    return () => {
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
-      }
-      shouldKeepListeningRef.current = false;
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch (e) {
-          // ignore cleanup abort
-        }
-      }
-    };
   }, []);
 
-  const toggleSpeechRecognition = () => {
-    if (!speechSupported || !recognitionRef.current) {
-      alert('Speech recognition is not supported in this browser. Please open in Google Chrome or Microsoft Edge.');
-      return;
-    }
-
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-    }
-
+  const handleToggleSpeech = () => {
+    if (!speechSupported || !recognitionRef.current) return;
     if (isListening) {
-      shouldKeepListeningRef.current = false;
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        // ignore
-      }
+      try { recognitionRef.current.stop(); } catch (e) {}
       setIsListening(false);
-      return;
-    }
-
-    setSpeechError(null);
-    transcriptAccumulatorRef.current = query ? query.trim() : '';
-    shouldKeepListeningRef.current = true;
-
-    try {
-      recognitionRef.current.start();
-    } catch (err) {
-      console.warn('Could not start recognition:', err);
+    } else {
+      transcriptAccumulatorRef.current = query;
       try {
-        recognitionRef.current.abort();
-        setTimeout(() => {
-          recognitionRef.current.start();
-        }, 150);
-      } catch (retryErr) {
-        setSpeechError('Microphone unavailable or already in use. Please check browser permissions.');
-        setIsListening(false);
-        shouldKeepListeningRef.current = false;
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error('Failed to start speech recognition', err);
       }
     }
   };
 
-  // Export current conversation report to formatted PDF / Print
-  const handleExportPDF = (turn = null) => {
+  const handleSend = () => {
+    if (!query.trim() || loading) return;
+    if (isListening && recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+      setIsListening(false);
+    }
+    ask(query.trim());
+  };
+
+  const handleOpenCitation = (citIndex, citationsList = []) => {
+    const list = citationsList.length > 0 ? citationsList : (response?.citations || []);
+    const target = list[citIndex - 1] || list[0];
+    if (target) {
+      setActiveCitation(target);
+      setActiveCitationIndex(citIndex);
+      setShowCitationDrawer(true);
+    }
+  };
+
+  const handlePrint = () => {
     window.print();
   };
 
-  const sampleQuestions = [
-    "What is the passing criteria for Autonomous Exam under 2024 regulations?",
-    "Compare Autonomous Academic Regulations 2020 vs 2024 passing threshold",
-    "What are the attendance requirements to appear in finals?",
-    "What subjects and credits are offered in Semester 5 B.Tech CSE?",
-    "What is the policy regarding NVIDIA GPU cluster and AI ethics?",
-    "What are the laboratory safety protocols for ENTC VLSI Lab?",
-  ];
-
-  const handleAsk = (e) => {
-    if (e) e.preventDefault();
-    const queryToAsk = query.trim();
-    if (!queryToAsk || loading) return;
-    setQuery('');
-    ask(queryToAsk);
-  };
-
-  const handlePromptClick = (sample) => {
-    setQuery('');
-    ask(sample);
-  };
-
-  const handleCitationClick = (citation) => {
-    setActiveCitation(citation);
-    setShowCitationDrawer(true);
-  };
-
-  const handleOpenDocPreview = (citation) => {
-    setPreviewDocument({
-      title: citation.document_title,
-      filename: citation.document_filename,
-      page: citation.page_number,
-      snippet: citation.snippet,
-      version: citation.version || 'v1.0',
-      status: citation.lifecycle_status || 'active'
-    });
-  };
-
-  // Helper to parse text nodes and convert [1], [2], or 【1】 into interactive buttons
-  const renderFormattedAnswer = (rawText, citations = []) => {
-    if (!rawText) return null;
-
-    let cleaned = rawText
-      .replace(/【(\d+)】/g, '[$1]')
-      .replace(/\[Evidence\s*(\d+)\]/gi, '[$1]')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/&lt;br\s*\/?&gt;/gi, '\n')
-      .replace(/\n\s*\n\s*\n+/g, '\n\n')
-      .trim();
-
-    return (
-      <div className="markdown-body">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            p: ({ node, children, ...props }) => (
-              <p {...props} style={{ marginBottom: '1rem', lineHeight: 1.65 }}>
-                {renderChildrenWithCitations(children, citations)}
-              </p>
-            ),
-            li: ({ node, children, ...props }) => (
-              <li {...props} style={{ marginBottom: '0.4rem', lineHeight: 1.6 }}>
-                {renderChildrenWithCitations(children, citations)}
-              </li>
-            ),
-            blockquote: ({ node, children, ...props }) => (
-              <blockquote {...props} style={{ borderLeft: '3px solid var(--primary)', paddingLeft: '0.85rem', margin: '0.85rem 0', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                {renderChildrenWithCitations(children, citations)}
-              </blockquote>
-            ),
-            strong: ({ node, children, ...props }) => (
-              <strong {...props} style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                {renderChildrenWithCitations(children, citations)}
-              </strong>
-            ),
-            em: ({ node, children, ...props }) => (
-              <em {...props}>{renderChildrenWithCitations(children, citations)}</em>
-            ),
-            h1: ({ node, children, ...props }) => <h1 {...props}>{renderChildrenWithCitations(children, citations)}</h1>,
-            h2: ({ node, children, ...props }) => <h2 {...props}>{renderChildrenWithCitations(children, citations)}</h2>,
-            h3: ({ node, children, ...props }) => <h3 {...props}>{renderChildrenWithCitations(children, citations)}</h3>,
-            h4: ({ node, children, ...props }) => <h4 {...props}>{renderChildrenWithCitations(children, citations)}</h4>,
-            td: ({ node, children, ...props }) => (
-              <td {...props}>{renderChildrenWithCitations(children, citations)}</td>
-            )
-          }}
-        >
-          {cleaned}
-        </ReactMarkdown>
-      </div>
-    );
-  };
-
-  const renderChildrenWithCitations = (children, citations) => {
-    if (!children) return null;
-    return React.Children.map(children, (child) => {
-      // Recurse into nested React elements (like <strong>, <em>) so inner text citations are caught
-      if (React.isValidElement(child)) {
-        return React.cloneElement(child, {
-          children: renderChildrenWithCitations(child.props.children, citations)
-        });
-      }
-
-      if (typeof child !== 'string') return child;
-
-      // Match [1], [2], [Evidence 1], Source [1], etc.
-      const parts = child.split(/(\[(?:Evidence\s*)?\d+\])/gi);
-      if (parts.length === 1) return child;
-
-      return parts.map((part, i) => {
-        const match = part.match(/\[(?:Evidence\s*)?(\d+)\]/i);
-        if (match) {
-          const index = parseInt(match[1], 10);
-          const citation = citations.find((c) => c.citation_index === index);
-
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (citation) {
-                  handleCitationClick(citation);
-                } else if (citations.length > 0) {
-                  // Fallback to first citation if index mismatch
-                  handleCitationClick(citations[0]);
-                }
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '3px',
-                margin: '0 3px',
-                padding: '2px 7px',
-                borderRadius: '6px',
-                fontSize: '0.74rem',
-                fontWeight: 700,
-                color: '#0284c7',
-                background: 'rgba(2, 132, 199, 0.1)',
-                border: '1px solid rgba(2, 132, 199, 0.35)',
-                cursor: 'pointer',
-                transform: 'translateY(-1px)',
-                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.1)'
-              }}
-              className="citation-badge-btn"
-              title={citation ? `Click to inspect: ${citation.document_title} (Page ${citation.page_number})` : `Inspect evidence source [${index}]`}
-            >
-              <FileText size={11} />
-              <span>[{index}]</span>
-            </button>
-          );
-        }
-        return part;
-      });
-    });
-  };
+  const activeTitle = conversations.find(c => c.id === activeConversationId)?.title || 'Autonomous Grounded Q&A';
 
   return (
-    <div 
-      className="animate-fade-in chat-container-layout" 
-      style={{ 
-        display: 'flex', 
-        height: 'calc(100vh - 120px)',
-        border: '1px solid var(--border-light)',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        background: 'var(--bg-card)',
-        boxShadow: 'var(--shadow-sm)'
-      }}
-    >
-      {/* Integrated Thread Sidebar inside Single Card */}
+    <div className="flex h-[calc(100vh-theme(spacing.16)-50px)] border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal bg-brutal-paper dark:bg-brutal-black overflow-hidden relative">
+      
+      {/* Toast Alert */}
+      {toast && (
+        <BrutalToast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Desktop / Collapsible Thread Sidebar */}
       {showSessionsSidebar && (
         <ThreadSidebar
           conversations={conversations}
@@ -400,468 +169,91 @@ export default function RAGAssistantView() {
           onCreateNewSession={createNewSession}
           onDeleteSession={deleteSession}
           onCloseSidebar={() => setShowSessionsSidebar(false)}
-          userName="Faculty Auditor"
-          userRole="CONCORD Evaluator"
+          userName={user?.full_name || user?.email || 'Institutional Member'}
+          userRole={user?.role_code || 'VERIFIED USER'}
         />
       )}
 
-      {/* Main Conversation & Question Answering Area inside Same Card */}
-      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', height: '100%', background: 'var(--bg-primary)' }}>
-        {/* Top Header Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-card)', zIndex: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {!showSessionsSidebar && (
-              <button
-                type="button"
-                onClick={() => setShowSessionsSidebar(true)}
-                className="btn btn-secondary"
-                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', gap: '4px' }}
-                title="Show conversation threads"
-              >
-                <PanelLeft size={14} /> Threads
-              </button>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bot size={16} color="var(--primary)" />
-              </div>
-              <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                CONCORD Grounded Assistant
-              </span>
-            </div>
-            {activeConversationId ? (
-              <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-                Active Thread
-              </span>
-            ) : (
-              <span className="badge badge-neutral">New Inquiry</span>
-            )}
-          </div>
+      {/* Main Conversation Canvas */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-brutal-paper dark:bg-brutal-black">
+        
+        {/* Top Header */}
+        <ChatHeader
+          showSidebar={showSessionsSidebar}
+          onToggleSidebar={() => setShowSessionsSidebar(!showSessionsSidebar)}
+          onPrint={handlePrint}
+          conversationTitle={activeTitle}
+        />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span className="badge badge-neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Cpu size={12} /> Groq Llama 3.3
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-              <ShieldCheck size={14} color="var(--success)" />
-              <span className="no-print">Zero-Hallucination Grounding</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Scrollable Conversation Stream */}
-        <div className="chat-messages-scroll">
-          {/* Welcome Screen when Empty */}
-          {history.length === 0 && !loading && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: 'auto 0', padding: '2rem 1rem', textAlign: 'center', maxWidth: '680px', alignSelf: 'center' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '16px', background: 'rgba(56, 189, 248, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-                <Sparkles size={28} color="var(--primary)" />
-              </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 0.5rem 0' }}>
-                How can I assist your institutional inquiry today?
-              </h2>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
-                Ask questions about curriculum, passing rules, AI cluster ethics, or upload documents for grounded verification.
-              </p>
-
-              {/* Suggested Questions Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem', width: '100%' }}>
-                {sampleQuestions.slice(0, 4).map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => handlePromptClick(q)}
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border-light)',
-                      color: 'var(--text-main)',
-                      padding: '0.85rem 1rem',
-                      borderRadius: '12px',
-                      fontSize: '0.82rem',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.35rem',
-                      transition: 'all 0.2s ease',
-                      boxShadow: 'var(--shadow-sm)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontWeight: 600 }}>
-                      <Quote size={12} />
-                      <span>Suggested</span>
-                    </div>
-                    <span>{q}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Message Stream */}
+        <div
+          aria-live="polite"
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6"
+        >
+          {history.length === 0 ? (
+            <SuggestedPrompts
+              onSelectPrompt={(text) => {
+                setQuery(text);
+                ask(text);
+              }}
+            />
+          ) : (
+            history.map((msg, idx) => (
+              <MessageBlock
+                key={idx}
+                role={msg.role}
+                content={msg.content}
+                timestamp={msg.timestamp}
+                citations={msg.citations}
+                onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
+              />
+            ))
           )}
 
-          {/* Dialogue Turns */}
-          {history.map((turn, idx) => (
-            <div key={turn.id || idx} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
-              {/* User Question with slide-in animation */}
-              <div className="chat-bubble-user animate-user-msg">
-                {turn.query}
-                {turn.effective_query && turn.effective_query !== turn.query && (
-                  <div style={{ fontSize: '0.72rem', opacity: 0.85, marginTop: '4px', fontStyle: 'italic' }}>
-                    Contextualized: {turn.effective_query}
-                  </div>
-                )}
-              </div>
-
-              {/* Assistant Answer Box with smooth slide-up animation */}
-              <div className="chat-bubble-assistant animate-assistant-msg">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Bot size={16} color="var(--primary)" />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>CONCORD Grounded Intelligence</span>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span>Model: <strong>{turn.model_used || 'Groq Llama 3.3'}</strong></span>
-                        <span>•</span>
-                        <span>Latency: <strong>{turn.latency_ms || 320} ms</strong></span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleExportPDF(turn)}
-                      className="btn btn-ghost no-print"
-                      style={{
-                        padding: '0.35rem 0.65rem',
-                        fontSize: '0.75rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer'
-                      }}
-                      title="Print or export verified answer and citations to PDF"
-                    >
-                      <Printer size={13} />
-                      <span>Print / PDF</span>
-                    </button>
-                    <span className={`badge ${turn.confidence === 'high' ? 'badge-success' : 'badge-warning'}`}>
-                      {turn.confidence === 'high' ? 'Verified Evidence' : 'Extracted Records'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Formatted Markdown */}
-                <div style={{ fontSize: '0.94rem', color: 'var(--text-main)' }}>
-                  {renderFormattedAnswer(turn.answer, turn.citations)}
-                </div>
-
-                {/* Turn Citations Grid */}
-                {turn.citations && turn.citations.length > 0 && (
-                  <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-light)', paddingTop: '1rem' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.65rem' }}>
-                      Verified Evidence Sources ({turn.citations.length})
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.65rem' }}>
-                      {turn.citations.map((c) => (
-                        <div
-                          key={c.citation_index}
-                          onClick={() => handleCitationClick(c)}
-                          style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
-                            borderRadius: '8px',
-                            padding: '0.75rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.35rem',
-                            transition: 'all 0.2s ease',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary)', background: 'rgba(2, 132, 199, 0.08)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                              Source [{c.citation_index}]
-                            </span>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                              Page {c.page_number}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {c.document_title}
-                          </div>
-                          <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', margin: 0, display: '-webkit-box', WebKitLineClamp: 2, WebKitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            "{c.snippet}"
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Loading / Generating State with Animated Typing Indicator */}
+          {/* Stepped Loading Indicator */}
           {loading && (
-            <div className="glass-panel animate-assistant-msg" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '860px', width: '100%', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(2, 132, 199, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Bot size={16} color="var(--primary)" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span>Synthesizing answer with verified citations</span>
-                      <span style={{ display: 'inline-flex', gap: '4px', alignItems: 'center', marginLeft: '4px' }}>
-                        <span className="typing-dot" />
-                        <span className="typing-dot" />
-                        <span className="typing-dot" />
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>Query contextualization, RRF retrieval & grounding via Groq Cloud</div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.25rem' }}>
-                <div style={{ height: '12px', width: '85%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out' }} />
-                <div style={{ height: '12px', width: '92%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out', animationDelay: '0.2s' }} />
-                <div style={{ height: '12px', width: '65%', background: 'var(--border-light)', borderRadius: '4px', animation: 'pulse 1.5s infinite ease-in-out', animationDelay: '0.4s' }} />
+            <div className="flex items-center gap-2 p-4 bg-brutal-white dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow w-fit shadow-brutal-sm">
+              <span className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white">
+                Synthesizing
+              </span>
+              <div className="flex items-center gap-1.5 ml-2">
+                <span className="w-2.5 h-2.5 bg-brutal-yellow border border-brutal-black animate-pulse" />
+                <span className="w-2.5 h-2.5 bg-brutal-black dark:bg-brutal-yellow border border-brutal-black animate-pulse delay-150" />
+                <span className="w-2.5 h-2.5 bg-brutal-yellow border border-brutal-black animate-pulse delay-300" />
               </div>
             </div>
           )}
 
-          {/* Error Feedback */}
+          {/* Error Message */}
           {error && (
-            <div className="glass-panel" style={{ padding: '1rem', borderLeft: '4px solid #ef4444', display: 'flex', alignItems: 'center', gap: '0.75rem', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
-              <AlertCircle size={20} color="#ef4444" />
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{error}</span>
+            <div className="p-4 bg-brutal-accent/15 border-2 border-brutal-accent font-mono text-xs text-brutal-accent font-bold">
+              Error generating response: {error}
             </div>
           )}
 
-          {/* Auto-scroll Anchor */}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Bottom Pinned Input Area (ChatGPT Style) */}
-        <div className="chat-input-bottom-bar no-print">
-          <div className="chat-input-box-wrapper">
-            {/* Speech error indicator if any */}
-            {speechError && (
-              <div className="glass-panel animate-fade-in" style={{ padding: '0.65rem 1rem', borderLeft: '4px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', background: 'rgba(245, 158, 11, 0.1)', marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <AlertCircle size={16} color="#f59e0b" />
-                  <span style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>{speechError}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSpeechError(null)}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem' }}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
+        {/* Pinned Bottom Composer */}
+        <Composer
+          query={query}
+          setQuery={setQuery}
+          onSend={handleSend}
+          loading={loading}
+          isListening={isListening}
+          speechSupported={speechSupported}
+          onToggleSpeech={handleToggleSpeech}
+        />
+      </div>
 
-            <form onSubmit={handleAsk} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={isListening ? "Listening continuously... (Speak your inquiry)" : "Message CONCORD Grounded Intelligence (e.g. passing criteria, credits, or follow-up)..."}
-                  style={{
-                    paddingLeft: '1.25rem',
-                    paddingRight: '3.75rem',
-                    height: '54px',
-                    fontSize: '0.95rem',
-                    borderRadius: '16px',
-                    width: '100%',
-                    background: 'var(--bg-card)',
-                    borderColor: isListening ? '#ef4444' : 'var(--border-light)',
-                    boxShadow: isListening ? '0 0 16px rgba(239, 68, 68, 0.4)' : '0 4px 20px rgba(0, 0, 0, 0.25)'
-                  }}
-                />
+      {/* Slide-In Citation Provenance Drawer */}
+      <CitationDrawer
+        isOpen={showCitationDrawer}
+        onClose={() => setShowCitationDrawer(false)}
+        citation={activeCitation}
+        citationIndex={activeCitationIndex}
+      />
 
-                <button
-                  type="button"
-                  onClick={toggleSpeechRecognition}
-                  className="btn btn-ghost"
-                  style={{
-                    position: 'absolute',
-                    right: '0.75rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    padding: '0.5rem',
-                    borderRadius: '10px',
-                    color: isListening ? '#ef4444' : 'var(--text-dim)',
-                    background: isListening ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease'
-                  }}
-                  title={isListening ? "Click to stop voice listening" : "Click to speak inquiry via microphone"}
-                >
-                  {isListening ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }} />
-                      <Mic size={18} />
-                    </div>
-                  ) : (
-                    <Mic size={18} />
-                  )}
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || !query.trim()}
-                className="btn btn-primary"
-                style={{
-                  height: '54px',
-                  width: '54px',
-                  borderRadius: '16px',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-                title="Send query"
-              >
-                {loading ? (
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />
-                ) : (
-                  <Send size={18} />
-                )}
-              </button>
-            </form>
-
-            <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-              Responses are strictly anchored to verified institutional documents with citation provenance.
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* Citation Inspector Modal / Slide-over */}
-      {showCitationDrawer && activeCitation && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="glass-panel animate-scale-up" style={{ width: '100%', maxWidth: '620px', maxHeight: '80vh', overflowY: 'auto', padding: '1.75rem', background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <span className="badge badge-primary">Citation [{activeCitation.citation_index}]</span>
-                {activeCitation.lifecycle_status === 'superseded' ? (
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                    🔴 SUPERSEDED ({activeCitation.version || 'Older Version'})
-                  </span>
-                ) : (
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-                    🟢 CURRENT ({activeCitation.version || 'v1.0'})
-                  </span>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCitationDrawer(false)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.25rem', fontWeight: 700 }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 0.25rem 0' }}>
-                {activeCitation.document_title}
-              </h3>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
-                Filename: {activeCitation.document_filename} • Page: {activeCitation.page_number}
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-primary)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text-main)', fontStyle: 'italic' }}>
-              "{activeCitation.snippet}"
-            </div>
-
-            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => handleOpenDocPreview(activeCitation)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
-              >
-                <Eye size={15} /> Preview in Document Viewer
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setShowCitationDrawer(false)}
-                style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem' }}
-              >
-                Close Inspector
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* In-Browser Document Viewer Modal */}
-      {previewDocument && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(5px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div className="glass-panel animate-scale-up" style={{ width: '100%', maxWidth: '820px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', padding: '1.75rem', background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <FileText size={20} color="var(--primary)" />
-                <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-                    {previewDocument.title}
-                  </h3>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                    {previewDocument.filename} • Page {previewDocument.page} • Version {previewDocument.version}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setPreviewDocument(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.25rem', fontWeight: 700 }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span className="badge badge-info">Page {previewDocument.page} Context</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Direct Citation Highlight</span>
-              </div>
-              <div style={{ padding: '1rem', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '6px', fontSize: '0.9rem', lineHeight: 1.65, color: 'var(--text-main)', fontStyle: 'italic' }}>
-                "{previewDocument.snippet}"
-              </div>
-            </div>
-
-            <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setPreviewDocument(null)}
-              >
-                Close Document Preview
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
