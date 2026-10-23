@@ -41,6 +41,11 @@ export default {
       borderWidth: {
         '3': '3px',
       },
+      borderRadius: {
+        'none': '0px',
+        DEFAULT: '0px',
+        'full': '9999px',
+      },
       fontFamily: {
         mono: ['"JetBrains Mono"', '"Space Mono"', 'ui-monospace', 'monospace'],
         display: ['"Space Grotesk"', '"Outfit"', 'Inter', 'sans-serif'],

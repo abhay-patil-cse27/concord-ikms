@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ==============================================================================
-   CONCORD — Enterprise Institutional Design System (Vanilla CSS Tokens)
-   Strict Contrast, High Legibility, Smooth GPU Transitions, Light/Dark Modes
+   CONCORD — Yellow Brutalist Enterprise Design System
+   High-contrast, razor-sharp geometric borders, accessible typography
    ============================================================================== */
 
 :root {
@@ -15,22 +15,14 @@
   /* Layout Spacing */
   --sidebar-width: 260px;
   --navbar-height: 70px;
-  /* LEGACY-REMOVE: Force border radius to 0 */
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-full: 0px;
   --transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* ============================================================================
-     PRIMARY PALETTE: LIGHT THEME (Yellow Brutalist Hero & Paper Contrast)
-     ============================================================================ */
+  /* Primary Light Theme Palette */
   --bg-primary: #F4F0E8;
   --bg-secondary: #FAFAFA;
   --bg-card: #FAFAFA;
   --bg-card-hover: #F4F0E8;
   --bg-subtle: #F4F0E8;
-  --bg-glass: #FAFAFA;
 
   --border-light: #0A0A0A;
   --border-focus: #FFE600;
@@ -49,8 +41,8 @@
   --status-info: #0A0A0A;
   --status-info-bg: #FFE600;
 
-  --text-main: #0A0A0A;        /* Pitch black for ultra-sharp typography */
-  --text-muted: #4B5563;       /* Neutral slate */
+  --text-main: #0A0A0A;
+  --text-muted: #4B5563;
   --text-dim: #6B7280;
   --text-inverse: #FAFAFA;
 
@@ -62,21 +54,14 @@
   --shadow-sm: 2px 2px 0px #0A0A0A;
   --shadow-md: 4px 4px 0px #0A0A0A;
   --shadow-lg: 8px 8px 0px #0A0A0A;
-
-  --banner-bg: #FFE600;
-  --banner-border: #0A0A0A;
 }
 
-/* ============================================================================
-   DARK THEME PALETTE (Brutalist Pitch & Yellow Accents)
-   ============================================================================ */
 [data-theme='dark'] {
   --bg-primary: #0A0A0A;
   --bg-secondary: #141414;
   --bg-card: #181818;
   --bg-card-hover: #222222;
   --bg-subtle: #222222;
-  --bg-glass: #181818;
 
   --border-light: #FFE600;
   --border-focus: #FFE600;
@@ -108,46 +93,12 @@
   --shadow-sm: 2px 2px 0px #FFE600;
   --shadow-md: 4px 4px 0px #FFE600;
   --shadow-lg: 8px 8px 0px #FFE600;
-
-  --banner-bg: #141414;
-  --banner-border: #FFE600;
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
-
-/* LEGACY-REMOVE: Targeted stopgap enforcing square geometry on legacy surfaces without breaking intentional circles */
-:is(
-  .glass-panel,
-  .btn,
-  .badge,
-  input:not([type="radio"]):not([type="checkbox"]),
-  select,
-  textarea,
-  .chat-session-item,
-  .chat-container-layout,
-  .chat-bubble-user,
-  .chat-bubble-assistant,
-  table,
-  th,
-  td,
-  dialog,
-  [class*="rounded"]:not(.rounded-full):not([class*="avatar"]):not([class*="dot"]):not([class*="spinner"]):not([class*="animate-spin"])
-) {
-  border-radius: 0px !important;
-}
-
-/* Explicit preserve for circular UI elements (spinners, status pips, radio inputs) */
-:is(
-  .rounded-full,
-  .typing-dot,
-  input[type="radio"],
-  [data-circle="true"]
-) {
-  border-radius: 9999px !important;
 }
 
 body {
@@ -170,234 +121,39 @@ h1, h2, h3, h4, h5, h6 {
 
 button {
   font-family: var(--font-mono);
-  cursor: pointer;
-  border: none;
-  background: none;
-  transition: var(--transition);
 }
 
-/* Form Controls */
-input, select, textarea {
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  color: var(--input-text);
-  background-color: var(--input-bg);
-  border: 2px solid var(--input-border);
-  border-radius: 0px !important;
-  padding: 0.65rem 0.9rem;
-  outline: none;
-  transition: var(--transition);
+/* Custom Brutalist Block Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-input::placeholder, textarea::placeholder {
-  color: var(--input-placeholder);
-  opacity: 1;
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+  border-left: 2px solid #0A0A0A;
 }
 
-select {
-  cursor: pointer;
-}
-
-select option {
-  background-color: var(--bg-secondary);
-  color: var(--text-main);
-}
-
-input:focus, select:focus, textarea:focus {
-  border-color: #0A0A0A;
-  box-shadow: 3px 3px 0px #0A0A0A;
-}
-
-[data-theme='dark'] input:focus, 
-[data-theme='dark'] select:focus, 
-[data-theme='dark'] textarea:focus {
-  border-color: #FFE600;
-  box-shadow: 3px 3px 0px #FFE600;
-}
-
-/* Yellow Brutalist Card Surface */
-.glass-panel {
-  background: var(--bg-card);
-  border: 2px solid #0A0A0A;
-  border-radius: 0px !important;
-  box-shadow: 4px 4px 0px #0A0A0A;
-}
-
-[data-theme='dark'] .glass-panel {
-  border-color: #FFE600;
-  box-shadow: 4px 4px 0px #FFE600;
-}
-
-/* Brutalist Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
-  font-size: 0.85rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: 0px !important;
-  border: 2px solid #0A0A0A;
-  cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.btn-primary {
+::-webkit-scrollbar-thumb {
   background: #FFE600;
-  color: #0A0A0A !important;
-  box-shadow: 3px 3px 0px #0A0A0A;
+  border: 2px solid #0A0A0A;
 }
 
-.btn-primary:hover {
+::-webkit-scrollbar-thumb:hover {
   background: #FFD000;
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #0A0A0A;
 }
 
-.btn-primary:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #0A0A0A;
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #0A0A0A;
+  border-left: 2px solid #FFE600;
 }
 
-.btn-secondary {
-  background: #FAFAFA;
-  color: #0A0A0A;
-  border: 2px solid #0A0A0A;
-  box-shadow: 3px 3px 0px #0A0A0A;
-}
-
-.btn-secondary:hover {
-  background: #F4F0E8;
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #0A0A0A;
-}
-
-.btn-ghost {
-  color: #0A0A0A;
-  border: 2px solid transparent;
-}
-
-.btn-ghost:hover {
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
   background: #FFE600;
-  color: #0A0A0A;
   border: 2px solid #0A0A0A;
-  box-shadow: 2px 2px 0px #0A0A0A;
 }
 
-/* Brutalist Badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.55rem;
-  font-size: 0.72rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: 0px;
-  border: 2px solid #0A0A0A;
-  box-shadow: 2px 2px 0px #0A0A0A;
-}
-
-.badge-info {
-  background: #FFE600;
-  color: #0A0A0A;
-}
-
-.badge-success {
-  background: #1B5E20;
-  color: #FAFAFA;
-}
-
-.badge-warning {
-  background: var(--status-warning-bg);
-  color: var(--status-warning);
-  border: 1px solid rgba(180, 83, 9, 0.25);
-}
-
-.badge-danger {
-  background: var(--status-danger-bg);
-  color: var(--status-danger);
-  border: 1px solid rgba(185, 28, 28, 0.25);
-}
-
-.badge-info {
-  background: var(--status-info-bg);
-  color: var(--status-info);
-  border: 1px solid rgba(3, 105, 161, 0.25);
-}
-
-.badge-neutral {
-  background: var(--bg-subtle);
-  color: var(--text-muted);
-  border: 1px solid var(--border-light);
-}
-
-/* Smooth Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes userMsgSlide {
-  0% { opacity: 0; transform: translateY(16px) scale(0.96); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.animate-user-msg {
-  animation: userMsgSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes assistantMsgSlide {
-  0% { opacity: 0; transform: translateY(18px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-.animate-assistant-msg {
-  animation: assistantMsgSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes pulseDot {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40% { transform: scale(1); opacity: 1; }
-}
-
-.typing-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--primary);
-  animation: pulseDot 1.4s infinite ease-in-out both;
-}
-
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
-.typing-dot:nth-child(3) { animation-delay: 0s; }
-
-@keyframes floatSlow {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-}
-
-.animate-float {
-  animation: floatSlow 4s ease-in-out infinite;
-}
-
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
-
-/* Markdown Formatted Answer Styling (Tables, Headings, Lists, Quotes) */
+/* Markdown Assistant Answer Styling */
 .markdown-body {
   font-size: 0.93rem;
   line-height: 1.6;
@@ -447,7 +203,6 @@ input:focus, select:focus, textarea:focus {
   padding: 0.35rem 0.85rem;
   margin: 0.65rem 0;
   background: var(--bg-subtle);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   color: var(--text-muted);
 }
 
@@ -456,15 +211,14 @@ input:focus, select:focus, textarea:focus {
   border-collapse: collapse;
   margin: 1.25rem 0;
   font-size: 0.875rem;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  border: 2px solid var(--border-light);
   overflow: hidden;
 }
 
 .markdown-body th {
   background: var(--bg-subtle);
   color: var(--text-main);
-  font-weight: 600;
+  font-weight: 700;
   text-align: left;
   padding: 0.65rem 0.9rem;
   border-bottom: 2px solid var(--border-light);
@@ -483,170 +237,32 @@ input:focus, select:focus, textarea:focus {
 .markdown-body code {
   background: var(--bg-subtle);
   padding: 0.15rem 0.4rem;
-  border-radius: 4px;
   font-size: 0.85em;
-  font-family: monospace;
-  color: var(--primary);
+  font-family: var(--font-mono);
+  color: #0A0A0A;
+  border: 1px solid #0A0A0A;
 }
 
-/* ==============================================================================
-   PREMIUM CUSTOM SCROLLBAR & INTERACTIVE HOVER POLISH
-   ============================================================================== */
-
-/* LEGACY-REMOVE: BRUTALIST CUSTOM SCROLLBAR & INTERACTIVE HOVER POLISH */
-
-/* Brutalist Block Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
-  border-left: 2px solid #0A0A0A;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #FFE600;
-  border: 2px solid #0A0A0A;
-  border-radius: 0px !important;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #FFD000;
-}
-
-[data-theme='dark'] ::-webkit-scrollbar-track {
-  background: #0A0A0A;
-  border-left: 2px solid #FFE600;
-}
-
-[data-theme='dark'] ::-webkit-scrollbar-thumb {
-  background: #FFE600;
-  border: 2px solid #0A0A0A;
-}
-
-/* LEGACY-REMOVE: Global Interactive Hover Effects */
-.glass-panel {
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.glass-panel:hover {
-  border-color: #0A0A0A;
-}
-
-[data-theme='dark'] .glass-panel:hover {
+[data-theme='dark'] .markdown-body code {
+  color: #FFE600;
   border-color: #FFE600;
 }
 
-/* LEGACY-REMOVE: Smooth Interactive Nav Button Hover */
-.sidebar-nav-btn {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0px !important;
-  border: 2px solid transparent;
-  transition: all 0.1s ease;
-}
-
-.sidebar-nav-btn:hover:not(:disabled) {
-  background: #FFE600 !important;
-  color: #0A0A0A !important;
-  border-color: #0A0A0A !important;
-  transform: translateX(3px);
-}
-
-.sidebar-nav-btn.active {
-  background: #FFE600 !important;
-  color: #0A0A0A !important;
-  border-color: #0A0A0A !important;
-  box-shadow: 2px 2px 0px #0A0A0A;
-}
-
-/* Table Row Hover Lift */
-table tr {
-  transition: background-color 0.1s ease;
-}
-
-table tbody tr:hover {
-  background: rgba(255, 230, 0, 0.15) !important;
-}
-
-/* LEGACY-REMOVE: Interactive Pill Badges Hover */
-.badge {
-  border-radius: 0px !important;
-  transition: transform 0.1s ease;
-}
-
-.citation-badge-btn {
-  border-radius: 0px !important;
-  background: #FAFAFA !important;
-  border: 2px solid #0A0A0A !important;
-  color: #0A0A0A !important;
-  box-shadow: 2px 2px 0px #0A0A0A !important;
-}
-
-.citation-badge-btn:hover {
-  background: #FFE600 !important;
-  border-color: #0A0A0A !important;
-  color: #0A0A0A !important;
-  transform: translate(-1px, -1px) !important;
-  box-shadow: 3px 3px 0px #0A0A0A !important;
-}
-
-.citation-badge-btn:active {
-  transform: translate(1px, 1px) !important;
-  box-shadow: 1px 1px 0px #0A0A0A !important;
-}
-
-
-
-/* ==============================================================================
-   PRINT & REPORT EXPORT STYLING (@media print)
-   ============================================================================== */
+/* Print Styling */
 @media print {
-  /* Hide application chrome, sidebars, navigation, search boxes, and action buttons */
   aside, 
   nav, 
   header, 
   form, 
   .no-print,
-  button,
-  .sidebar-nav-btn {
+  button {
     display: none !important;
   }
 
   body {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #0A0A0A !important;
     font-size: 11pt !important;
     line-height: 1.6 !important;
   }
-
-  .glass-panel,
-  .chat-bubble-assistant {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: none !important;
-    color: #0f172a !important;
-    page-break-inside: avoid;
-    margin-bottom: 1.5rem !important;
-    padding: 1.25rem !important;
-  }
-
-  .chat-bubble-user {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
-    box-shadow: none !important;
-    font-weight: 600 !important;
-    max-width: 100% !important;
-    margin-bottom: 1rem !important;
-  }
-
-  .badge {
-    border: 1px solid #94a3b8 !important;
-    color: #334155 !important;
-    background: transparent !important;
-  }
 }
-
