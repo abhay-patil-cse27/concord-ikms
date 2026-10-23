@@ -149,7 +149,7 @@ export default function RAGAssistantView() {
   const activeTitle = conversations.find(c => c.id === activeConversationId)?.title || 'Autonomous Grounded Q&A';
 
   return (
-    <div className="flex h-full min-h-[500px] border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal bg-brutal-paper dark:bg-brutal-black overflow-hidden relative">
+    <div className="flex h-full w-full border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal-lg bg-brutal-paper dark:bg-brutal-black overflow-hidden relative min-h-0">
       
       {/* Toast Alert */}
       {toast && (
@@ -174,10 +174,10 @@ export default function RAGAssistantView() {
         />
       )}
 
-      {/* Main Conversation Canvas */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-brutal-paper dark:bg-brutal-black">
+      {/* Main Conversation Canvas (ChatGPT-style fixed card window) */}
+      <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 overflow-hidden bg-brutal-paper dark:bg-brutal-black">
         
-        {/* Top Header */}
+        {/* Top Header (Fixed) */}
         <ChatHeader
           showSidebar={showSessionsSidebar}
           onToggleSidebar={() => setShowSessionsSidebar(!showSessionsSidebar)}
@@ -185,10 +185,10 @@ export default function RAGAssistantView() {
           conversationTitle={activeTitle}
         />
 
-        {/* Message Stream */}
+        {/* Message Stream (Scrollable Container) */}
         <div
           aria-live="polite"
-          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6"
+          className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 space-y-6"
         >
           {history.length === 0 ? (
             <SuggestedPrompts

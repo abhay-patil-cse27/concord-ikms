@@ -30,9 +30,9 @@ export default function AppShell({ activeTab, setActiveTab, children }) {
           onCloseMobile={() => setMobileMenuOpen(false)}
         />
 
-        {/* Main Content Canvas - locked to overflow-hidden on rag tab so header/sidebar/composer stay fixed */}
-        <main className={`flex-1 h-full max-w-full ${activeTab === 'rag' ? 'overflow-hidden p-2 md:p-3' : 'overflow-y-auto p-4 md:p-8'}`}>
-          <div className={`${activeTab === 'rag' ? 'w-full h-full' : 'max-w-7xl mx-auto pb-12'}`}>
+        {/* Main Content Canvas */}
+        <main className={`flex-1 h-full max-w-full flex flex-col ${activeTab === 'rag' ? 'overflow-hidden p-2 md:p-3' : 'overflow-y-auto p-4 md:p-8'}`}>
+          <div className={`${activeTab === 'rag' ? 'w-full h-full flex flex-col min-h-0' : 'max-w-7xl mx-auto pb-12 w-full'}`}>
             <PageTransition activeKey={activeTab}>
               {children}
             </PageTransition>
