@@ -123,6 +123,27 @@ button {
   font-family: var(--font-mono);
 }
 
+/* Accessible High-Contrast Focus Visible Rings */
+:focus-visible {
+  outline: 3px solid #FFE600 !important;
+  outline-offset: 2px !important;
+}
+
+[data-theme='dark'] :focus-visible {
+  outline: 3px solid #FFE600 !important;
+  outline-offset: 2px !important;
+}
+
+/* Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Custom Brutalist Block Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

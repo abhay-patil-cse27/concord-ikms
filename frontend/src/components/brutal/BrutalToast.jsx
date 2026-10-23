@@ -61,6 +61,8 @@ export default function BrutalToast({
             current.shadow,
             className
           )}
+          role="status"
+          aria-live="polite"
         >
           <div className="flex-shrink-0 mt-0.5">
             <Icon size={18} />
