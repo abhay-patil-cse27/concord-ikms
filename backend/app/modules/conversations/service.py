@@ -76,27 +76,38 @@ class ConversationService:
     @staticmethod
     def contextualize_query(query: str, previous_messages: List[ConversationMessage]) -> str:
         """
-        Rewrites or augments follow-up queries that contain ambiguous pronouns (it, that, these, the rules)
+        Rewrites follow-up queries that contain explicit ambiguous pronouns (it, that, these, those, same, above)
         using the subject of the immediately preceding user query.
+        Does NOT attach previous query context to greetings, pleasantries, or standalone questions.
         """
         clean_q = query.strip()
         lower_q = clean_q.lower()
-        pronouns = [" it", " that", " these", " those", " same", " above", " for it", " about it"]
+
+        # Conversational greetings and small-talk: never rewrite with previous query
+        greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "howdy", "greetings", "thanks", "thank you"]
+        if lower_q in greetings or lower_q.rstrip("!.,") in greetings:
+            return clean_q
+
+        # Explicit reference triggers that require antecedent resolution
+        explicit_pronoun_phrases = [
+            " it", " it?", " it.", " that", " that?", " that.",
+            " these", " those", " the same", " as above", " for it", " about it",
+            "explain more", "elaborate", "tell me more", "what about it", "why is that"
+        ]
         
-        has_pronoun = any(p in lower_q for p in pronouns) or len(lower_q.split()) <= 4
-        if not has_pronoun or not previous_messages:
+        has_explicit_reference = any(p in f" {lower_q} " for p in explicit_pronoun_phrases)
+        if not has_explicit_reference or not previous_messages:
             return clean_q
 
         # Find the latest user query from the preceding history
         last_user_turn = None
         for msg in reversed(previous_messages):
-            if msg.role == "user":
-                last_user_turn = msg.content
+            if msg.role == "user" and msg.content.lower().strip() not in greetings:
+                last_user_turn = msg.content.strip()
                 break
 
-        if last_user_turn:
-            # Contextualized synthetic query providing antecedent context
-            return f"{clean_q} (Regarding: {last_user_turn})"
+        if last_user_turn and last_user_turn.lower() != lower_q:
+            return f"{clean_q} (Regarding previous topic: {last_user_turn})"
 
         return clean_q
 

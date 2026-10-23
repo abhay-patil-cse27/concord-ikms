@@ -116,7 +116,13 @@ export default function MessageBlock({
 
           {timestamp && (
             <span className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark">
-              {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {(() => {
+                if (typeof timestamp === 'string' && (timestamp.includes(':') && !timestamp.includes('T') && !timestamp.includes('-'))) {
+                  return timestamp;
+                }
+                const parsed = new Date(timestamp);
+                return isNaN(parsed.getTime()) ? timestamp : parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              })()}
             </span>
           )}
         </div>
