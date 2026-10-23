@@ -124,16 +124,30 @@ The frontend is built with **React 18 + Vite 5** and features a **Yellow Brutali
   - `BrutalBadge.jsx`: Monospaced high-contrast status pills (`yellow`, `black`, `paper`, `red`, `green`).
   - `BrutalInput.jsx`: Rectangular input with hard focus lift and label/error bindings.
   - `BrutalModal.jsx`: Editorial dialog with yellow header, flat dark backdrop, and escape listeners.
-  - `BrutalTable.jsx`: Architectural data table with monospaced rows and hover effects.
+  - `BrutalTable.jsx`: Architectural data table with monospaced rows, sticky header, and hover effects.
   - `BrutalTabs.jsx`: Segmented brutalist tab bar with active yellow lift.
   - `BrutalSkeleton.jsx` & `BrutalEmptyState.jsx`: Loading and zero-state placeholders.
   - `BrutalToast.jsx`: Fixed alert notification banner with hard offset shadows.
 - **Decomposed Layout Shell ([`frontend/src/components/layout/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/layout)):**
   - `AppShell.jsx`: Full-height frame coordinating header, ticker, sidebar, and view transitions.
-  - `Navbar.jsx`: Brand identity, mobile drawer toggle, `RoleSwitcher`, and `ThemeToggle`.
-  - `Sidebar.jsx`: Collapsible navigation with `NavItem` buttons and mobile slide-in drawer.
-  - `MarqueeTicker.jsx`: Editorial institutional ticker tape respecting `prefers-reduced-motion`.
+  - `Navbar.jsx`: Brand identity, mobile drawer toggle, user profile dropdown with DEV-only role switching, and logout.
+  - `Sidebar.jsx`: Collapsible navigation with shortened labels (`Overview`, `Departments`, `Users`, `Audit Logs`, `Ingestion`, `Search`, `Grounded Q&A`, `Benchmarks`) and explicit tooltips.
+  - `MarqueeTicker.jsx`: Seamless edge-to-edge institutional ticker tape with hard bottom border and offset shadow.
   - `PageTransition.jsx`: Framer Motion view transition wrapper.
+- **Custom Interaction Hooks ([`frontend/src/hooks/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/hooks)):**
+  - `useScrollReveal.js`: IntersectionObserver entry reveal hook respecting `prefers-reduced-motion`.
+  - `useMagnetic.js`: Tactile hover cursor displacement hook for hero action triggers.
+- **Institutional Portal Landing ([`frontend/src/views/LandingView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/LandingView.jsx)):**
+  - Modular section breakdown: `HeroSection`, `StatsStrip`, `FeatureGrid`, `HowItWorks`, `RoleCards`, and `FooterBlock`.
+  - Oversized editorial typography, technical specification cards, and zero generic gradients or emojis.
+- **Security Authentication Gateway ([`frontend/src/views/LoginView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/LoginView.jsx)):**
+  - Instant 1-click persona quick login cards (Admin, HOD CSE, Faculty, Student) with pre-fill capability.
+  - Built with `BrutalInput` and `BrutalCard`, providing error alerts, loading state feedback, and OWASP compliance notes.
+- **Knowledge Ingestion & Document Governance ([`frontend/src/views/DocumentsView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/DocumentsView.jsx)):**
+  - Modular section architecture: `DocumentsHeader`, `DocumentFilters`, and `DocumentTable`.
+  - Drag-and-drop file ingestion dialog with `UploadModal.jsx`.
+  - Semantic vector chunk inspection with OCR vs native tagging in `ChunkInspectorModal.jsx`.
+  - Live search filtering, department scope dropdown, and review queue tabs.
 
 ---
 
@@ -147,3 +161,4 @@ The RAG Assistant uses modern interactive animations and chronological layout:
   - `.typing-dot`: Staggered wave animation (`pulseDot 1.4s`) while Groq Cloud synthesizes evidence chunks.
 - **Sanitized Markdown Rendering:** Strips out raw `<br>` and HTML artifacts, rendering clean typography, tables, and clickable evidence citation badges `[1]`, `[2]`.
 - **Institutional Single-Card Surface:** Side panel threads and conversation stream unified in a clean, elevated card with zero disjointed borders.
+
