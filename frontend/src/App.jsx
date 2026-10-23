@@ -86,11 +86,28 @@ export default function App() {
     );
   }
 
+  const [selectedRole, setSelectedRole] = useState(null);
+
   if (!user) {
     if (showLoginModal) {
-      return <LoginView onBack={() => setShowLoginModal(false)} />;
+      return (
+        <LoginView
+          onBack={() => {
+            setShowLoginModal(false);
+            setSelectedRole(null);
+          }}
+          preselectedRole={selectedRole}
+        />
+      );
     }
-    return <LandingView onGoToLogin={() => setShowLoginModal(true)} />;
+    return (
+      <LandingView
+        onGoToLogin={(role) => {
+          setSelectedRole(role || null);
+          setShowLoginModal(true);
+        }}
+      />
+    );
   }
 
   const renderContent = () => {

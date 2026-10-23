@@ -1,209 +1,297 @@
 import React, { useState } from 'react';
-import { Shield, ArrowRight, UserCheck, Key, AlertCircle } from 'lucide-react';
+import { Shield, ArrowRight, ArrowLeft, AlertCircle, CheckCircle2, Lock, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BrutalButton, BrutalCard, BrutalBadge, BrutalInput } from '../components/brutal';
+import ThemeToggle from '../components/layout/ThemeToggle';
+import { cn } from '../lib/utils';
 
-export default function LoginView({ onBack }) {
+const DEMO_ACCOUNTS = [
+  {
+    role: 'platform_admin',
+    title: 'Platform Administrator',
+    email: 'admin@concord.kit.edu',
+    password: 'Admin@12345',
+    desc: 'Full college-wide institutional catalog, security ledger audits, and system configuration.',
+    badge: 'Superuser',
+    badgeTone: 'yellow',
+  },
+  {
+    role: 'dept_admin',
+    title: 'Department Admin (HOD CSE)',
+    email: 'deptadmin.cse@concord.kit.edu',
+    password: 'Dept@12345',
+    desc: 'Department policy control, circular and syllabus ingestion, and departmental audit logs.',
+    badge: 'HOD Scope',
+    badgeTone: 'black',
+  },
+  {
+    role: 'faculty',
+    title: 'CSE Faculty Member',
+    email: 'faculty.cse@concord.kit.edu',
+    password: 'Faculty@12345',
+    desc: 'Academic staff access, course circular uploads, exam rubrics, and verified document search.',
+    badge: 'Staff Scope',
+    badgeTone: 'paper',
+  },
+  {
+    role: 'student',
+    title: 'Enrolled Student',
+    email: 'student.cse@concord.kit.edu',
+    password: 'Student@12345',
+    desc: 'Read-only access to published circulars, academic syllabi, and grounded AI assistant.',
+    badge: 'Student Scope',
+    badgeTone: 'paper',
+  },
+];
+
+/**
+ * LoginView
+ * Yellow Brutalist gateway featuring quick-login persona cards,
+ * credentials form built with BrutalInput, error/loading/disabled states,
+ * and zero generic styling.
+ */
+export default function LoginView({ onBack, preselectedRole }) {
   const { login, demoLogin, error } = useAuth();
-  const [email, setEmail] = useState('admin@concord.kit.edu');
-  const [password, setPassword] = useState('Admin@12345');
+  
+  // Initialize credentials (optionally match preselected role)
+  const initialAccount = DEMO_ACCOUNTS.find(a => a.role === preselectedRole) || DEMO_ACCOUNTS[0];
+  const [email, setEmail] = useState(initialAccount.email);
+  const [password, setPassword] = useState(initialAccount.password);
   const [loading, setLoading] = useState(false);
+  const [quickLoginRole, setQuickLoginRole] = useState(null);
   const [localError, setLocalError] = useState(null);
 
-  const demoAccounts = [
-    {
-      role: 'platform_admin',
-      title: 'Platform Administrator',
-      email: 'admin@concord.kit.edu',
-      desc: 'Institutional oversight across all departments, audit inspection, user & schema governance.',
-      badge: 'Superuser',
-    },
-    {
-      role: 'dept_admin',
-      title: 'Department Admin (HOD CSE)',
-      email: 'deptadmin.cse@concord.kit.edu',
-      desc: 'Department-level policy control, document ingestion, and departmental audit logs.',
-      badge: 'Dept Scope',
-    },
-    {
-      role: 'faculty',
-      title: 'CSE Faculty Member',
-      email: 'faculty.cse@concord.kit.edu',
-      desc: 'Academic staff access, course notice uploads, and authorized document search.',
-      badge: 'Staff',
-    },
-    {
-      role: 'student',
-      title: 'Enrolled Student',
-      email: 'student.cse@concord.kit.edu',
-      desc: 'Read-only access to published circulars, academic syllabi, and student Q&A.',
-      badge: 'Student',
-    },
-  ];
-
-  const handlePasswordSubmit = async (e) => {
+  const handleCredentialsSubmit = async (e) => {
     e.preventDefault();
+    if (!email || !password || loading) return;
+
     setLoading(true);
     setLocalError(null);
     try {
       await login(email, password);
     } catch (err) {
-      setLocalError(err.message);
+      setLocalError(err?.message || 'Authentication failed. Please verify credentials.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDemoSelect = async (roleCode) => {
+  const handleQuickDemoLogin = async (acc) => {
+    if (loading) return;
     setLoading(true);
+    setQuickLoginRole(acc.role);
     setLocalError(null);
     try {
-      await demoLogin(roleCode);
+      // Direct fast authentication via demo endpoint
+      await demoLogin(acc.role);
     } catch (err) {
-      setLocalError(err.message);
+      // Fallback: fill inputs and submit standard password login
+      setEmail(acc.email);
+      setPassword(acc.password);
+      try {
+        await login(acc.email, acc.password);
+      } catch (innerErr) {
+        setLocalError(innerErr?.message || 'Instant login failed.');
+      }
     } finally {
       setLoading(false);
+      setQuickLoginRole(null);
     }
+  };
+
+  const handlePreFill = (acc) => {
+    setEmail(acc.email);
+    setPassword(acc.password);
+    setLocalError(null);
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-      <div style={{ width: '100%', maxWidth: '1000px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
-        
-        {/* Left Column: Mission & Demo Switcher */}
-        <div>
+    <div className="min-h-screen bg-brutal-paper dark:bg-brutal-black text-brutal-black dark:text-brutal-white font-sans flex flex-col selection:bg-brutal-yellow selection:text-brutal-black">
+      
+      {/* Top Simple Utility Bar */}
+      <header className="h-16 w-full bg-brutal-white dark:bg-brutal-dark border-b-3 border-brutal-black dark:border-brutal-yellow shadow-brutal px-4 md:px-8 flex items-center justify-between select-none">
+        <div className="flex items-center gap-3">
           {onBack && (
             <button
+              type="button"
               onClick={onBack}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                fontSize: '0.85rem',
-                color: 'var(--text-muted)',
-                marginBottom: '1rem',
-                cursor: 'pointer',
-              }}
+              className="flex items-center gap-1.5 py-1.5 px-2.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface font-mono text-xs font-bold uppercase shadow-brutal-sm hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
             >
-              ← Back to Overview
+              <ArrowLeft size={14} />
+              <span>Back</span>
             </button>
           )}
 
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--status-info-bg)', border: '1px solid rgba(2, 132, 199, 0.25)', borderRadius: 'var(--radius-full)', padding: '0.35rem 0.85rem', marginBottom: '1.25rem' }}>
-            <Shield size={16} color="var(--primary)" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>CONCORD Institutional Gateway</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-brutal-yellow border-2 border-brutal-black shadow-brutal-sm flex items-center justify-center">
+              <Shield size={18} className="text-brutal-black" strokeWidth={2.5} />
+            </div>
+            <span className="font-display font-black text-lg tracking-tight uppercase text-brutal-black dark:text-brutal-white">
+              CONCORD IKMS
+            </span>
           </div>
+        </div>
 
-          <h1 style={{ fontSize: '2.25rem', fontWeight: 700, lineHeight: 1.15, marginBottom: '1rem', color: 'var(--text-main)' }}>
-            Institutional Identity & Personas
-          </h1>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
-            Context-Oriented Cognitive Memory Layer for Multi-Source Knowledge Integration, Adaptive Retrieval, and Governed Institutional Intelligence.
-          </p>
+        <ThemeToggle />
+      </header>
 
-          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.75rem' }}>
-            Select Institutional Persona to Pre-fill Credentials:
-          </div>
+      {/* Main Authentication Canvas */}
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 py-10 md:py-16 flex items-center justify-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          
+          {/* Left Column: Quick Persona Cards (7 cols) */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <BrutalBadge tone="yellow" size="sm">
+                  SECURITY GATEWAY
+                </BrutalBadge>
+                <span className="font-mono text-xs font-bold text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wider">
+                  OWASP ASVS 4.1
+                </span>
+              </div>
+              <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl uppercase tracking-tight text-brutal-black dark:text-brutal-white">
+                Institutional Personas
+              </h1>
+              <p className="font-sans text-sm text-brutal-black/80 dark:text-brutal-white/80 mt-2 font-medium">
+                Click any pre-configured institutional persona for 1-click authentication or credential pre-fill.
+              </p>
+            </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {demoAccounts.map((acc) => (
-              <button
-                key={acc.role}
-                type="button"
-                onClick={() => {
-                  setEmail(acc.email);
-                  // Populate matching pre-seeded password
-                  if (acc.role === 'platform_admin') setPassword('Admin@12345');
-                  else if (acc.role === 'dept_admin') setPassword('Dept@12345');
-                  else if (acc.role === 'faculty') setPassword('Faculty@12345');
-                  else if (acc.role === 'student') setPassword('Student@12345');
-                }}
-                className="glass-panel"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.85rem 1rem',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  border: email === acc.email ? '1px solid var(--primary)' : '1px solid var(--border-card)',
-                  background: email === acc.email ? 'var(--status-info-bg)' : 'var(--bg-card)',
-                  transition: 'var(--transition)',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>{acc.title}</span>
-                    <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>{acc.badge}</span>
+            {/* Persona Quick-Login List */}
+            <div className="flex flex-col gap-3">
+              {DEMO_ACCOUNTS.map((acc) => {
+                const isSelected = email === acc.email;
+                const isLoggingInThis = quickLoginRole === acc.role;
+
+                return (
+                  <div
+                    key={acc.role}
+                    className={cn(
+                      'p-4 border-3 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4',
+                      isSelected
+                        ? 'bg-brutal-white dark:bg-brutal-dark-surface border-brutal-black dark:border-brutal-yellow shadow-brutal translate-x-1'
+                        : 'bg-brutal-white/70 dark:bg-brutal-dark-surface/70 border-brutal-black/40 dark:border-brutal-yellow/40 hover:border-brutal-black dark:hover:border-brutal-yellow shadow-brutal-sm'
+                    )}
+                  >
+                    <div className="flex-1 cursor-pointer" onClick={() => handlePreFill(acc)}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-display font-black text-sm uppercase text-brutal-black dark:text-brutal-white">
+                          {acc.title}
+                        </span>
+                        <BrutalBadge tone={acc.badgeTone} size="sm">
+                          {acc.badge}
+                        </BrutalBadge>
+                      </div>
+                      <div className="font-mono text-[11px] text-brutal-muted dark:text-brutal-muted-dark truncate">
+                        {acc.email}
+                      </div>
+                      <div className="font-sans text-xs text-brutal-black/70 dark:text-brutal-white/70 mt-1 line-clamp-1">
+                        {acc.desc}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handlePreFill(acc)}
+                        className="py-1.5 px-3 border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs font-bold uppercase bg-brutal-paper dark:bg-brutal-dark hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+                      >
+                        Pre-fill
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => handleQuickDemoLogin(acc)}
+                        className="py-1.5 px-3 border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs font-black uppercase bg-brutal-yellow text-brutal-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                      >
+                        <span>{isLoggingInThis ? 'Authorizing...' : 'Instant Login'}</span>
+                        <ArrowRight size={13} strokeWidth={2.5} />
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>{acc.email}</div>
-                </div>
-                <ArrowRight size={16} color="var(--primary)" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Column: Password Login Form */}
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.35rem' }}>Sign In with Credentials</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Standard JWT password authentication with server-enforced access checks.
-            </p>
+                );
+              })}
+            </div>
           </div>
 
-          {(localError || error) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', background: 'var(--status-danger-bg)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem', color: 'var(--status-danger)', fontSize: '0.85rem' }}>
-              <AlertCircle size={16} />
-              <span>{localError || error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                Institutional Email
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@concord.kit.edu"
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                Account Password
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '0.8rem', marginTop: '0.5rem' }}
+          {/* Right Column: Credentials Form with BrutalCard (5 cols) */}
+          <div className="lg:col-span-5 w-full">
+            <BrutalCard
+              tone="default"
+              className="p-6 sm:p-8 border-3 shadow-brutal-lg flex flex-col gap-6"
             >
-              {loading ? 'Authenticating...' : 'Sign In to Dashboard'}
-            </button>
-          </form>
+              <div className="pb-4 border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20">
+                <div className="flex items-center gap-2 text-brutal-black dark:text-brutal-yellow mb-1">
+                  <Lock size={16} strokeWidth={2.5} />
+                  <span className="font-mono text-xs font-black uppercase tracking-wider">
+                    Secure JWT Credentials
+                  </span>
+                </div>
+                <h2 className="font-display font-black text-2xl uppercase tracking-tight text-brutal-black dark:text-brutal-white">
+                  Sign In to Portal
+                </h2>
+              </div>
 
-          <div style={{ marginTop: '1.5rem', padding: '0.85rem', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', color: 'var(--text-dim)', textAlign: 'center' }}>
-            Secured via PBKDF2 / Bcrypt & HMAC-SHA256 tokens per OWASP ASVS 5.0.
+              {/* Error Alert Banner */}
+              {(localError || error) && (
+                <div className="p-3 bg-brutal-accent/15 border-2 border-brutal-accent text-brutal-black dark:text-brutal-white flex items-start gap-2.5 font-mono text-xs">
+                  <AlertCircle size={16} className="text-brutal-accent flex-shrink-0 mt-0.5" />
+                  <span className="font-bold">{localError || error}</span>
+                </div>
+              )}
+
+              {/* Manual Login Form */}
+              <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4">
+                <BrutalInput
+                  label="Institutional Email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@concord.kit.edu"
+                  disabled={loading}
+                />
+
+                <BrutalInput
+                  label="Account Password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  disabled={loading}
+                />
+
+                <div className="pt-2">
+                  <BrutalButton
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    disabled={loading}
+                    loading={loading && !quickLoginRole}
+                    className="w-full justify-center text-sm font-black tracking-widest uppercase shadow-brutal hover:shadow-brutal-sm"
+                  >
+                    <span>{loading ? 'Authenticating...' : 'Sign In to Dashboard'}</span>
+                    <ArrowRight size={16} strokeWidth={3} />
+                  </BrutalButton>
+                </div>
+              </form>
+
+              {/* Security Specs Note */}
+              <div className="pt-4 border-t-2 border-brutal-black/10 dark:border-brutal-yellow/10 font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wide leading-relaxed">
+                Secured via PBKDF2 / Bcrypt password hashing & HMAC-SHA256 JWT sessions per OWASP ASVS 4.1.
+              </div>
+            </BrutalCard>
           </div>
-        </div>
 
-      </div>
+        </div>
+      </main>
+
+      {/* Footer Strip */}
+      <footer className="border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20 py-4 px-4 text-center font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark uppercase select-none">
+        CONCORD IKMS • Kolhapur Institute of Technology • Autonomous Regulations 2024
+      </footer>
     </div>
   );
 }
