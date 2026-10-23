@@ -1,27 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
 import AppShell from './components/layout/AppShell';
-import LoginView from './views/LoginView';
-import DashboardView from './views/DashboardView';
-import DepartmentsView from './views/DepartmentsView';
-import UsersView from './views/UsersView';
-import AuditLogsView from './views/AuditLogsView';
-import DocumentsView from './views/DocumentsView';
-import SearchView from './views/SearchView';
-import RAGAssistantView from './views/RAGAssistantView';
-import BenchmarkView from './views/BenchmarkView';
-import { FileText, Search, Clock } from 'lucide-react';
+import BrutalSkeleton from './components/brutal/BrutalSkeleton';
 
-
-
-
-import LandingView from './views/LandingView';
+// Lazy-loaded Views for High-Performance Code Splitting
+const LandingView = lazy(() => import('./views/LandingView'));
+const LoginView = lazy(() => import('./views/LoginView'));
+const DashboardView = lazy(() => import('./views/DashboardView'));
+const DepartmentsView = lazy(() => import('./views/DepartmentsView'));
+const UsersView = lazy(() => import('./views/UsersView'));
+const AuditLogsView = lazy(() => import('./views/AuditLogsView'));
+const DocumentsView = lazy(() => import('./views/DocumentsView'));
+const SearchView = lazy(() => import('./views/SearchView'));
+const RAGAssistantView = lazy(() => import('./views/RAGAssistantView'));
+const BenchmarkView = lazy(() => import('./views/BenchmarkView'));
 
 const VALID_ROUTES = ['dashboard', 'departments', 'users', 'audit', 'documents', 'search', 'rag', 'benchmarks'];
 
 function getRouteFromHash() {
   const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase().trim();
   return VALID_ROUTES.includes(hash) ? hash : 'dashboard';
+}
+
+function ViewSuspenseFallback() {
+  return (
+    <div className="space-y-4 p-2 sm:p-6">
+      <BrutalSkeleton count={1} height="h-16" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <BrutalSkeleton count={1} height="h-32" />
+        <BrutalSkeleton count={1} height="h-32" />
+        <BrutalSkeleton count={1} height="h-32" />
+      </div>
+      <BrutalSkeleton count={3} height="h-24" />
+    </div>
+  );
 }
 
 export default function App() {
@@ -72,22 +84,26 @@ export default function App() {
   if (!user) {
     if (showLoginModal) {
       return (
-        <LoginView
-          onBack={() => {
-            setShowLoginModal(false);
-            setSelectedRole(null);
-          }}
-          preselectedRole={selectedRole}
-        />
+        <Suspense fallback={<ViewSuspenseFallback />}>
+          <LoginView
+            onBack={() => {
+              setShowLoginModal(false);
+              setSelectedRole(null);
+            }}
+            preselectedRole={selectedRole}
+          />
+        </Suspense>
       );
     }
     return (
-      <LandingView
-        onGoToLogin={(role) => {
-          setSelectedRole(role || null);
-          setShowLoginModal(true);
-        }}
-      />
+      <Suspense fallback={<ViewSuspenseFallback />}>
+        <LandingView
+          onGoToLogin={(role) => {
+            setSelectedRole(role || null);
+            setShowLoginModal(true);
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -116,7 +132,9 @@ export default function App() {
 
   return (
     <AppShell activeTab={activeTab} setActiveTab={setActiveTab}>
-      {renderContent()}
+      <Suspense fallback={<ViewSuspenseFallback />}>
+        {renderContent()}
+      </Suspense>
     </AppShell>
   );
 }
