@@ -18,9 +18,17 @@ const CACHE_KEYS = {
 export const uiCache = {
   get: (key, defaultValue = null) => {
     try {
-      const serialized = sessionStorage.getItem(key);
-      if (!serialized) return defaultValue;
-      return JSON.parse(serialized);
+      // First check sessionStorage, then fallback to localStorage
+      const sessionData = sessionStorage.getItem(key);
+      if (sessionData) return JSON.parse(sessionData);
+      
+      const localData = localStorage.getItem(key);
+      if (localData) {
+        // Hydrate sessionStorage for faster access
+        sessionStorage.setItem(key, localData);
+        return JSON.parse(localData);
+      }
+      return defaultValue;
     } catch (e) {
       console.warn('uiCache get error:', e);
       return defaultValue;
@@ -29,7 +37,9 @@ export const uiCache = {
 
   set: (key, value) => {
     try {
-      sessionStorage.setItem(key, JSON.stringify(value));
+      const serialized = JSON.stringify(value);
+      sessionStorage.setItem(key, serialized);
+      localStorage.setItem(key, serialized);
     } catch (e) {
       console.warn('uiCache set error:', e);
     }
@@ -38,6 +48,7 @@ export const uiCache = {
   remove: (key) => {
     try {
       sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
     } catch (e) {
       console.warn('uiCache remove error:', e);
     }
@@ -45,7 +56,10 @@ export const uiCache = {
 
   clearAll: () => {
     try {
-      Object.values(CACHE_KEYS).forEach((k) => sessionStorage.removeItem(k));
+      Object.values(CACHE_KEYS).forEach((k) => {
+        sessionStorage.removeItem(k);
+        localStorage.removeItem(k);
+      });
     } catch (e) {
       console.warn('uiCache clearAll error:', e);
     }

@@ -44,11 +44,11 @@ export default function BenchmarkView() {
       setLoading(true);
       setError(null);
       const res = await api.getBenchmarkMetrics();
-      if (res.success) {
+      if (res.success && res.data) {
         setMetricsData(res.data);
         uiCache.set(uiCache.KEYS.BENCHMARK, {
           metricsData: res.data,
-          liveResult,
+          liveResult: liveResult,
         });
       }
     } catch (err) {
@@ -60,7 +60,7 @@ export default function BenchmarkView() {
   };
 
   useEffect(() => {
-    // Only fetch if there is no cached data in memory or session storage
+    // Only fetch if there is truly no cached data
     const currentCached = uiCache.get(uiCache.KEYS.BENCHMARK, null);
     if (!currentCached?.metricsData && !metricsData) {
       fetchMetrics();
@@ -72,10 +72,17 @@ export default function BenchmarkView() {
       setRunning(true);
       setError(null);
       const res = await api.runLiveBenchmark();
-      if (res.success) {
+      if (res.success && res.data) {
         setLiveResult(res.data);
         // refresh stats
-        await fetchMetrics();
+        const metricsRes = await api.getBenchmarkMetrics();
+        if (metricsRes.success && metricsRes.data) {
+          setMetricsData(metricsRes.data);
+          uiCache.set(uiCache.KEYS.BENCHMARK, {
+            metricsData: metricsRes.data,
+            liveResult: res.data,
+          });
+        }
       }
     } catch (err) {
       console.error('Live benchmark failed:', err);
