@@ -149,7 +149,7 @@ export default function RAGAssistantView() {
   const activeTitle = conversations.find(c => c.id === activeConversationId)?.title || 'Autonomous Grounded Q&A';
 
   return (
-    <div className="flex h-[calc(100vh-theme(spacing.16)-50px)] border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal bg-brutal-paper dark:bg-brutal-black overflow-hidden relative">
+    <div className="flex h-full min-h-[500px] border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal bg-brutal-paper dark:bg-brutal-black overflow-hidden relative">
       
       {/* Toast Alert */}
       {toast && (

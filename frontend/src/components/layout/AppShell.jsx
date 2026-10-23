@@ -31,8 +31,8 @@ export default function AppShell({ activeTab, setActiveTab, children }) {
         />
 
         {/* Scrollable Main Content Canvas */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto h-full max-w-full">
-          <div className="max-w-7xl mx-auto pb-12">
+        <main className={`flex-1 overflow-y-auto h-full max-w-full ${activeTab === 'rag' ? 'p-2 md:p-4' : 'p-4 md:p-8'}`}>
+          <div className={`${activeTab === 'rag' ? 'max-w-full h-full' : 'max-w-7xl mx-auto pb-12'}`}>
             <PageTransition activeKey={activeTab}>
               {children}
             </PageTransition>

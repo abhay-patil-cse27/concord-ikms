@@ -50,37 +50,34 @@ export function useRAG() {
       const detail = await api.getConversation(convId);
       setActiveConversationId(convId);
       
-      // Convert messages to history turns
-      const threadTurns = [];
-      const msgs = detail.messages || [];
-      for (let i = 0; i < msgs.length; i += 2) {
-        const u = msgs[i];
-        const a = msgs[i + 1];
-        if (u && u.role === 'user') {
-          threadTurns.push({
-            id: u.id,
-            query: u.content,
-            answer: a ? a.content : '',
-            citations: a?.citations || [],
-            confidence: a?.confidence || 'medium',
-            model_used: a?.model_used || 'groq',
-            latency_ms: a?.latency_ms || 0,
-            timestamp: new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      // Load messages directly in chronological order
+      const msgs = (detail.messages || []).map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        citations: m.citations || [],
+        confidence: m.confidence || 'medium',
+        model_used: m.model_used || 'groq',
+        latency_ms: m.latency_ms || 0,
+        timestamp: m.created_at
+          ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }));
+
+      // Keep strict chronological order: oldest queries at the top, newest at the bottom
+      setHistory(msgs);
+      if (msgs.length > 0) {
+        const lastAsst = [...msgs].reverse().find((m) => m.role === 'assistant');
+        if (lastAsst) {
+          setResponse({
+            query: msgs[msgs.length - 2]?.content || '',
+            answer: lastAsst.content,
+            citations: lastAsst.citations,
+            confidence: lastAsst.confidence,
+            model_used: lastAsst.model_used,
+            latency_ms: lastAsst.latency_ms,
           });
         }
-      }
-      // Keep chronological order: oldest queries at the top, newest at the bottom
-      setHistory(threadTurns);
-      if (threadTurns.length > 0) {
-        const latest = threadTurns[threadTurns.length - 1];
-        setResponse({
-          query: latest.query,
-          answer: latest.answer,
-          citations: latest.citations,
-          confidence: latest.confidence,
-          model_used: latest.model_used,
-          latency_ms: latest.latency_ms,
-        });
       }
     } catch (err) {
       setError(err.message || 'Failed to load conversation history');
@@ -134,18 +131,24 @@ export function useRAG() {
       }
 
       setResponse(data);
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setHistory((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
-          query: q.trim(),
-          effective_query: data.effective_query,
-          answer: data.answer,
+          id: `u-${Date.now()}`,
+          role: 'user',
+          content: q.trim(),
+          timestamp: nowStr,
+        },
+        {
+          id: `a-${Date.now()}`,
+          role: 'assistant',
+          content: data.answer,
           citations: data.citations,
           confidence: data.confidence,
           model_used: data.model_used,
           latency_ms: data.latency_ms,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: nowStr,
         },
       ]);
       return data;
