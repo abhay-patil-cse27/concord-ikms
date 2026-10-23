@@ -144,15 +144,25 @@ button {
   }
 }
 
-/* Custom Brutalist Block Scrollbar */
+/* Custom Brutalist Block Scrollbar (Light & Dark Theme) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #FFE600 #F4F0E8;
+}
+
+[data-theme='dark'] * {
+  scrollbar-color: #FFE600 #0A0A0A;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
 }
 
 ::-webkit-scrollbar-track {
   background: var(--bg-primary);
   border-left: 2px solid #0A0A0A;
+  border-top: 2px solid #0A0A0A;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -164,14 +174,27 @@ button {
   background: #FFD000;
 }
 
+::-webkit-scrollbar-corner {
+  background: var(--bg-primary);
+}
+
 [data-theme='dark'] ::-webkit-scrollbar-track {
   background: #0A0A0A;
   border-left: 2px solid #FFE600;
+  border-top: 2px solid #FFE600;
 }
 
 [data-theme='dark'] ::-webkit-scrollbar-thumb {
   background: #FFE600;
-  border: 2px solid #0A0A0A;
+  border: 2px solid #FFE600;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #FFD000;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-corner {
+  background: #0A0A0A;
 }
 
 /* Markdown Assistant Answer Styling */
