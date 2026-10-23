@@ -65,6 +65,7 @@ export default function Composer({
               size="md"
               onClick={onToggleSpeech}
               title={isListening ? 'Stop listening' : 'Start speech-to-text'}
+              aria-label={isListening ? 'Stop speech recognition' : 'Start speech recognition'}
               className="p-3"
             >
               {isListening ? <MicOff size={18} /> : <Mic size={18} />}

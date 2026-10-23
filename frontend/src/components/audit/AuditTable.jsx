@@ -84,6 +84,7 @@ export default function AuditTable({ events = [] }) {
                     onClick={() => handleCopy(hashString, evt.id)}
                     className="p-1 hover:text-brutal-yellow transition-colors"
                     title="Copy full SHA-256 hash"
+                    aria-label="Copy full SHA-256 hash"
                   >
                     {copiedId === evt.id ? <Check size={12} className="text-brutal-success" /> : <Copy size={12} />}
                   </button>

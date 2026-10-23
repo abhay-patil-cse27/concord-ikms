@@ -15,13 +15,44 @@ export default function CitationDrawer({
 }) {
   const panelRef = useRef(null);
 
-  // Esc key closes drawer
+  // Focus trap and Esc key handler
   useEffect(() => {
+    if (!isOpen) return;
+
+    const panelEl = panelRef.current;
+    if (!panelEl) return;
+
+    const focusable = panelEl.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstEl = focusable[0];
+    const lastEl = focusable[focusable.length - 1];
+
+    if (firstEl) {
+      firstEl.focus();
+    }
+
     function handleKeyDown(e) {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstEl) {
+            e.preventDefault();
+            lastEl?.focus();
+          }
+        } else {
+          if (document.activeElement === lastEl) {
+            e.preventDefault();
+            firstEl?.focus();
+          }
+        }
       }
     }
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);

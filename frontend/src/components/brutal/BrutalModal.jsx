@@ -32,13 +32,47 @@ export default function BrutalModal({
     };
   }, [isOpen]);
 
-  // Escape key handler
+  const modalRef = React.useRef(null);
+
+  // Focus trap and Escape key handler
   useEffect(() => {
+    if (!isOpen) return;
+
+    // Focus the first interactive element or modal itself
+    const modalEl = modalRef.current;
+    if (!modalEl) return;
+
+    const focusableElements = modalEl.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (firstElement) {
+      firstElement.focus();
+    }
+
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         onClose?.();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement?.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement?.focus();
+          }
+        }
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
@@ -59,6 +93,10 @@ export default function BrutalModal({
 
           {/* Modal Container */}
           <motion.div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
             variants={variants.modalContent}
             initial="initial"
             animate="animate"

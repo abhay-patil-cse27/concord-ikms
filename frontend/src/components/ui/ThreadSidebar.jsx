@@ -177,6 +177,7 @@ export default function ThreadSidebar({
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1 text-brutal-accent hover:bg-brutal-accent hover:text-brutal-white transition-all flex-shrink-0"
                         title="Delete session"
+                        aria-label={`Delete conversation session ${c.title || 'Untitled'}`}
                       >
                         <Trash2 size={12} />
                       </button>
