@@ -21,94 +21,94 @@
   --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ============================================================================
-     PRIMARY PALETTE: LIGHT THEME (Clean, High Contrast, Institutional Slate)
+     PRIMARY PALETTE: LIGHT THEME (Yellow Brutalist Hero & Paper Contrast)
      ============================================================================ */
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f1f5f9;
-  --bg-subtle: #f1f5f9;
-  --bg-glass: rgba(255, 255, 255, 0.95);
+  --bg-primary: #F4F0E8;
+  --bg-secondary: #FAFAFA;
+  --bg-card: #FAFAFA;
+  --bg-card-hover: #F4F0E8;
+  --bg-subtle: #F4F0E8;
+  --bg-glass: #FAFAFA;
 
-  --border-light: #e2e8f0;
-  --border-focus: #0284c7;
-  --border-card: #e2e8f0;
+  --border-light: #0A0A0A;
+  --border-focus: #FFE600;
+  --border-card: #0A0A0A;
 
-  --primary: #0284c7;
-  --primary-hover: #0369a1;
-  --primary-glow: rgba(2, 132, 199, 0.2);
+  --primary: #FFE600;
+  --primary-hover: #FFD000;
+  --primary-glow: rgba(255, 230, 0, 0.4);
 
-  --status-success: #15803d;
-  --status-success-bg: #dcfce7;
-  --status-warning: #b45309;
-  --status-warning-bg: #fef3c7;
-  --status-danger: #b91c1c;
-  --status-danger-bg: #fee2e2;
-  --status-info: #0369a1;
-  --status-info-bg: #e0f2fe;
+  --status-success: #1B5E20;
+  --status-success-bg: #E8F5E9;
+  --status-warning: #B45309;
+  --status-warning-bg: #FEF3C7;
+  --status-danger: #FF3333;
+  --status-danger-bg: #FEE2E2;
+  --status-info: #0A0A0A;
+  --status-info-bg: #FFE600;
 
-  --text-main: #0f172a;        /* Deep slate navy for high contrast */
-  --text-muted: #475569;       /* Slate 600 */
-  --text-dim: #64748b;         /* Slate 500 */
-  --text-inverse: #ffffff;
+  --text-main: #0A0A0A;        /* Pitch black for ultra-sharp typography */
+  --text-muted: #4B5563;       /* Neutral slate */
+  --text-dim: #6B7280;
+  --text-inverse: #FAFAFA;
 
-  --input-bg: #ffffff;
-  --input-border: #cbd5e1;
-  --input-placeholder: #94a3b8;
-  --input-text: #0f172a;
+  --input-bg: #FAFAFA;
+  --input-border: #0A0A0A;
+  --input-placeholder: #9CA3AF;
+  --input-text: #0A0A0A;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 2px 2px 0px #0A0A0A;
+  --shadow-md: 4px 4px 0px #0A0A0A;
+  --shadow-lg: 8px 8px 0px #0A0A0A;
 
-  --banner-bg: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
-  --banner-border: #bae6fd;
+  --banner-bg: #FFE600;
+  --banner-border: #0A0A0A;
 }
 
 /* ============================================================================
    DARK THEME PALETTE (Deep Slate Navy, Glow Effects)
    ============================================================================ */
 [data-theme='dark'] {
-  --bg-primary: #0a0d14;
-  --bg-secondary: #0f172a;
-  --bg-card: #131b2e;
-  --bg-card-hover: #1e293b;
-  --bg-subtle: #1e293b;
-  --bg-glass: rgba(15, 23, 42, 0.92);
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #141414;
+  --bg-card: #181818;
+  --bg-card-hover: #222222;
+  --bg-subtle: #222222;
+  --bg-glass: #181818;
 
-  --border-light: rgba(255, 255, 255, 0.1);
-  --border-focus: rgba(56, 189, 248, 0.6);
-  --border-card: rgba(255, 255, 255, 0.08);
+  --border-light: #FFE600;
+  --border-focus: #FFE600;
+  --border-card: #FFE600;
 
-  --primary: #38bdf8;
-  --primary-hover: #0284c7;
-  --primary-glow: rgba(56, 189, 248, 0.3);
+  --primary: #FFE600;
+  --primary-hover: #FFD000;
+  --primary-glow: rgba(255, 230, 0, 0.4);
 
-  --status-success: #34d399;
-  --status-success-bg: rgba(16, 185, 129, 0.15);
-  --status-warning: #fbbf24;
-  --status-warning-bg: rgba(245, 158, 11, 0.15);
-  --status-danger: #f87171;
-  --status-danger-bg: rgba(239, 68, 68, 0.15);
-  --status-info: #38bdf8;
-  --status-info-bg: rgba(14, 165, 233, 0.15);
+  --status-success: #00D664;
+  --status-success-bg: rgba(0, 214, 100, 0.15);
+  --status-warning: #FFD000;
+  --status-warning-bg: rgba(255, 208, 0, 0.15);
+  --status-danger: #FF3333;
+  --status-danger-bg: rgba(255, 51, 51, 0.15);
+  --status-info: #FFE600;
+  --status-info-bg: rgba(255, 230, 0, 0.15);
 
-  --text-main: #f8fafc;
-  --text-muted: #cbd5e1;
-  --text-dim: #94a3b8;
-  --text-inverse: #0f172a;
+  --text-main: #FAFAFA;
+  --text-muted: #9CA3AF;
+  --text-dim: #6B7280;
+  --text-inverse: #0A0A0A;
 
-  --input-bg: #0f172a;
-  --input-border: rgba(255, 255, 255, 0.15);
-  --input-placeholder: #64748b;
-  --input-text: #f8fafc;
+  --input-bg: #141414;
+  --input-border: #FFE600;
+  --input-placeholder: #6B7280;
+  --input-text: #FAFAFA;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 2px 2px 0px #FFE600;
+  --shadow-md: 4px 4px 0px #FFE600;
+  --shadow-lg: 8px 8px 0px #FFE600;
 
-  --banner-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 132, 199, 0.2) 100%);
-  --banner-border: rgba(56, 189, 248, 0.25);
+  --banner-bg: #141414;
+  --banner-border: #FFE600;
 }
 
 *, *::before, *::after {
@@ -175,76 +175,103 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-/* Glassmorphism Panel */
+/* Yellow Brutalist Card Surface */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  border: 2px solid #0A0A0A;
+  border-radius: 0px;
+  box-shadow: 4px 4px 0px #0A0A0A;
 }
 
-/* Buttons */
+[data-theme='dark'] .glass-panel {
+  border-color: #FFE600;
+  box-shadow: 4px 4px 0px #FFE600;
+}
+
+/* Brutalist Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 0.65rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  transition: var(--transition);
+  font-size: 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 0px;
+  border: 2px solid #0A0A0A;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .btn-primary {
-  background: var(--primary);
-  color: #ffffff;
-  box-shadow: var(--shadow-sm);
+  background: #FFE600;
+  color: #0A0A0A;
+  box-shadow: 3px 3px 0px #0A0A0A;
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  background: #FFD000;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px #0A0A0A;
+}
+
+.btn-primary:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #0A0A0A;
 }
 
 .btn-secondary {
-  background: var(--bg-subtle);
-  color: var(--text-main);
-  border: 1px solid var(--border-light);
+  background: #FAFAFA;
+  color: #0A0A0A;
+  border: 2px solid #0A0A0A;
+  box-shadow: 3px 3px 0px #0A0A0A;
 }
 
 .btn-secondary:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-light);
+  background: #F4F0E8;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px #0A0A0A;
 }
 
 .btn-ghost {
-  color: var(--text-muted);
+  color: #0A0A0A;
+  border: 2px solid transparent;
 }
 
 .btn-ghost:hover {
-  color: var(--text-main);
-  background: var(--bg-subtle);
+  background: #FFE600;
+  color: #0A0A0A;
+  border: 2px solid #0A0A0A;
+  box-shadow: 2px 2px 0px #0A0A0A;
 }
 
-/* Badges */
+/* Brutalist Badges */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.25rem 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: var(--radius-full);
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 0px;
+  border: 2px solid #0A0A0A;
+  box-shadow: 2px 2px 0px #0A0A0A;
+}
+
+.badge-info {
+  background: #FFE600;
+  color: #0A0A0A;
 }
 
 .badge-success {
-  background: var(--status-success-bg);
-  color: var(--status-success);
-  border: 1px solid rgba(21, 128, 61, 0.25);
+  background: #1B5E20;
+  color: #FAFAFA;
 }
 
 .badge-warning {

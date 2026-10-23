@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   Key, 
@@ -12,9 +12,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import HealthCard from '../components/HealthCard';
+import { BrutalCard, BrutalButton, BrutalBadge } from '../components/brutal';
 
+/**
+ * DashboardView
+ * Redesigned in pure Yellow Brutalist aesthetics with zero inline styles.
+ */
 export default function DashboardView() {
   const { user } = useAuth();
+  const [reseedStatus, setReseedStatus] = useState(null);
 
   const role = user?.roles?.[0];
   const permissions = role?.permissions || [];
@@ -31,182 +37,153 @@ export default function DashboardView() {
   ];
 
   return (
-    <div className="animate-fade-in">
-      {/* Welcome & Persona Banner */}
-      <div
-        className="glass-panel"
-        style={{
-          padding: '2rem',
-          marginBottom: '1.5rem',
-          background: 'var(--banner-bg)',
-          border: '1px solid var(--banner-border)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1.5rem',
-        }}
+    <div className="flex flex-col gap-6">
+      {/* Welcome & Persona Hero Card */}
+      <BrutalCard
+        variant="yellow"
+        className="p-6 md:p-8"
       >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-            <span className="badge badge-info" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-              {role?.name || 'Active Persona'}
-            </span>
-            <span style={{ fontSize: '0.825rem', color: 'var(--text-muted)' }}>
-              • Code: <strong style={{ color: 'var(--primary)' }}>{role?.code}</strong>
-            </span>
-          </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            Welcome, {user?.full_name}
-          </h1>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Authenticated under institutional scope • Account: <span style={{ color: 'var(--text-main)' }}>{user?.email}</span>
-          </p>
-        </div>
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="flex-1 min-w-[280px]">
+            <div className="flex items-center gap-2 mb-2">
+              <BrutalBadge tone="black">
+                {role?.name || 'Active Persona'}
+              </BrutalBadge>
+              <span className="font-mono text-xs font-bold text-brutal-black/80">
+                • Code: <strong>{role?.code || 'platform_admin'}</strong>
+              </span>
+            </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div style={{ textAlign: 'right', background: 'var(--bg-card)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assigned Roles</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
-              {user?.roles?.length || 0}
-            </div>
+            <h1 className="font-display font-black text-2xl md:text-4xl uppercase tracking-tight text-brutal-black mb-2">
+              Welcome, {user?.full_name}
+            </h1>
+
+            <p className="font-mono text-xs md:text-sm text-brutal-black/85">
+              Authenticated under institutional scope • Account: <span className="font-bold underline">{user?.email}</span>
+            </p>
           </div>
-          <div style={{ textAlign: 'right', background: 'var(--bg-card)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Granted Permissions</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--status-success)' }}>
-              {role?.code === 'platform_admin' ? 'ALL (Superuser)' : permissions.length}
+
+          <div className="flex items-center gap-3">
+            <div className="bg-brutal-white border-2 border-brutal-black shadow-brutal-sm p-3 min-w-[120px] text-right">
+              <div className="font-mono text-[10px] font-black uppercase text-brutal-muted">Assigned Roles</div>
+              <div className="font-mono text-2xl font-black text-brutal-black">{user?.roles?.length || 1}</div>
+            </div>
+
+            <div className="bg-brutal-white border-2 border-brutal-black shadow-brutal-sm p-3 min-w-[140px] text-right">
+              <div className="font-mono text-[10px] font-black uppercase text-brutal-muted">Granted Permissions</div>
+              <div className="font-mono text-2xl font-black text-brutal-black">
+                {role?.code === 'platform_admin' ? 'ALL' : permissions.length}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </BrutalCard>
 
       {/* Admin Demo Management Bar */}
       {role?.code === 'platform_admin' && (
-        <div 
-          className="glass-panel animate-fade-in" 
-          style={{ 
-            padding: '1rem 1.5rem', 
-            marginBottom: '1.5rem', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            flexWrap: 'wrap', 
-            gap: '1rem',
-            background: 'rgba(56, 189, 248, 0.05)',
-            border: '1px solid rgba(56, 189, 248, 0.25)'
-          }}
+        <BrutalCard
+          variant="default"
+          className="p-4"
+          headerVariant="yellow"
         >
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShieldCheck size={18} color="var(--primary)" />
-              Institutional Demo Evaluator Controls
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="font-display font-black text-sm uppercase tracking-tight flex items-center gap-2 text-brutal-black dark:text-brutal-white">
+                <ShieldCheck size={18} className="text-brutal-black dark:text-brutal-yellow" />
+                Institutional Demo Evaluator Controls
+              </div>
+              <p className="font-mono text-xs text-brutal-muted dark:text-brutal-muted-dark mt-0.5">
+                Reset and re-populate canonical cross-department documents (CSE, ENTC, Exam Regulations) into SQLite and ChromaDB.
+              </p>
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-              Reset and re-populate canonical cross-department documents (CSE, ENTC, Exam Regulations) into SQLite and ChromaDB.
-            </div>
-          </div>
 
-          <button
-            onClick={async () => {
-              if (window.confirm('Reset and re-populate canonical demo knowledge records into SQLite and ChromaDB?')) {
-                try {
-                  const res = await api.reseedDemoData();
-                  alert(res.message || 'Demo records reseeded successfully!');
-                } catch (err) {
-                  alert(`Reseed failed: ${err.message}`);
+            <BrutalButton
+              variant="primary"
+              size="sm"
+              icon={Layers}
+              onClick={async () => {
+                if (window.confirm('Reset and re-populate canonical demo knowledge records into SQLite and ChromaDB?')) {
+                  try {
+                    setReseedStatus('Reseeding...');
+                    const res = await api.reseedDemoData();
+                    alert(res.message || 'Demo records reseeded successfully!');
+                  } catch (err) {
+                    alert(`Reseed failed: ${err.message}`);
+                  } finally {
+                    setReseedStatus(null);
+                  }
                 }
-              }
-            }}
-            className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}
-          >
-            <Layers size={16} />
-            Reseed Demo Knowledge Base
-          </button>
-        </div>
+              }}
+            >
+              {reseedStatus || 'Reseed Demo Knowledge Base'}
+            </BrutalButton>
+          </div>
+        </BrutalCard>
       )}
 
       {/* Live System Health */}
       <HealthCard />
 
       {/* Grid: M1 Foundation Checklist & Effective Permissions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Foundation Slices Verification */}
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-            <CheckCircle2 size={20} color="var(--status-success)" />
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Milestone 1 Foundation Slice</h2>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {m1Capabilities.map((cap, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid var(--border-light)',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.2rem' }}>
-                    {cap.title}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                    {cap.desc}
-                  </div>
+        <BrutalCard
+          title="Milestone 1 Foundation Slice"
+          badge="Active"
+          headerVariant="default"
+          className="p-0"
+          bodyClassName="p-4 flex flex-col gap-2.5"
+        >
+          {m1Capabilities.map((cap, idx) => (
+            <div
+              key={idx}
+              className="flex items-start justify-between gap-3 p-3 border-2 border-brutal-black/20 dark:border-brutal-yellow/20 bg-brutal-paper/50 dark:bg-brutal-dark-surface"
+            >
+              <div>
+                <div className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white">
+                  {cap.title}
                 </div>
-                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
-                  {cap.status}
-                </span>
+                <div className="font-mono text-[11px] text-brutal-muted dark:text-brutal-muted-dark mt-0.5">
+                  {cap.desc}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <BrutalBadge tone="green" size="sm">
+                {cap.status}
+              </BrutalBadge>
+            </div>
+          ))}
+        </BrutalCard>
 
         {/* Server-Enforced RBAC Permissions */}
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Key size={20} color="var(--primary)" />
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Effective Security Permissions</h2>
-            </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-              OWASP ASVS 4.1 Enforced
-            </span>
-          </div>
-
-          {role?.code === 'platform_admin' ? (
-            <div style={{ padding: '1rem', background: 'rgba(56, 189, 248, 0.08)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(56, 189, 248, 0.25)', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.25rem' }}>
+        <BrutalCard
+          title="Effective Security Permissions"
+          subtitle="OWASP ASVS 4.1 Enforced"
+          badge="RBAC"
+          headerVariant="default"
+          className="p-0"
+          bodyClassName="p-4 flex flex-col gap-4"
+        >
+          {role?.code === 'platform_admin' && (
+            <div className="p-3 bg-brutal-yellow border-2 border-brutal-black shadow-brutal-sm">
+              <div className="font-display font-black text-xs uppercase text-brutal-black">
                 Full Platform Administrative Delegation
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <div className="font-mono text-[11px] text-brutal-black/85 mt-0.5">
                 This persona bypasses individual route guards with unrestricted administrative authorization across all organizational scopes.
               </div>
             </div>
-          ) : null}
+          )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.6rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {permissions.map((p) => (
               <div
                 key={p.code}
-                style={{
-                  padding: '0.65rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border-light)',
-                }}
+                className="p-2.5 border-2 border-brutal-black/30 dark:border-brutal-yellow/30 bg-brutal-paper dark:bg-brutal-dark-surface"
               >
-                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'monospace' }}>
+                <div className="font-mono text-xs font-black text-brutal-black dark:text-brutal-yellow">
                   {p.code}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
+                <div className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark mt-0.5">
                   {p.description}
                 </div>
               </div>
@@ -214,12 +191,11 @@ export default function DashboardView() {
           </div>
 
           {permissions.length === 0 && role?.code !== 'platform_admin' && (
-            <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+            <div className="p-4 text-center font-mono text-xs text-brutal-muted">
               No custom permissions granted for this role.
             </div>
           )}
-        </div>
-
+        </BrutalCard>
       </div>
     </div>
   );
