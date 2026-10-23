@@ -114,51 +114,50 @@ docker compose down
 
 ## 4. UI Architecture & Yellow Brutalist Design System
 
-The frontend is built with **React 18 + Vite 5** and features a **Yellow Brutalist Design System**:
-- **Design Aesthetic:** Bold editorial brutalism with hero high-voltage yellow (`#FFE600`), structural pitch black borders (`#0A0A0A`), architectural paper off-white (`#F4F0E8`), and restrained hazard red accents (`#FF3333`).
-- **Tactile Shadows & Mechanical Borders:** Hard 2px/3px solid borders with 4px/8px non-blurred offset drop shadows (`shadow-brutal`), hover lift (`-2px, -2px`), and tactile button press response (`2px, 2px`).
-- **Theme Synchronization:** Seamless brutalist dark mode (`[data-theme='dark']` and `.dark` class) with near-black base (`#121212`), high-contrast yellow borders, and dark cards (`#1C1C1C`).
+The frontend is built with **React 18 + Vite 5** and implements an uncompromising **Yellow Brutalist Design System**:
+- **Design Aesthetic:** Bold editorial brutalism featuring hero high-voltage yellow (`#FFE600`), structural pitch black borders (`#0A0A0A`), architectural paper off-white (`#F4F0E8`), and restrained hazard red accents (`#FF3333`).
+- **Tactile Shadows & Mechanical Borders:** Hard 2px/3px solid borders with 2px/4px/8px non-blurred offset drop shadows (`shadow-brutal`, `shadow-brutal-lg`), hover lift (`-2px, -2px`), and tactile button press response (`2px, 2px`).
+- **Theme Synchronization:** Seamless brutalist dark mode (`[data-theme='dark']` and `.dark` class) with pitch black base (`#0A0A0A`), high-voltage yellow borders (`#FFE600`), and dark card surfaces (`#181818`).
+- **Typography & Font System:**
+  - Display: `Space Grotesk` (headings, KPI metrics, brand markers).
+  - Body: `Inter` (readable data grids, system labels, narrative content).
+  - Monospace: `JetBrains Mono` (hashes, status badges, timestamps, audit trails).
 - **Reusable Primitive Library ([`frontend/src/components/brutal/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/brutal)):**
-  - `BrutalButton.jsx`: Mechanical tactile button (`primary`, `secondary`, `dark`, `danger`, `ghost`).
-  - `BrutalCard.jsx`: Heavy-bordered container with optional yellow header and hard offset shadow.
-  - `BrutalBadge.jsx`: Monospaced high-contrast status pills (`yellow`, `black`, `paper`, `red`, `green`).
+  - `BrutalButton.jsx`: Mechanical tactile button with variants (`primary`, `secondary`, `dark`, `danger`, `ghost`).
+  - `BrutalCard.jsx`: Heavy-bordered architectural card with optional yellow header and offset shadow.
+  - `BrutalBadge.jsx`: Monospaced high-contrast status badge (`yellow`, `black`, `paper`, `red`, `green`).
   - `BrutalInput.jsx`: Rectangular input with hard focus lift and label/error bindings.
-  - `BrutalModal.jsx`: Editorial dialog with yellow header, flat dark backdrop, and escape listeners.
-  - `BrutalTable.jsx`: Architectural data table with monospaced rows, sticky header, and hover effects.
+  - `BrutalModal.jsx`: Editorial dialog with yellow header, flat dark backdrop, focus trapping, and escape listeners.
+  - `BrutalTable.jsx`: Architectural data table with monospaced rows, sticky header, and hover effects wrapped in `overflow-x-auto`.
   - `BrutalTabs.jsx`: Segmented brutalist tab bar with active yellow lift.
   - `BrutalSkeleton.jsx` & `BrutalEmptyState.jsx`: Loading and zero-state placeholders.
-  - `BrutalToast.jsx`: Fixed alert notification banner with hard offset shadows.
-- **Decomposed Layout Shell ([`frontend/src/components/layout/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/layout)):**
-  - `AppShell.jsx`: Full-height frame coordinating header, ticker, sidebar, and view transitions.
-  - `Navbar.jsx`: Brand identity, mobile drawer toggle, user profile dropdown with DEV-only role switching, and logout.
-  - `Sidebar.jsx`: Collapsible navigation with shortened labels (`Overview`, `Departments`, `Users`, `Audit Logs`, `Ingestion`, `Search`, `Grounded Q&A`, `Benchmarks`) and explicit tooltips.
-  - `MarqueeTicker.jsx`: Seamless edge-to-edge institutional ticker tape with hard bottom border and offset shadow.
-  - `PageTransition.jsx`: Framer Motion view transition wrapper.
-- **Custom Interaction Hooks ([`frontend/src/hooks/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/hooks)):**
-  - `useScrollReveal.js`: IntersectionObserver entry reveal hook respecting `prefers-reduced-motion`.
-  - `useMagnetic.js`: Tactile hover cursor displacement hook for hero action triggers.
-- **Institutional Portal Landing ([`frontend/src/views/LandingView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/LandingView.jsx)):**
-  - Modular section breakdown: `HeroSection`, `StatsStrip`, `FeatureGrid`, `HowItWorks`, `RoleCards`, and `FooterBlock`.
-  - Oversized editorial typography, technical specification cards, and zero generic gradients or emojis.
-- **Security Authentication Gateway ([`frontend/src/views/LoginView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/LoginView.jsx)):**
-  - Instant 1-click persona quick login cards (Admin, HOD CSE, Faculty, Student) with pre-fill capability.
-  - Built with `BrutalInput` and `BrutalCard`, providing error alerts, loading state feedback, and OWASP compliance notes.
-- **Knowledge Ingestion & Document Governance ([`frontend/src/views/DocumentsView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/DocumentsView.jsx)):**
-  - Modular section architecture: `DocumentsHeader`, `DocumentFilters`, and `DocumentTable`.
-  - Drag-and-drop file ingestion dialog with `UploadModal.jsx`.
-  - Semantic vector chunk inspection with OCR vs native tagging in `ChunkInspectorModal.jsx`.
-  - Live search filtering, department scope dropdown, and review queue tabs.
+  - `BrutalToast.jsx`: Fixed alert notification banner with `role="status"` and `aria-live="polite"`.
+- **Performance & Code-Splitting Architecture:**
+  - Route views lazy-loaded via `React.lazy()` with `BrutalSkeleton` fallback in `App.jsx`.
+  - Vendor chunk splitting in `vite.config.js`:
+    - `vendor-react` (React, React DOM) ~134 kB
+    - `vendor-motion` (Framer Motion) ~115 kB
+    - `vendor-markdown` (React Markdown, Remark GFM) ~158 kB
+    - `vendor-icons` (Lucide React) ~33 kB
+    - Application entry chunk ~58 kB
+    - Zero chunks exceed 500 kB.
+- **Accessibility & Motion Compliance:**
+  - High-contrast visible focus rings (`:focus-visible` with 3px yellow outline).
+  - `prefers-reduced-motion` compliance across all Framer Motion presets and global CSS transitions.
+  - Touch targets minimum 44px on mobile viewports.
 
 ---
 
-## 5. Conversational UI & Animations System
+## 5. Conversational RAG & Ingestion System
 
-The RAG Assistant uses modern interactive animations and chronological layout:
-- **Chronological Flow:** Questions and synthesized answers flow top-to-bottom with smooth automatic scrolling (`messagesEndRef.current.scrollIntoView`).
-- **Entrance Transitions:**
-  - `.animate-user-msg`: Fluid slide-up transition from bottom right with scale pop (`userMsgSlide 0.28s`).
-  - `.animate-assistant-msg`: Smooth fade-and-lift elevation (`assistantMsgSlide 0.35s`).
-  - `.typing-dot`: Staggered wave animation (`pulseDot 1.4s`) while Groq Cloud synthesizes evidence chunks.
-- **Sanitized Markdown Rendering:** Strips out raw `<br>` and HTML artifacts, rendering clean typography, tables, and clickable evidence citation badges `[1]`, `[2]`.
-- **Institutional Single-Card Surface:** Side panel threads and conversation stream unified in a clean, elevated card with zero disjointed borders.
+- **Grounded Q&A ([`frontend/src/views/RAGAssistantView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/RAGAssistantView.jsx)):**
+  - Instant citation inspection drawer with keyboard trapping (Tab containment, Esc to close).
+  - High-contrast assistant response formatting with markdown tables and sanitized code blocks.
+  - Suggested prompts, live query status, and speech recognition input.
+- **Ingestion & Knowledge Governance ([`frontend/src/views/DocumentsView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/DocumentsView.jsx)):**
+  - Drag-and-drop document upload with `UploadModal.jsx`.
+  - Vector chunk inspector modal with OCR vs Native extraction details and confidence scores.
+- **Institutional Benchmarking & Verification ([`frontend/src/views/BenchmarkView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/BenchmarkView.jsx)):**
+  - KPI telemetry cards, live benchmark runner, and department latency matrices.
+
 
