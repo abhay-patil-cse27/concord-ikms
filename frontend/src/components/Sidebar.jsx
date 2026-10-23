@@ -10,11 +10,26 @@ import {
   BarChart3,
   Lock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { cn } from '../lib/utils';
+import NavItem from './layout/NavItem';
 
-export default function Sidebar({ activeTab, setActiveTab }) {
+/**
+ * Sidebar
+ * Modular Yellow Brutalist sidebar navigation.
+ * Desktop: Collapsible width with hard borders and tactile buttons.
+ * Mobile: Slide-in drawer with solid dark backdrop.
+ */
+export default function Sidebar({
+  activeTab,
+  setActiveTab,
+  isMobileOpen = false,
+  onCloseMobile
+}) {
   const { hasPermission, user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -44,226 +59,165 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       label: 'Security Audit Logs',
       icon: ShieldAlert,
       accessible: hasPermission('audit:read'),
-      badge: 'Security',
+      badge: 'SHA-256',
     },
     {
       id: 'documents',
       label: 'Knowledge Ingestion',
       icon: FileText,
       accessible: true,
-      milestone: 'M2',
+      badge: 'OCR',
     },
     {
       id: 'search',
       label: 'Contextual Search',
       icon: Search,
       accessible: true,
-      milestone: 'M3',
+      badge: 'RRF',
     },
     {
       id: 'rag',
       label: 'Grounded Q&A (Groq)',
       icon: Bot,
       accessible: true,
-      milestone: 'M4',
+      badge: 'AI',
     },
     {
       id: 'benchmarks',
       label: 'Evaluation & Benchmarks',
       icon: BarChart3,
       accessible: true,
-      milestone: 'M7',
-      badge: 'Metrics',
+      badge: 'M7/M8',
     },
   ];
 
-  const sidebarWidth = collapsed ? '72px' : '260px';
+  const handleSelectTab = (id) => {
+    setActiveTab(id);
+    if (isMobileOpen && onCloseMobile) {
+      onCloseMobile();
+    }
+  };
 
-  return (
+  const sidebarContent = (
     <aside
-      style={{
-        width: sidebarWidth,
-        minWidth: sidebarWidth,
-        maxWidth: sidebarWidth,
-        height: 'calc(100vh - var(--navbar-height))',
-        position: 'sticky',
-        top: 'var(--navbar-height)',
-        borderRight: '1px solid var(--border-light)',
-        background: 'var(--bg-card)',
-        padding: collapsed ? '1.25rem 0.5rem' : '1.25rem 0.85rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.35rem',
-        transition: 'width 0.28s cubic-bezier(0.16, 1, 0.3, 1), padding 0.28s ease',
-        zIndex: 90,
-        overflowX: 'hidden',
-        overflowY: 'auto',
-      }}
+      className={cn(
+        'h-full bg-brutal-white dark:bg-brutal-dark border-r-3 border-brutal-black dark:border-brutal-yellow flex flex-col justify-between select-none transition-all duration-200 z-30',
+        collapsed ? 'w-18' : 'w-64',
+        'p-3'
+      )}
     >
-      {/* Header with Collapse Toggle */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          padding: '0 0.5rem',
-          marginBottom: '0.75rem',
-        }}
-      >
-        {!collapsed && (
-          <span
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              color: 'var(--text-dim)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.07em',
-              whiteSpace: 'nowrap',
-            }}
+      {/* Top Header & Collapse Toggle */}
+      <div>
+        <div className="flex items-center justify-between gap-2 px-1 pb-3 mb-2 border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20">
+          {!collapsed && (
+            <span className="font-mono text-[10px] font-black uppercase tracking-widest text-brutal-muted dark:text-brutal-muted-dark">
+              Core Navigation
+            </span>
+          )}
+
+          {/* Desktop collapse toggle */}
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden md:flex p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            aria-label={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
-            Modules
-          </span>
-        )}
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
 
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="btn btn-secondary"
-          style={{
-            padding: '0.35rem',
-            borderRadius: '6px',
-            border: '1px solid var(--border-light)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            background: 'var(--bg-secondary)',
-          }}
-          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          aria-label={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-        >
-          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-        </button>
-      </div>
-
-      {/* Navigation Items */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          const isLocked = !item.accessible;
-
-          return (
+          {/* Mobile close toggle */}
+          {onCloseMobile && (
             <button
-              key={item.id}
-              onClick={() => {
-                if (item.accessible) {
-                  setActiveTab(item.id);
-                }
-              }}
-              disabled={isLocked}
-              className={`sidebar-nav-btn ${isActive ? 'active' : ''}`}
-              title={collapsed ? item.label : undefined}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: collapsed ? 'center' : 'space-between',
-                padding: collapsed ? '0.75rem 0' : '0.65rem 0.85rem',
-                borderRadius: 'var(--radius-md)',
-                color: isActive ? 'var(--primary)' : isLocked ? 'var(--text-dim)' : 'var(--text-muted)',
-                border: isActive ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid transparent',
-                cursor: isLocked ? 'not-allowed' : 'pointer',
-                opacity: isLocked ? 0.45 : 1,
-                width: '100%',
-              }}
+              type="button"
+              onClick={onCloseMobile}
+              className="md:hidden p-1.5 border-2 border-brutal-black bg-brutal-yellow text-brutal-black"
+              aria-label="Close Navigation Drawer"
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  justifyContent: collapsed ? 'center' : 'flex-start',
-                  minWidth: 0,
-                }}
-              >
-                <Icon
-                  size={18}
-                  style={{ flexShrink: 0 }}
-                  color={isActive ? 'var(--primary)' : isLocked ? 'var(--text-dim)' : 'currentColor'}
-                />
-                {!collapsed && (
-                  <span
-                    style={{
-                      fontSize: '0.85rem',
-                      fontWeight: isActive ? 600 : 500,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {item.label}
-                  </span>
-                )}
-              </div>
-
-              {!collapsed && (
-                <div>
-                  {isLocked ? (
-                    <Lock size={13} color="var(--text-dim)" />
-                  ) : item.milestone ? (
-                    <span
-                      style={{
-                        fontSize: '0.65rem',
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '4px',
-                        background: 'rgba(255,255,255,0.06)',
-                        color: 'var(--text-dim)',
-                      }}
-                    >
-                      {item.milestone}
-                    </span>
-                  ) : item.badge ? (
-                    <span
-                      style={{
-                        fontSize: '0.65rem',
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '4px',
-                        background: 'rgba(56, 189, 248, 0.1)',
-                        color: 'var(--primary)',
-                      }}
-                    >
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </div>
-              )}
+              <X size={16} />
             </button>
-          );
-        })}
+          )}
+        </div>
+
+        {/* Navigation Item Stack */}
+        <nav className="flex flex-col gap-1.5" aria-label="Sidebar Navigation">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            const isAccessible = item.accessible;
+
+            if (!isAccessible) {
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 border-2 border-transparent text-brutal-muted/50 dark:text-brutal-muted-dark/40 font-mono text-xs font-bold uppercase cursor-not-allowed select-none',
+                    collapsed && 'justify-center'
+                  )}
+                  title={`${item.label} (Access Restricted)`}
+                >
+                  <Lock size={16} className="flex-shrink-0" />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </div>
+              );
+            }
+
+            return (
+              <NavItem
+                key={item.id}
+                icon={item.icon}
+                label={item.label}
+                badge={item.badge}
+                isActive={isActive}
+                isCollapsed={collapsed}
+                onClick={() => handleSelectTab(item.id)}
+              />
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Footer Scope Indicator */}
+      {/* Footer Scope Card */}
       {!collapsed && (
-        <div
-          className="animate-fade-in"
-          style={{
-            marginTop: 'auto',
-            padding: '0.85rem 0.75rem',
-            background: 'rgba(255,255,255,0.02)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-light)',
-          }}
-        >
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
-            Effective Scope
+        <div className="mt-4 p-3 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm">
+          <div className="flex items-center gap-1.5 mb-1 text-brutal-black dark:text-brutal-yellow">
+            <ShieldCheck size={14} />
+            <span className="font-mono text-[10px] font-black uppercase tracking-wider">
+              Enforced Scope
+            </span>
           </div>
-          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>
-            {user?.roles?.[0]?.name || 'Anonymous'}
+          <div className="font-mono text-xs font-black text-brutal-black dark:text-brutal-white truncate">
+            {user?.roles?.[0]?.name || user?.role_code || 'STUDENT CSE'}
           </div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.15rem' }}>
-            Server-enforced RBAC
+          <div className="font-mono text-[9px] text-brutal-muted dark:text-brutal-muted-dark uppercase mt-0.5">
+            0.0% Security Leakage Gate
           </div>
         </div>
       )}
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <div className="hidden md:block h-full flex-shrink-0">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile Slide-in Drawer with Backdrop */}
+      {isMobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Flat dark backdrop */}
+          <div
+            onClick={onCloseMobile}
+            className="fixed inset-0 bg-brutal-black/80"
+            aria-hidden="true"
+          />
+          {/* Drawer Panel */}
+          <div className="relative w-72 max-w-[85vw] h-full z-10">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ==============================================================================
    CONCORD — Enterprise Institutional Design System (Vanilla CSS Tokens)
    Strict Contrast, High Legibility, Smooth GPU Transitions, Light/Dark Modes

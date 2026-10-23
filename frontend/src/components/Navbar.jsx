@@ -1,111 +1,84 @@
 import React from 'react';
-import { Shield, UserCircle, LogOut, RefreshCw, Sun, Moon } from 'lucide-react';
+import { Shield, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import RoleSwitcher from './layout/RoleSwitcher';
+import ThemeToggle from './layout/ThemeToggle';
+import { BrutalButton, BrutalBadge } from './brutal';
 
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-  return (
-    <button
-      onClick={toggleTheme}
-      title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0.45rem',
-        borderRadius: 'var(--radius-md)',
-        background: 'var(--bg-subtle)',
-        border: '1px solid var(--border-light)',
-        color: 'var(--text-main)',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-      }}
-    >
-      {theme === 'light' ? <Moon size={16} color="var(--primary)" /> : <Sun size={16} color="var(--primary)" />}
-    </button>
-  );
-}
-
-export default function Navbar() {
-  const { user, logout, demoLogin } = useAuth();
-
-  const handleRoleSwitch = (roleCode) => {
-    demoLogin(roleCode).catch((err) => alert(err.message));
-  };
+/**
+ * Navbar
+ * Yellow Brutalist header bar with architectural brand identity,
+ * tactile role switcher, theme toggle, and mobile menu trigger.
+ */
+export default function Navbar({ onToggleMobileMenu }) {
+  const { user, logout } = useAuth();
 
   return (
-    <header
-      style={{
-        height: 'var(--navbar-height)',
-        borderBottom: '1px solid var(--border-light)',
-        background: 'var(--bg-glass)',
-        backdropFilter: 'blur(16px)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 2rem',
-      }}
-    >
-      {/* Brand Identity */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 0 15px rgba(56, 189, 248, 0.4)',
-          }}
-        >
-          <Shield size={22} color="#ffffff" />
-        </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-              CONCORD
-            </span>
-            <span className="badge badge-info" style={{ fontSize: '0.65rem', padding: '0.15rem 0.45rem' }}>
-              KIT Institutional v0.1
-            </span>
+    <header className="h-16 w-full bg-brutal-white dark:bg-brutal-dark border-b-3 border-brutal-black dark:border-brutal-yellow z-40 sticky top-0 px-4 md:px-6 flex items-center justify-between gap-4 select-none">
+      {/* Left: Mobile Toggle & Brand Identity */}
+      <div className="flex items-center gap-3 md:gap-4">
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            className="md:hidden p-2 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-yellow text-brutal-black shadow-brutal-sm"
+            aria-label="Toggle Navigation Menu"
+          >
+            <Menu size={18} />
+          </button>
+        )}
+
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-brutal-yellow border-2 border-brutal-black shadow-brutal-sm flex items-center justify-center flex-shrink-0">
+            <Shield size={20} className="text-brutal-black" strokeWidth={2.5} />
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            Knowledge Integration & Trust-Aware Intelligence Layer
+
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-display font-black text-lg md:text-xl tracking-tight uppercase text-brutal-black dark:text-brutal-white">
+                CONCORD
+              </span>
+              <BrutalBadge tone="yellow" size="sm" className="hidden sm:inline-flex">
+                KIT IKMS
+              </BrutalBadge>
+            </div>
+            <div className="hidden sm:block font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wider -mt-0.5">
+              Cognitive Institutional Memory
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Right Controls: Demo Role Quick Switcher & User Profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        {/* Theme Switcher */}
+      {/* Right: Role Quick-Switcher, Theme Toggle, User Status, Logout */}
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Role Switcher */}
+        {user && <RoleSwitcher className="hidden sm:flex" />}
+
+        {/* Theme Mode Toggle */}
         <ThemeToggle />
 
-        {/* User Card */}
+        {/* User Card & Logout */}
         {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                {user.full_name}
+          <div className="flex items-center gap-2 pl-2 border-l-2 border-brutal-black/20 dark:border-brutal-yellow/20">
+            <div className="hidden xl:block text-right">
+              <div className="font-mono text-xs font-bold text-brutal-black dark:text-brutal-white truncate max-w-[140px]">
+                {user.full_name || user.email}
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                {user.email}
+              <div className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark uppercase">
+                {user.role_code || 'VERIFIED USER'}
               </div>
             </div>
 
-            <button
+            <BrutalButton
+              variant="secondary"
+              size="sm"
               onClick={logout}
               title="Sign Out"
-              className="btn btn-ghost"
-              style={{ padding: '0.4rem', borderRadius: 'var(--radius-md)' }}
+              aria-label="Sign out"
+              className="px-2.5 py-1.5"
             >
-              <LogOut size={18} />
-            </button>
+              <LogOut size={15} />
+            </BrutalButton>
           </div>
         )}
       </div>

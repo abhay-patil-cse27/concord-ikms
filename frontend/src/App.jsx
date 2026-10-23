@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+import AppShell from './components/layout/AppShell';
 import LoginView from './views/LoginView';
 import DashboardView from './views/DashboardView';
 import DepartmentsView from './views/DepartmentsView';
@@ -118,24 +117,8 @@ export default function App() {
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <Navbar />
-      <div style={{ display: 'flex', flex: 1, height: 'calc(100vh - var(--navbar-height))', overflow: 'hidden' }}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <main
-          style={{
-            flex: 1,
-            padding: '2rem',
-            overflowY: 'auto',
-            height: '100%',
-            maxWidth: '100%',
-          }}
-        >
-          <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-            {renderContent()}
-          </div>
-        </main>
-      </div>
-    </div>
+    <AppShell activeTab={activeTab} setActiveTab={setActiveTab}>
+      {renderContent()}
+    </AppShell>
   );
 }

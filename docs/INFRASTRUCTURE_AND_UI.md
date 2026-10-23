@@ -112,25 +112,28 @@ docker compose down
 
 ---
 
-## 4. UI Architecture & Design System
+## 4. UI Architecture & Yellow Brutalist Design System
 
-The frontend is built with **React + Vite** and uses a bespoke Institutional Design System:
-- **Typography:** Inter (body) & Outfit (display headers) via Google Fonts.
-- **Theming:** High-contrast Institutional Light Theme default with seamless Dark Mode toggle via CSS variables (`--bg-primary`, `--bg-card`, `--text-main`, `--border-light`).
-- **Modular Components ([`frontend/src/components/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components)):**
-  - `Navbar.jsx`: Top navigation, live health indicator, role switcher pills (`Admin`, `HOD CSE`, `Faculty`, `Student`).
-  - `Sidebar.jsx`: Platform module navigation with RBAC access locks and milestone tags.
-  - `HealthCard.jsx`: Live heartbeat checking backend `/healthz` and database latency.
-  - `documents/`: Decomposed sub-components (`UploadModal`, `DocumentTable`, `ChunkInspectorModal`).
-  - `ui/`: Reusable primitives (`SearchBar`, `EvidenceCitationCard`).
-- **Interactive Views ([`frontend/src/views/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views)):**
-  - `LandingView.jsx`: Institutional welcome portal with search bar and feature highlights.
-  - `DashboardView.jsx`: System overview, permissions breakdown, and evaluator demo controls.
-  - `DocumentsView.jsx`: Ingestion, chunk inspector, and HOD governance review queue.
-  - `SearchView.jsx`: Contextual search with department filter and RRF score breakdowns.
-  - `RAGAssistantView.jsx`: Grounded Q&A assistant in a unified single-card layout with continuous Web Speech voice dictation, multi-turn conversational session persistence, slide-in animations, generating typing indicator dots, sanitized markdown rendering without raw `<br>` tags, and institutional PDF/print reporting.
-  - `ui/ThreadSidebar.jsx`: Reusable collapsible session thread sidebar grouping inquiries into Recents, Yesterday, and Previous 7 Days with instant search filtering.
-  - `BenchmarkView.jsx`: Empirical evaluation matrix (Hit Rate@5, MRR@5, latency) and live benchmark runner.
+The frontend is built with **React 18 + Vite 5** and features a **Yellow Brutalist Design System**:
+- **Design Aesthetic:** Bold editorial brutalism with hero high-voltage yellow (`#FFE600`), structural pitch black borders (`#0A0A0A`), architectural paper off-white (`#F4F0E8`), and restrained hazard red accents (`#FF3333`).
+- **Tactile Shadows & Mechanical Borders:** Hard 2px/3px solid borders with 4px/8px non-blurred offset drop shadows (`shadow-brutal`), hover lift (`-2px, -2px`), and tactile button press response (`2px, 2px`).
+- **Theme Synchronization:** Seamless brutalist dark mode (`[data-theme='dark']` and `.dark` class) with near-black base (`#121212`), high-contrast yellow borders, and dark cards (`#1C1C1C`).
+- **Reusable Primitive Library ([`frontend/src/components/brutal/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/brutal)):**
+  - `BrutalButton.jsx`: Mechanical tactile button (`primary`, `secondary`, `dark`, `danger`, `ghost`).
+  - `BrutalCard.jsx`: Heavy-bordered container with optional yellow header and hard offset shadow.
+  - `BrutalBadge.jsx`: Monospaced high-contrast status pills (`yellow`, `black`, `paper`, `red`, `green`).
+  - `BrutalInput.jsx`: Rectangular input with hard focus lift and label/error bindings.
+  - `BrutalModal.jsx`: Editorial dialog with yellow header, flat dark backdrop, and escape listeners.
+  - `BrutalTable.jsx`: Architectural data table with monospaced rows and hover effects.
+  - `BrutalTabs.jsx`: Segmented brutalist tab bar with active yellow lift.
+  - `BrutalSkeleton.jsx` & `BrutalEmptyState.jsx`: Loading and zero-state placeholders.
+  - `BrutalToast.jsx`: Fixed alert notification banner with hard offset shadows.
+- **Decomposed Layout Shell ([`frontend/src/components/layout/`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/layout)):**
+  - `AppShell.jsx`: Full-height frame coordinating header, ticker, sidebar, and view transitions.
+  - `Navbar.jsx`: Brand identity, mobile drawer toggle, `RoleSwitcher`, and `ThemeToggle`.
+  - `Sidebar.jsx`: Collapsible navigation with `NavItem` buttons and mobile slide-in drawer.
+  - `MarqueeTicker.jsx`: Editorial institutional ticker tape respecting `prefers-reduced-motion`.
+  - `PageTransition.jsx`: Framer Motion view transition wrapper.
 
 ---
 
