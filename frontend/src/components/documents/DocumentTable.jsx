@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { 
   FileText, 
   CheckCircle2, 
@@ -7,9 +8,18 @@ import {
   Layers, 
   Eye, 
   Download, 
-  Trash2 
+  Trash2,
+  Check,
+  X
 } from 'lucide-react';
+import { BrutalTable, BrutalBadge, BrutalButton } from '../brutal';
+import { variants } from '../../motion/presets';
 
+/**
+ * DocumentTable
+ * Yellow Brutalist table displaying ingested institutional documents,
+ * lifecycle metadata, OCR badges, chunk counts, and approval review actions.
+ */
 export default function DocumentTable({
   documents,
   departments,
@@ -19,192 +29,179 @@ export default function DocumentTable({
   onReview,
   onDelete,
 }) {
+  const getDeptCode = (deptId) => {
+    const dept = departments.find((d) => d.id === deptId);
+    return dept ? dept.code : 'GLOBAL';
+  };
+
+  const headers = [
+    'Document Details',
+    'Scope',
+    'Status',
+    'Lifecycle',
+    'Chunks',
+    'Size',
+    'Ingested',
+    { label: 'Actions', className: 'text-right' }
+  ];
+
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
-            <th style={{ padding: '0.75rem 1rem' }}>Document</th>
-            <th style={{ padding: '0.75rem 1rem' }}>Department</th>
-            <th style={{ padding: '0.75rem 1rem' }}>Governance</th>
-            <th style={{ padding: '0.75rem 1rem' }}>Version / Trust</th>
-            <th style={{ padding: '0.75rem 1rem' }}>Chunks</th>
-            <th style={{ padding: '0.75rem 1rem' }}>Size</th>
-            <th style={{ padding: '0.75rem 1rem' }}>Uploaded</th>
-            <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.map((doc) => {
-            const dept = departments.find((d) => d.id === doc.department_id);
-            return (
-              <tr
-                key={doc.id}
-                style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', transition: 'background 0.2s' }}
-              >
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <FileText size={16} color="var(--primary)" />
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{doc.title}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{doc.filename}</div>
+    <div className="w-full">
+      <BrutalTable headers={headers} stickyHeader>
+        {documents.map((doc, idx) => {
+          const deptCode = getDeptCode(doc.department_id);
+
+          return (
+            <motion.tr
+              key={doc.id}
+              variants={variants.staggerItem}
+              className="border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20 hover:bg-brutal-yellow/10 transition-colors font-mono text-xs"
+            >
+              {/* Document Title & Filename */}
+              <td className="p-3.5">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 bg-brutal-yellow border-2 border-brutal-black flex items-center justify-center flex-shrink-0 mt-0.5 shadow-brutal-sm">
+                    <FileText size={16} className="text-brutal-black" strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-sans font-bold text-sm text-brutal-black dark:text-brutal-white truncate max-w-xs md:max-w-sm" title={doc.title}>
+                      {doc.title}
+                    </div>
+                    <div className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark truncate max-w-xs">
+                      {doc.filename}
                     </div>
                   </div>
-                </td>
+                </div>
+              </td>
 
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <span className="badge badge-info">{dept ? dept.code : 'DEPT'}</span>
-                </td>
+              {/* Department Scope Badge */}
+              <td className="p-3.5">
+                <BrutalBadge tone="yellow" size="sm">
+                  {deptCode}
+                </BrutalBadge>
+              </td>
 
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  {doc.status === 'processed' ? (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#22c55e', fontSize: '0.8rem' }}>
-                      <CheckCircle2 size={14} /> Processed
-                    </span>
-                  ) : doc.status === 'failed' ? (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#ef4444', fontSize: '0.8rem' }}>
-                      <AlertCircle size={14} /> Failed
-                    </span>
+              {/* Ingestion Pipeline Status */}
+              <td className="p-3.5 whitespace-nowrap">
+                {doc.status === 'processed' ? (
+                  <BrutalBadge tone="success" size="sm" dot>
+                    PROCESSED
+                  </BrutalBadge>
+                ) : doc.status === 'failed' ? (
+                  <BrutalBadge tone="accent" size="sm" dot>
+                    FAILED
+                  </BrutalBadge>
+                ) : (
+                  <BrutalBadge tone="yellow" size="sm" dot>
+                    PARSING
+                  </BrutalBadge>
+                )}
+              </td>
+
+              {/* Lifecycle & Version State */}
+              <td className="p-3.5 whitespace-nowrap">
+                <div className="flex flex-col gap-1 items-start">
+                  <span className="font-bold text-xs">{doc.version || 'v1.0'}</span>
+                  {doc.lifecycle_status === 'superseded' ? (
+                    <BrutalBadge tone="accent" size="sm">
+                      SUPERSEDED
+                    </BrutalBadge>
+                  ) : doc.lifecycle_status === 'archived' ? (
+                    <BrutalBadge tone="black" size="sm">
+                      ARCHIVED
+                    </BrutalBadge>
                   ) : (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#38bdf8', fontSize: '0.8rem' }}>
-                      <Clock size={14} /> Processing
-                    </span>
+                    <BrutalBadge tone="success" size="sm">
+                      ACTIVE
+                    </BrutalBadge>
                   )}
-                </td>
+                </div>
+              </td>
 
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{doc.version || 'v1.0'}</span>
-                    {doc.lifecycle_status === 'superseded' ? (
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          color: '#ef4444',
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          padding: '0.1rem 0.35rem',
-                          borderRadius: '4px',
-                          width: 'fit-content',
-                        }}
-                      >
-                        🔴 SUPERSEDED
-                      </span>
-                    ) : doc.lifecycle_status === 'archived' ? (
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          color: '#94a3b8',
-                          background: 'rgba(148, 163, 184, 0.1)',
-                          padding: '0.1rem 0.35rem',
-                          borderRadius: '4px',
-                          width: 'fit-content',
-                        }}
-                      >
-                        ⚪ ARCHIVED
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          color: '#22c55e',
-                          background: 'rgba(34, 197, 94, 0.1)',
-                          padding: '0.1rem 0.35rem',
-                          borderRadius: '4px',
-                          width: 'fit-content',
-                        }}
-                      >
-                        🟢 ACTIVE
-                      </span>
-                    )}
-                  </div>
-                </td>
+              {/* Chunks Count */}
+              <td className="p-3.5 whitespace-nowrap">
+                <div className="inline-flex items-center gap-1.5 font-bold">
+                  <Layers size={14} className="text-brutal-muted dark:text-brutal-muted-dark" />
+                  <span>{doc.chunk_count || 0}</span>
+                </div>
+              </td>
 
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}>
-                    <Layers size={14} color="var(--text-muted)" />
-                    {doc.chunk_count}
-                  </span>
-                </td>
+              {/* File Size */}
+              <td className="p-3.5 whitespace-nowrap text-brutal-muted dark:text-brutal-muted-dark text-[11px]">
+                {Math.round(doc.file_size_bytes / 1024)} KB
+              </td>
 
-                <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  {Math.round(doc.file_size_bytes / 1024)} KB
-                </td>
+              {/* Creation Date */}
+              <td className="p-3.5 whitespace-nowrap text-brutal-muted dark:text-brutal-muted-dark text-[11px]">
+                {new Date(doc.created_at).toLocaleDateString()}
+              </td>
 
-                <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  {new Date(doc.created_at).toLocaleDateString()}
-                </td>
-
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                    {/* Governance Action Buttons */}
-                    {isApprover && doc.approval_status === 'pending_approval' && (
-                      <>
-                        <button
-                          onClick={() => onReview(doc.id, 'approved')}
-                          className="btn btn-primary"
-                          style={{
-                            padding: '0.35rem 0.65rem',
-                            fontSize: '0.75rem',
-                            background: '#10b981',
-                            borderColor: '#10b981',
-                          }}
-                          title="Approve Document (Sync to Vector Index)"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => onReview(doc.id, 'rejected')}
-                          className="btn btn-danger"
-                          style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                          title="Reject Document"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-
-                    <button
-                      onClick={() => onInspect(doc.id)}
-                      className="btn btn-secondary"
-                      style={{ padding: '0.35rem 0.5rem', fontSize: '0.75rem' }}
-                      title="Inspect Chunks"
-                    >
-                      <Eye size={14} />
-                    </button>
-
-                    <a
-                      href={`/api/v1/documents/${doc.id}/download`}
-                      className="btn btn-secondary"
-                      style={{
-                        padding: '0.35rem 0.5rem',
-                        fontSize: '0.75rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                      title="Download Raw File"
-                    >
-                      <Download size={14} />
-                    </a>
-
-                    {canDelete && (
+              {/* Actions Column */}
+              <td className="p-3.5 text-right whitespace-nowrap">
+                <div className="flex items-center justify-end gap-1.5">
+                  {/* Approver Controls */}
+                  {isApprover && doc.approval_status === 'pending_approval' && (
+                    <>
                       <button
-                        onClick={() => onDelete(doc.id, doc.title)}
-                        className="btn btn-danger"
-                        style={{ padding: '0.35rem 0.5rem', fontSize: '0.75rem' }}
-                        title="Delete Document"
+                        type="button"
+                        onClick={() => onReview(doc.id, 'approved')}
+                        className="py-1 px-2 border-2 border-brutal-black bg-brutal-success text-brutal-white font-mono text-[10px] font-black uppercase hover:opacity-90 flex items-center gap-1 shadow-brutal-sm"
+                        title="Approve Document (Sync to Vector Index)"
                       >
-                        <Trash2 size={14} />
+                        <Check size={12} strokeWidth={3} />
+                        <span>Approve</span>
                       </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                      <button
+                        type="button"
+                        onClick={() => onReview(doc.id, 'rejected')}
+                        className="py-1 px-2 border-2 border-brutal-black bg-brutal-accent text-brutal-white font-mono text-[10px] font-black uppercase hover:opacity-90 flex items-center gap-1 shadow-brutal-sm"
+                        title="Reject Document"
+                      >
+                        <X size={12} strokeWidth={3} />
+                        <span>Reject</span>
+                      </button>
+                    </>
+                  )}
+
+                  {/* Chunk Inspector */}
+                  <button
+                    type="button"
+                    onClick={() => onInspect(doc.id)}
+                    className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+                    title="Inspect Extracted Chunks"
+                    aria-label="Inspect Chunks"
+                  >
+                    <Eye size={14} />
+                  </button>
+
+                  {/* Raw File Download */}
+                  <a
+                    href={`/api/v1/documents/${doc.id}/download`}
+                    className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+                    title="Download Raw Asset"
+                    aria-label="Download Document"
+                  >
+                    <Download size={14} />
+                  </a>
+
+                  {/* Delete Option */}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(doc.id, doc.title)}
+                      className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface text-brutal-accent hover:bg-brutal-accent hover:text-brutal-white transition-colors"
+                      title="Delete Document"
+                      aria-label="Delete Document"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              </td>
+            </motion.tr>
+          );
+        })}
+      </BrutalTable>
     </div>
   );
 }

@@ -1,125 +1,104 @@
 import React from 'react';
-import { FileText, X } from 'lucide-react';
+import { Layers, FileText, Zap, Hash } from 'lucide-react';
+import { BrutalModal, BrutalBadge, BrutalButton } from '../brutal';
 
+/**
+ * ChunkInspectorModal
+ * Yellow Brutalist inspector modal displaying document chunks,
+ * extraction method (OCR vs Native), page citations, and monospaced text.
+ */
 export default function ChunkInspectorModal({ inspectDoc, onClose }) {
   if (!inspectDoc) return null;
 
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(5px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '1.5rem',
-      }}
-    >
-      <div
-        className="glass-panel animate-scale-up"
-        style={{
-          width: '100%',
-          maxWidth: '850px',
-          maxHeight: '85vh',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '1.75rem',
-          position: 'relative',
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1.25rem',
-            right: '1.25rem',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-          }}
-        >
-          <X size={20} />
-        </button>
+  const chunks = inspectDoc.chunks || [];
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <FileText size={18} color="var(--primary)" />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{inspectDoc.title}</h3>
+  return (
+    <BrutalModal
+      isOpen={Boolean(inspectDoc)}
+      onClose={onClose}
+      title={inspectDoc.title || 'Document Inspection'}
+      subtitle={`${inspectDoc.filename} • ${Math.round((inspectDoc.file_size_bytes || 0) / 1024)} KB • ${inspectDoc.chunk_count || chunks.length} Total Chunks`}
+      size="lg"
+    >
+      <div className="flex flex-col gap-4 max-h-[65vh] overflow-hidden">
+        
+        {/* Top Summary Bar */}
+        <div className="flex items-center justify-between pb-3 border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20 font-mono text-xs">
+          <div className="flex items-center gap-2">
+            <BrutalBadge tone="yellow" size="sm">
+              SHA-256 VERIFIED
+            </BrutalBadge>
+            <BrutalBadge tone="black" size="sm">
+              {chunks.length} EXTRACTED CHUNKS
+            </BrutalBadge>
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            {inspectDoc.filename} • {Math.round(inspectDoc.file_size_bytes / 1024)} KB •{' '}
-            {inspectDoc.chunk_count} Chunks Generated
-          </p>
+          <span className="text-brutal-muted dark:text-brutal-muted-dark uppercase text-[10px]">
+            Lifecycle: {inspectDoc.lifecycle_status || 'ACTIVE'}
+          </span>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
-          {inspectDoc.chunks && inspectDoc.chunks.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {inspectDoc.chunks.map((chunk) => (
+        {/* Scrollable Chunk Stream */}
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {chunks.length > 0 ? (
+            chunks.map((chunk) => {
+              const isOcr = Boolean(chunk.metadata_?.is_ocr);
+              const pageNum = chunk.metadata_?.page_number || 1;
+
+              return (
                 <div
                   key={chunk.id}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                  }}
+                  className="bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm p-4 flex flex-col gap-2.5"
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                      fontSize: '0.75rem',
-                      color: 'var(--text-dim)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span className="badge badge-info">Chunk #{chunk.chunk_index}</span>
-                      {chunk.metadata_?.is_ocr ? (
-                        <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                          ⚡ OCR Extracted
-                        </span>
+                  {/* Chunk Header */}
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-brutal-black/10 dark:border-brutal-yellow/10">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-black bg-brutal-yellow text-brutal-black px-1.5 py-0.5 border border-brutal-black">
+                        #{chunk.chunk_index}
+                      </span>
+                      {isOcr ? (
+                        <BrutalBadge tone="accent" size="sm" className="flex items-center gap-1">
+                          <Zap size={11} />
+                          <span>OCR Extracted</span>
+                        </BrutalBadge>
                       ) : (
-                        <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-                          📄 Native
-                        </span>
+                        <BrutalBadge tone="paper" size="sm" className="flex items-center gap-1">
+                          <FileText size={11} />
+                          <span>Native Text</span>
+                        </BrutalBadge>
                       )}
                     </div>
-                    <span>
-                      {chunk.char_count} chars • Page {chunk.metadata_?.page_number || 1}
-                    </span>
+
+                    <div className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wider">
+                      Page {pageNum} • {chunk.char_count} Characters
+                    </div>
                   </div>
-                  <pre
-                    style={{
-                      whiteSpace: 'pre-wrap',
-                      fontFamily: 'monospace',
-                      fontSize: '0.85rem',
-                      lineHeight: 1.5,
-                      color: 'var(--text-primary)',
-                      margin: 0,
-                    }}
-                  >
+
+                  {/* Chunk Monospaced Content */}
+                  <pre className="font-mono text-xs text-brutal-black dark:text-brutal-white whitespace-pre-wrap leading-relaxed select-text bg-brutal-white dark:bg-brutal-dark p-3 border border-brutal-black/20 dark:border-brutal-yellow/20 max-h-48 overflow-y-auto">
                     {chunk.content}
                   </pre>
                 </div>
-              ))}
-            </div>
+              );
+            })
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-              No chunk segments extracted for this document.
+            <div className="text-center py-12 font-mono text-xs text-brutal-muted dark:text-brutal-muted-dark uppercase">
+              No chunk segments indexed for this document asset.
             </div>
           )}
         </div>
+
+        {/* Modal Bottom Footer */}
+        <div className="pt-3 border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20 flex justify-end">
+          <BrutalButton
+            variant="secondary"
+            size="sm"
+            onClick={onClose}
+          >
+            Close Inspector
+          </BrutalButton>
+        </div>
+
       </div>
-    </div>
+    </BrutalModal>
   );
 }
