@@ -48,6 +48,7 @@ export default function App() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTabState] = useState(getRouteFromHash);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null);
 
   // Sync state when URL hash changes (Back/Forward buttons or direct paste)
   useEffect(() => {
@@ -85,8 +86,6 @@ export default function App() {
       </div>
     );
   }
-
-  const [selectedRole, setSelectedRole] = useState(null);
 
   if (!user) {
     if (showLoginModal) {
