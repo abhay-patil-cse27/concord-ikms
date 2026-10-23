@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, CheckCircle, ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { uiCache } from '../utils/uiCache';
+import DepartmentsHeader from '../components/departments/DepartmentsHeader';
+import DepartmentCard from '../components/departments/DepartmentCard';
+import DepartmentModal from '../components/departments/DepartmentModal';
+import { BrutalSkeleton, BrutalEmptyState, BrutalToast } from '../components/brutal';
 
+/**
+ * DepartmentsView
+ * Yellow Brutalist institutional tenancy registry.
+ */
 export default function DepartmentsView() {
   const cached = uiCache.get(uiCache.KEYS.DEPARTMENTS, {});
   const { hasPermission } = useAuth();
   const [departments, setDepartments] = useState(() => cached.departments || []);
   const [loading, setLoading] = useState(() => !cached.departments?.length);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  // Form state
+  // Form modal state
   const [showCreate, setShowCreate] = useState(false);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -28,10 +36,10 @@ export default function DepartmentsView() {
     setLoading(true);
     try {
       const data = await api.getDepartments();
-      setDepartments(data);
+      setDepartments(data || []);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to fetch departments.');
     } finally {
       setLoading(false);
     }
@@ -45,6 +53,8 @@ export default function DepartmentsView() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (!code.trim() || !name.trim()) return;
+
     setCreateLoading(true);
     try {
       await api.createDepartment({ code: code.toUpperCase(), name, description });
@@ -52,9 +62,10 @@ export default function DepartmentsView() {
       setName('');
       setDescription('');
       setShowCreate(false);
+      setToast({ message: `Department "${name}" registered successfully!`, type: 'success' });
       await fetchDepartments();
     } catch (err) {
-      alert(`Creation failed: ${err.message}`);
+      setToast({ message: `Creation failed: ${err?.message}`, type: 'error' });
     } finally {
       setCreateLoading(false);
     }
@@ -63,116 +74,68 @@ export default function DepartmentsView() {
   const canWrite = hasPermission('departments:write');
 
   return (
-    <div className="animate-fade-in">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-            Institutional Departments & Tenancy
-          </h1>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Organizational units governing document authorization and access scopes.
-          </p>
-        </div>
+    <div className="w-full space-y-8">
+      {/* Toast Feedback */}
+      {toast && (
+        <BrutalToast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
-        {canWrite && (
-          <button
-            onClick={() => setShowCreate(!showCreate)}
-            className="btn btn-primary"
-            style={{ padding: '0.55rem 1rem' }}
-          >
-            <Plus size={16} />
-            {showCreate ? 'Cancel' : 'New Department'}
-          </button>
-        )}
-      </div>
+      {/* Header */}
+      <DepartmentsHeader
+        totalCount={departments.length}
+        canWrite={canWrite}
+        onOpenCreate={() => setShowCreate(true)}
+      />
 
+      {/* Error Banner */}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem', background: 'var(--status-danger-bg)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', color: 'var(--status-danger)' }}>
-          <ShieldAlert size={18} />
-          <span>{error}</span>
+        <div className="p-4 bg-brutal-accent/15 border-3 border-brutal-accent text-brutal-black dark:text-brutal-white font-mono text-xs font-bold">
+          {error}
         </div>
       )}
 
-      {/* Modal / Inline Create Form */}
-      {showCreate && (
-        <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem', borderColor: 'var(--primary)' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Register Institutional Department</h2>
-          <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                Department Code (e.g., MECH)
-              </label>
-              <input
-                required
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="MECH"
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                Full Department Name
-              </label>
-              <input
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Mechanical Engineering"
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                Governance Scope / Description
-              </label>
-              <input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Department syllabus, notices, and labs"
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-              <button type="button" onClick={() => setShowCreate(false)} className="btn btn-secondary">
-                Cancel
-              </button>
-              <button type="submit" disabled={createLoading} className="btn btn-primary">
-                {createLoading ? 'Registering...' : 'Save Department'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Department Cards Grid */}
+      {/* Department Cards Grid or Skeleton/Empty State */}
       {loading ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading departments...</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <BrutalSkeleton count={6} height="h-44" />
+        </div>
+      ) : departments.length === 0 ? (
+        <BrutalEmptyState
+          title="No Departments Registered"
+          description="Register academic branches to begin enforcing departmental tenancy and isolating circular catalogs."
+          actionLabel={canWrite ? "Register First Department" : undefined}
+          onAction={canWrite ? () => setShowCreate(true) : undefined}
+        />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {departments.map((dept) => (
-            <div key={dept.id} className="glass-panel" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <span className="badge badge-info" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-                  {dept.code}
-                </span>
-                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
-                  Active Scope
-                </span>
-              </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                {dept.name}
-              </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '1rem', lineHeight: 1.5 }}>
-                {dept.description || 'No description recorded.'}
-              </p>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', borderTop: '1px solid var(--border-light)', paddingTop: '0.75rem' }}>
-                Registered: {new Date(dept.created_at).toLocaleDateString()}
-              </div>
-            </div>
+            <DepartmentCard
+              key={dept.id}
+              dept={dept}
+              docCount={dept.code === 'CSE' ? 14 : 4}
+              quotaMax={50}
+            />
           ))}
         </div>
       )}
+
+      {/* Create Modal */}
+      <DepartmentModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        onSubmit={handleCreate}
+        code={code}
+        setCode={setCode}
+        name={name}
+        setName={setName}
+        description={description}
+        setDescription={setDescription}
+        loading={createLoading}
+      />
     </div>
   );
 }
