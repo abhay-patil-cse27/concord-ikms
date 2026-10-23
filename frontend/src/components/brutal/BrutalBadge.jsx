@@ -8,10 +8,9 @@ import { cn } from '../../lib/utils';
  * Tones:
  *  - yellow: High-voltage yellow tag with black text
  *  - black: Stark pitch-black tag with white text
- *  - green: High-contrast emerald success tag
- *  - red: Alert hazard tag
- *  - cyan: Blueprint / technical tag
- *  - paper: Neutral archival tag
+ *  - green: High-contrast forest green success tag
+ *  - red: Alert hazard crimson tag
+ *  - paper: Archival neutral off-white tag
  */
 export default function BrutalBadge({
   children,
