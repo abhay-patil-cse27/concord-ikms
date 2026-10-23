@@ -10,6 +10,7 @@ import { transitions } from '../../motion/presets';
 export default function NavItem({
   icon: Icon,
   label,
+  tooltip,
   badge,
   badgeTone = 'yellow',
   isActive = false,
@@ -32,7 +33,7 @@ export default function NavItem({
         isCollapsed && 'justify-center px-2',
         className
       )}
-      title={isCollapsed ? label : undefined}
+      title={tooltip || label}
     >
       {Icon && (
         <span className={cn('flex-shrink-0', isActive ? 'text-brutal-black' : 'text-brutal-black dark:text-brutal-white')}>

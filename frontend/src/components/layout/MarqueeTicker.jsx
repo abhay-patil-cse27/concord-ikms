@@ -20,7 +20,7 @@ export default function MarqueeTicker({
   const repeatedText = [...items, ...items, ...items].join('  ///  ');
 
   return (
-    <div className={cn('overflow-hidden whitespace-nowrap bg-brutal-black text-brutal-yellow py-1.5 border-b-2 border-brutal-black select-none font-mono text-[11px] font-black tracking-widest uppercase flex items-center', className)}>
+    <div className={cn('relative w-full overflow-hidden whitespace-nowrap bg-brutal-black text-brutal-yellow py-1.5 border-b-3 border-brutal-black dark:border-brutal-yellow shadow-brutal select-none font-mono text-[11px] font-black tracking-widest uppercase flex items-center z-20', className)}>
       <div className="inline-block animate-marquee motion-reduce:animate-none">
         {repeatedText}
       </div>

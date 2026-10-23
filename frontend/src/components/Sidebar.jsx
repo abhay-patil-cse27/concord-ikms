@@ -36,55 +36,63 @@ export default function Sidebar({
   const navItems = [
     {
       id: 'dashboard',
-      label: 'System Overview',
+      label: 'Overview',
+      tooltip: 'System Overview & Institutional Health',
       icon: LayoutDashboard,
       accessible: true,
     },
     {
       id: 'departments',
       label: 'Departments',
+      tooltip: 'Institutional Academic Departments',
       icon: Building2,
       accessible: hasPermission('departments:read'),
       badge: 'RBAC',
     },
     {
       id: 'users',
-      label: 'Institutional Users',
+      label: 'Users',
+      tooltip: 'User Directory & Role Assignments',
       icon: Users,
       accessible: hasPermission('users:read'),
       badge: 'Admin',
     },
     {
       id: 'audit',
-      label: 'Security Audit Logs',
+      label: 'Audit Logs',
+      tooltip: 'Cryptographic SHA-256 Security Audit Ledger',
       icon: ShieldAlert,
       accessible: hasPermission('audit:read'),
       badge: 'SHA-256',
     },
     {
       id: 'documents',
-      label: 'Knowledge Ingestion',
+      label: 'Ingestion',
+      tooltip: 'Knowledge Ingestion & OCR Pipeline',
       icon: FileText,
       accessible: true,
       badge: 'OCR',
     },
     {
       id: 'search',
-      label: 'Contextual Search',
+      label: 'Search',
+      tooltip: 'Hybrid RRF Contextual Search',
       icon: Search,
       accessible: true,
       badge: 'RRF',
     },
     {
       id: 'rag',
-      label: 'Grounded Q&A (Groq)',
+      label: 'Grounded Q&A',
+      tooltip: 'Grounded Institutional Q&A (Groq LLM)',
       icon: Bot,
       accessible: true,
       badge: 'AI',
     },
     {
       id: 'benchmarks',
-      label: 'Evaluation & Benchmarks',
+      label: 'Benchmarks',
+      tooltip: 'System Evaluation & Benchmarks (M7/M8)',
       icon: BarChart3,
       accessible: true,
       badge: 'M7/M8',
@@ -166,6 +174,7 @@ export default function Sidebar({
                 key={item.id}
                 icon={item.icon}
                 label={item.label}
+                tooltip={item.tooltip}
                 badge={item.badge}
                 isActive={isActive}
                 isCollapsed={collapsed}

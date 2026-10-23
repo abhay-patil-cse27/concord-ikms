@@ -9,16 +9,18 @@
 
 :root {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Outfit', 'Inter', sans-serif;
+  --font-heading: 'Space Grotesk', 'Outfit', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Space Mono', monospace;
 
   /* Layout Spacing */
   --sidebar-width: 260px;
   --navbar-height: 70px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-full: 9999px;
-  --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  /* LEGACY-REMOVE: Force border radius to 0 */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-full: 0px;
+  --transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ============================================================================
      PRIMARY PALETTE: LIGHT THEME (Yellow Brutalist Hero & Paper Contrast)
@@ -66,7 +68,7 @@
 }
 
 /* ============================================================================
-   DARK THEME PALETTE (Deep Slate Navy, Glow Effects)
+   DARK THEME PALETTE (Brutalist Pitch & Yellow Accents)
    ============================================================================ */
 [data-theme='dark'] {
   --bg-primary: #0A0A0A;
@@ -84,8 +86,8 @@
   --primary-hover: #FFD000;
   --primary-glow: rgba(255, 230, 0, 0.4);
 
-  --status-success: #00D664;
-  --status-success-bg: rgba(0, 214, 100, 0.15);
+  --status-success: #1B5E20;
+  --status-success-bg: #E8F5E9;
   --status-warning: #FFD000;
   --status-warning-bg: rgba(255, 208, 0, 0.15);
   --status-danger: #FF3333;
@@ -117,6 +119,11 @@
   padding: 0;
 }
 
+/* LEGACY-REMOVE: Global stopgap enforcing square geometry */
+*, *::before, *::after {
+  border-radius: 0px !important;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
@@ -125,18 +132,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   color: var(--text-main);
 }
 
 button {
-  font-family: inherit;
+  font-family: var(--font-mono);
   cursor: pointer;
   border: none;
   background: none;
@@ -145,12 +152,12 @@ button {
 
 /* Form Controls */
 input, select, textarea {
-  font-family: inherit;
+  font-family: var(--font-mono);
   font-size: 0.9rem;
   color: var(--input-text);
   background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-md);
+  border: 2px solid var(--input-border);
+  border-radius: 0px !important;
   padding: 0.65rem 0.9rem;
   outline: none;
   transition: var(--transition);
@@ -171,15 +178,22 @@ select option {
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-glow);
+  border-color: #0A0A0A;
+  box-shadow: 3px 3px 0px #0A0A0A;
+}
+
+[data-theme='dark'] input:focus, 
+[data-theme='dark'] select:focus, 
+[data-theme='dark'] textarea:focus {
+  border-color: #FFE600;
+  box-shadow: 3px 3px 0px #FFE600;
 }
 
 /* Yellow Brutalist Card Surface */
 .glass-panel {
   background: var(--bg-card);
   border: 2px solid #0A0A0A;
-  border-radius: 0px;
+  border-radius: 0px !important;
   box-shadow: 4px 4px 0px #0A0A0A;
 }
 
@@ -200,7 +214,7 @@ input:focus, select:focus, textarea:focus {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-radius: 0px;
+  border-radius: 0px !important;
   border: 2px solid #0A0A0A;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
@@ -208,7 +222,7 @@ input:focus, select:focus, textarea:focus {
 
 .btn-primary {
   background: #FFE600;
-  color: #0A0A0A;
+  color: #0A0A0A !important;
   box-shadow: 3px 3px 0px #0A0A0A;
 }
 
@@ -453,131 +467,157 @@ input:focus, select:focus, textarea:focus {
    PREMIUM CUSTOM SCROLLBAR & INTERACTIVE HOVER POLISH
    ============================================================================== */
 
-/* Modern Sleek Scrollbar */
+/* LEGACY-REMOVE: BRUTALIST CUSTOM SCROLLBAR & INTERACTIVE HOVER POLISH */
+
+/* Brutalist Block Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-primary);
+  border-left: 2px solid #0A0A0A;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
-  border-radius: 9999px;
-  transition: background 0.2s ease;
+  background: #FFE600;
+  border: 2px solid #0A0A0A;
+  border-radius: 0px !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.5);
+  background: #FFD000;
 }
 
-/* Global Interactive Hover Effects */
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #0A0A0A;
+  border-left: 2px solid #FFE600;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #FFE600;
+  border: 2px solid #0A0A0A;
+}
+
+/* LEGACY-REMOVE: Global Interactive Hover Effects */
 .glass-panel {
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .glass-panel:hover {
-  border-color: rgba(56, 189, 248, 0.28);
+  border-color: #0A0A0A;
 }
 
-/* Smooth Interactive Nav Button Hover */
+[data-theme='dark'] .glass-panel:hover {
+  border-color: #FFE600;
+}
+
+/* LEGACY-REMOVE: Smooth Interactive Nav Button Hover */
 .sidebar-nav-btn {
   position: relative;
   overflow: hidden;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 0px !important;
+  border: 2px solid transparent;
+  transition: all 0.1s ease;
 }
 
 .sidebar-nav-btn:hover:not(:disabled) {
-  background: rgba(56, 189, 248, 0.08) !important;
-  color: var(--text-main) !important;
+  background: #FFE600 !important;
+  color: #0A0A0A !important;
+  border-color: #0A0A0A !important;
   transform: translateX(3px);
 }
 
 .sidebar-nav-btn.active {
-  background: rgba(56, 189, 248, 0.14) !important;
-  border-color: rgba(56, 189, 248, 0.3) !important;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.1);
+  background: #FFE600 !important;
+  color: #0A0A0A !important;
+  border-color: #0A0A0A !important;
+  box-shadow: 2px 2px 0px #0A0A0A;
 }
 
 /* Table Row Hover Lift */
 table tr {
-  transition: background-color 0.18s ease;
+  transition: background-color 0.1s ease;
 }
 
 table tbody tr:hover {
-  background: rgba(56, 189, 248, 0.04) !important;
+  background: rgba(255, 230, 0, 0.15) !important;
 }
 
-/* Interactive Pill Badges Hover */
+/* LEGACY-REMOVE: Interactive Pill Badges Hover */
 .badge {
-  transition: transform 0.18s ease, filter 0.18s ease;
+  border-radius: 0px !important;
+  transition: transform 0.1s ease;
 }
 
-.badge:hover {
-  transform: scale(1.04);
+.citation-badge-btn {
+  border-radius: 0px !important;
+  background: #FAFAFA !important;
+  border: 2px solid #0A0A0A !important;
+  color: #0A0A0A !important;
+  box-shadow: 2px 2px 0px #0A0A0A !important;
 }
 
 .citation-badge-btn:hover {
-  background: rgba(2, 132, 199, 0.2) !important;
-  border-color: #0284c7 !important;
-  color: #0369a1 !important;
-  transform: translateY(-2px) scale(1.06) !important;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.22) !important;
+  background: #FFE600 !important;
+  border-color: #0A0A0A !important;
+  color: #0A0A0A !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 3px 3px 0px #0A0A0A !important;
 }
 
 .citation-badge-btn:active {
-  transform: translateY(0) scale(0.98) !important;
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0px #0A0A0A !important;
 }
 
-/* ==============================================================================
-   CONVERSATIONAL MULTI-TURN SESSIONS & BREATHABLE CHAT BUBBLES
-   ============================================================================== */
+/* LEGACY-REMOVE: CONVERSATIONAL MULTI-TURN SESSIONS & CHAT BUBBLES */
 .chat-session-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.65rem 0.85rem;
-  border-radius: var(--radius-md);
+  border-radius: 0px !important;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-weight: 700;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid transparent;
+  transition: all 0.1s ease;
+  border: 2px solid transparent;
   text-align: left;
 }
 
 .chat-session-item:hover {
   background: var(--bg-card-hover);
   color: var(--text-main);
-  border-color: var(--border-light);
+  border-color: #0A0A0A;
   transform: translateX(2px);
 }
 
 .chat-session-item.active {
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--primary);
-  border-color: rgba(56, 189, 248, 0.3);
-  font-weight: 600;
+  background: #FFE600;
+  color: #0A0A0A;
+  border-color: #0A0A0A;
+  box-shadow: 2px 2px 0px #0A0A0A;
+  font-weight: 800;
 }
 
-/* ==============================================================================
-   CHATGPT-STYLE SIDEBAR & THREAD LIST
-   ============================================================================== */
+/* LEGACY-REMOVE: CHATGPT-STYLE SIDEBAR & THREAD LIST */
 .chatgpt-sidebar {
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.2s ease;
 }
 
 .chatgpt-new-btn:hover {
-  background: var(--bg-card-hover) !important;
-  border-color: var(--border-focus) !important;
+  background: #FFE600 !important;
+  color: #0A0A0A !important;
+  border-color: #0A0A0A !important;
 }
 
 .chatgpt-thread-row:hover {
-  background: var(--bg-card-hover) !important;
-  color: var(--primary) !important;
+  background: #FFE600 !important;
+  color: #0A0A0A !important;
 }
 
 .chatgpt-thread-row .chatgpt-thread-delete {
@@ -591,8 +631,9 @@ table tbody tr:hover {
 
 .chatgpt-thread-delete:hover {
   opacity: 1 !important;
-  color: #ef4444 !important;
-  background: rgba(239, 68, 68, 0.15) !important;
+  color: #FAFAFA !important;
+  background: #FF3333 !important;
+  border: 1px solid #0A0A0A;
 }
 
 .chatgpt-scrollable-threads::-webkit-scrollbar {
@@ -600,8 +641,8 @@ table tbody tr:hover {
 }
 
 .chatgpt-scrollable-threads::-webkit-scrollbar-thumb {
-  background: var(--border-light);
-  border-radius: 4px;
+  background: #0A0A0A;
+  border-radius: 0px !important;
 }
 
 .chat-container-layout {
@@ -609,10 +650,15 @@ table tbody tr:hover {
   height: calc(100vh - 120px);
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-light);
+  border-radius: 0px !important;
+  border: 3px solid #0A0A0A;
   background: var(--bg-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 4px 4px 0px #0A0A0A;
+}
+
+[data-theme='dark'] .chat-container-layout {
+  border-color: #FFE600;
+  box-shadow: 4px 4px 0px #FFE600;
 }
 
 .chat-messages-scroll {
@@ -632,8 +678,8 @@ table tbody tr:hover {
   left: 0;
   right: 0;
   padding: 1.25rem 2rem 1.5rem 2rem;
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 0.92) 35%, rgba(248, 250, 252, 1) 100%);
-  backdrop-filter: blur(8px);
+  background: var(--bg-primary);
+  border-top: 2px solid #0A0A0A;
   z-index: 20;
 }
 
@@ -643,27 +689,35 @@ table tbody tr:hover {
   position: relative;
 }
 
+/* LEGACY-REMOVE: Chat bubbles converted from pill shape and cyan blue to crisp brutal boxes */
 .chat-bubble-user {
-  background: #0284c7;
-  color: #ffffff;
+  background: #FFE600;
+  color: #0A0A0A !important;
   padding: 0.9rem 1.35rem;
-  border-radius: 18px 18px 4px 18px;
+  border-radius: 0px !important;
+  border: 2px solid #0A0A0A;
   max-width: 75%;
   margin-left: auto;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   line-height: 1.55;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.28);
+  box-shadow: 3px 3px 0px #0A0A0A;
 }
 
 .chat-bubble-assistant {
   background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  border: 2px solid #0A0A0A;
   color: var(--text-main);
   padding: 1.35rem 1.65rem;
-  border-radius: 18px 18px 18px 4px;
+  border-radius: 0px !important;
   max-width: 100%;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 3px 3px 0px #0A0A0A;
   line-height: 1.65;
+}
+
+[data-theme='dark'] .chat-bubble-assistant {
+  border-color: #FFE600;
+  box-shadow: 3px 3px 0px #FFE600;
 }
 
 /* ==============================================================================
