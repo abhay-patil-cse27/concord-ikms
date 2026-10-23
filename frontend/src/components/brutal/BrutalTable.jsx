@@ -3,13 +3,54 @@ import { cn } from '../../lib/utils';
 
 /**
  * BrutalTable
- * Monospaced architectural data table with bold horizontal separators, yellow header, and hover rows.
+ * Monospaced architectural data table with bold horizontal separators, yellow/dark header, and hover rows.
+ * Supports:
+ *   - headers prop: array of strings or { label, className } objects
+ *   - stickyHeader prop: keeps the header pinned while scrolling
+ *   - direct composition: renders <thead> (if headers provided) and wraps children inside a semantic <tbody>
  */
-export function BrutalTable({ children, className = '' }) {
+export function BrutalTable({
+  headers,
+  stickyHeader = false,
+  children,
+  className = '',
+  tableClassName = '',
+}) {
   return (
     <div className={cn('w-full overflow-x-auto border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal', className)}>
-      <table className="w-full border-collapse text-left font-mono text-xs">
-        {children}
+      <table className={cn('w-full border-collapse text-left font-mono text-xs', tableClassName)}>
+        {headers && headers.length > 0 && (
+          <thead
+            className={cn(
+              'bg-brutal-black text-brutal-white dark:bg-brutal-dark-surface dark:text-brutal-yellow uppercase tracking-wider select-none border-b-2 border-brutal-black dark:border-brutal-yellow',
+              stickyHeader && 'sticky top-0 z-10'
+            )}
+          >
+            <tr>
+              {headers.map((h, i) => {
+                const label = typeof h === 'string' ? h : h.label;
+                const headClass = typeof h === 'object' && h.className ? h.className : '';
+                return (
+                  <th
+                    key={i}
+                    className={cn('px-3.5 py-3 font-mono font-black text-xs uppercase', headClass)}
+                  >
+                    {label}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+        )}
+
+        {/* If caller passed standard child rows without wrapping in <tbody>, enclose them in <tbody> to guarantee valid DOM nesting */}
+        {headers ? (
+          <tbody className="divide-y-2 divide-brutal-black/20 dark:divide-brutal-yellow/20 bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white">
+            {children}
+          </tbody>
+        ) : (
+          children
+        )}
       </table>
     </div>
   );
@@ -64,3 +105,4 @@ export function BrutalTableCell({ children, className = '' }) {
     </td>
   );
 }
+export default BrutalTable;
