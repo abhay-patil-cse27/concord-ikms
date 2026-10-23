@@ -119,9 +119,35 @@
   padding: 0;
 }
 
-/* LEGACY-REMOVE: Global stopgap enforcing square geometry */
-*, *::before, *::after {
+/* LEGACY-REMOVE: Targeted stopgap enforcing square geometry on legacy surfaces without breaking intentional circles */
+:is(
+  .glass-panel,
+  .btn,
+  .badge,
+  input:not([type="radio"]):not([type="checkbox"]),
+  select,
+  textarea,
+  .chat-session-item,
+  .chat-container-layout,
+  .chat-bubble-user,
+  .chat-bubble-assistant,
+  table,
+  th,
+  td,
+  dialog,
+  [class*="rounded"]:not(.rounded-full):not([class*="avatar"]):not([class*="dot"]):not([class*="spinner"]):not([class*="animate-spin"])
+) {
   border-radius: 0px !important;
+}
+
+/* Explicit preserve for circular UI elements (spinners, status pips, radio inputs) */
+:is(
+  .rounded-full,
+  .typing-dot,
+  input[type="radio"],
+  [data-circle="true"]
+) {
+  border-radius: 9999px !important;
 }
 
 body {
