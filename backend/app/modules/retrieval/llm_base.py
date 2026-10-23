@@ -23,3 +23,22 @@ class BaseLLMProvider(ABC):
         - model_used: str
         """
         pass
+
+    @abstractmethod
+    async def generate_conversational_answer(
+        self,
+        query: str,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        system_prompt: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate a direct, warm, conversational response for greetings, general inquiries,
+        and pleasantries without querying the vector index.
+        
+        Must return:
+        - answer: str
+        - citations: list (empty for conversational responses)
+        - confidence: str ('high')
+        - model_used: str
+        """
+        pass

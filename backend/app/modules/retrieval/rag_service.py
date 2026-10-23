@@ -27,6 +27,35 @@ class RAGService:
         self.retrieval_service = retrieval_service or RetrievalService()
         self.llm_provider = llm_provider or get_llm_provider()
 
+    def is_conversational_query(self, query: str) -> bool:
+        """
+        Classifies whether user query is a greeting, pleasantry, or general AI assistant capability query.
+        If true, the system responds naturally and warmly without querying the vector index.
+        """
+        import re
+        q = query.strip().lower()
+
+        # Direct short match or regex patterns
+        exact_phrases = {
+            "hi", "hello", "hey", "hola", "namaste", "good morning", "good afternoon",
+            "good evening", "how are you", "who are you", "what can you do", "help",
+            "what is your name", "who made you", "thank you", "thanks", "bye", "goodbye"
+        }
+        if q in exact_phrases or q.rstrip("?.!") in exact_phrases:
+            return True
+
+        # Regex patterns for greetings or self-introduction inquiries
+        patterns = [
+            r"^(hi|hello|hey|greetings|howdy)\b",
+            r"^who are you\b",
+            r"^what can you (do|help with)\b",
+            r"^how (can|do) you help\b",
+            r"^tell me about yourself\b",
+            r"^what is concord\b",
+            r"^(thanks|thank you)\b"
+        ]
+        return any(re.search(pat, q) for pat in patterns)
+
     async def ask(
         self,
         db: AsyncSession,
@@ -35,7 +64,24 @@ class RAGService:
     ) -> RAGAskResponse:
         start_time = time.perf_counter()
 
-        # Step 0: Check if query requires multi-step comparative research
+        # Step 0a: Conversational / Greeting Router (Healthy Conversational Agent)
+        # Avoids triggering ChromaDB / RAG search on generic chatter
+        if self.is_conversational_query(request.query):
+            conv_output = await self.llm_provider.generate_conversational_answer(
+                query=request.query
+            )
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            return RAGAskResponse(
+                query=request.query,
+                answer=conv_output.get("answer", ""),
+                citations=[],
+                confidence="high",
+                model_used=conv_output.get("model_used", "groq:conversational"),
+                latency_ms=round(latency_ms, 2),
+                retrieval_mode="direct_conversational"
+            )
+
+        # Step 0b: Check if query requires multi-step comparative research
         from app.modules.workflows.research_agent import ComparativeResearchAgent
         comp_agent = ComparativeResearchAgent(self.retrieval_service, self.llm_provider)
 

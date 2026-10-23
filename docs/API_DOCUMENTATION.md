@@ -151,10 +151,13 @@ sequenceDiagram
 
 ---
 
-## 5. Grounded RAG (`/rag`)
+## 5. Grounded RAG & Conversational Assistant (`/rag`, `/conversations`)
 
 ### `POST /rag/ask`
-- **Description:** Submits a question to the Grounded RAG pipeline powered by Groq Cloud (`openai/gpt-oss-120b`). Answers are strictly bound to retrieved institutional evidence with interactive citation references.
+- **Description:** Adaptive query endpoint. Automatically routes between:
+  1. **Direct Conversational Response:** Natural chit-chat / greetings without querying the vector index (`retrieval_mode: "direct_conversational"`).
+  2. **Multi-Step Comparative Synthesis:** Version and policy comparisons (`retrieval_mode: "multi_step_comparative"`).
+  3. **Grounded RAG:** Strict institutional evidence grounding with verified bracket citations (`retrieval_mode: "hybrid_rrf"`).
 - **Request Body:**
   ```json
   {
@@ -163,7 +166,7 @@ sequenceDiagram
     "top_k": 5
   }
   ```
-- **Response (200 OK):**
+- **Response (200 OK — Grounded Mode):**
   ```json
   {
     "answer": "Under the 2024 Autonomous Academic Regulations, a student must secure at least 40% in the End Semester Examination [1]...",
@@ -177,10 +180,24 @@ sequenceDiagram
         "version": "v2.0"
       }
     ],
-    "model_used": "groq/openai/gpt-oss-120b",
-    "latency_ms": 1120.4
+    "model_used": "groq:openai/gpt-oss-120b",
+    "latency_ms": 1120.4,
+    "retrieval_mode": "hybrid_rrf"
   }
   ```
+- **Response (200 OK — Conversational Greeting Mode):**
+  ```json
+  {
+    "answer": "Hello! I am CONCORD, your Institutional Knowledge Assistant for Kolhapur Institute of Technology...",
+    "citations": [],
+    "model_used": "groq:openai/gpt-oss-120b",
+    "latency_ms": 380.2,
+    "retrieval_mode": "direct_conversational"
+  }
+  ```
+
+### `POST /conversations/` & `POST /conversations/{id}/messages`
+- **Description:** Manages persistent multi-turn conversational sessions with dialogue history and contextual query resolution.
 
 ---
 
