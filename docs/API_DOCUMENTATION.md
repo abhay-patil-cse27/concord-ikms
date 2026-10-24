@@ -158,6 +158,7 @@ sequenceDiagram
   1. **Direct Conversational Response:** Natural chit-chat / greetings without querying the vector index (`retrieval_mode: "direct_conversational"`).
   2. **Multi-Step Comparative Synthesis:** Version and policy comparisons (`retrieval_mode: "multi_step_comparative"`).
   3. **Grounded RAG:** Strict institutional evidence grounding with verified bracket citations (`retrieval_mode: "hybrid_rrf"`).
+  4. **Guardrail Defense Interception:** If prompt injection, delimiter smuggling (`[INST]`, `<|im_start|>`), or harmful queries are detected, the request is intercepted at 0ms latency (`retrieval_mode: "blocked_by_guardrail"`), returning a polite institutional refusal.
 - **Request Body:**
   ```json
   {
