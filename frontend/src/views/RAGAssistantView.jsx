@@ -143,6 +143,29 @@ export default function RAGAssistantView() {
     }
   };
 
+  const handleCreateNewSession = () => {
+    createNewSession();
+    setToast({
+      message: 'New conversation session initialized.',
+      type: 'info',
+    });
+  };
+
+  const handleDeleteSession = async (id) => {
+    try {
+      await deleteSession(id);
+      setToast({
+        message: 'Conversation thread removed from memory.',
+        type: 'info',
+      });
+    } catch (e) {
+      setToast({
+        message: 'Failed to delete conversation thread.',
+        type: 'error',
+      });
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -207,8 +230,8 @@ export default function RAGAssistantView() {
           conversations={conversations}
           activeConversationId={activeConversationId}
           onSelectConversation={selectConversation}
-          onCreateNewSession={createNewSession}
-          onDeleteSession={deleteSession}
+          onCreateNewSession={handleCreateNewSession}
+          onDeleteSession={handleDeleteSession}
           onCloseSidebar={() => setShowSessionsSidebar(false)}
           userName={user?.full_name || user?.email || 'Institutional Member'}
           userRole={user?.role_code || 'VERIFIED USER'}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSearch } from '../hooks/useSearch';
 import SearchBar from '../components/ui/SearchBar';
 import EvidenceCitationCard from '../components/ui/EvidenceCitationCard';
-import { BrutalBadge, BrutalTabs, BrutalSkeleton, BrutalEmptyState } from '../components/brutal';
+import { BrutalBadge, BrutalTabs, BrutalSkeleton, BrutalEmptyState, BrutalToast } from '../components/brutal';
 import { Search as SearchIcon, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const SUGGESTIONS = [
@@ -31,6 +31,13 @@ export default function SearchView() {
   } = useSearch();
 
   const [activeTab, setActiveTab] = useState('all');
+  const [toast, setToast] = useState(null);
+
+  React.useEffect(() => {
+    if (error) {
+      setToast({ message: error, type: 'error' });
+    }
+  }, [error]);
 
   const handleQuickPrompt = (promptText) => {
     setQuery(promptText);
@@ -49,6 +56,15 @@ export default function SearchView() {
   return (
     <div className="w-full flex flex-col gap-6">
       
+      {/* Toast Notification */}
+      {toast && (
+        <BrutalToast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* View Masthead */}
       <div className="pb-6 border-b-3 border-brutal-black dark:border-brutal-yellow">
         <div className="flex items-center gap-2 mb-2">

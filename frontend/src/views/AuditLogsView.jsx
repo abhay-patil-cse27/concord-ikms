@@ -131,7 +131,15 @@ export default function AuditLogsView() {
           }
         />
       ) : (
-        <AuditTable events={filteredEvents} />
+        <AuditTable
+          events={filteredEvents}
+          onCopyHash={(hash) => {
+            setToast({
+              message: `Copied SHA-256 Hash (${hash.slice(0, 10)}...) to clipboard.`,
+              type: 'info',
+            });
+          }}
+        />
       )}
     </div>
   );

@@ -9,12 +9,13 @@ import { variants } from '../../motion/presets';
  * Displays monospaced cryptographic audit records, truncated SHA-256 hashes with copy trigger,
  * and previous-to-current block chain indicators.
  */
-export default function AuditTable({ events = [] }) {
+export default function AuditTable({ events = [], onCopyHash }) {
   const [copiedId, setCopiedId] = useState(null);
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
+    if (onCopyHash) onCopyHash(text);
     setTimeout(() => setCopiedId(null), 1500);
   };
 

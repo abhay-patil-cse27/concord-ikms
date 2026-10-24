@@ -160,4 +160,21 @@ The frontend is built with **React 18 + Vite 5** and implements an uncompromisin
 - **Institutional Benchmarking & Verification ([`frontend/src/views/BenchmarkView.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/views/BenchmarkView.jsx)):**
   - KPI telemetry cards, live benchmark runner, and department latency matrices.
 
+---
+
+## 6. Feedback & Notification System (BrutalToast)
+
+All user interactions and asynchronous tasks across CONCORD IKMS trigger unified tactile notifications via **[`BrutalToast`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/brutal/BrutalToast.jsx)**:
+- **Design Tokens:** Strictly bound to Tailwind Brutalist tokens (`bg-brutal-success`, `bg-brutal-yellow`, `bg-brutal-accent`, `bg-brutal-paper`), eliminating arbitrary inline colors and ensuring high-contrast readability (minimum 5.4:1 contrast ratio).
+- **Auto-Dismiss Lifecycle:** Configured with a default 4000ms duration with automatic cleanup timers and manual dismiss triggers.
+- **Accessibility:** Declared with `role="status"` and `aria-live="polite"` for non-disruptive screen reader announcements.
+- **System Activity Coverage:**
+  - **Conversational Assistant (`RAGAssistantView`):** Copy conversation as Markdown, thread session initialization, and session deletion.
+  - **Contextual Search (`SearchView`):** Retrieval completion diagnostics, empty state notices, and API error alerts.
+  - **Audit Ledger (`AuditLogsView`):** SHA-256 hash copy to clipboard, manual ledger synchronization, and cryptographic hash-chain integrity verification.
+  - **Document Governance (`DocumentsView`):** Upload confirmation, document deletion, review decisions (`approved`/`rejected`), and inspector load failures.
+  - **Department Management (`DepartmentsView`):** Department creation, validation errors, and quota limit feedback.
+  - **User Directory (`UsersView`):** Account activation/deactivation toggles and permission guard alerts.
+  - **Benchmarking Suite (`BenchmarkView`):** Metrics refresh and live benchmark execution assertions.
+
 
