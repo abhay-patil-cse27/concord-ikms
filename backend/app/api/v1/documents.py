@@ -65,9 +65,10 @@ async def list_documents(
     current_user: User = Depends(require_permission("documents:read")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Lists institutional documents with optional department and status filtering."""
+    """Lists institutional documents with department and status filtering scoped by tenant boundaries."""
     service = DocumentService(db)
     return await service.list_documents(
+        current_user=current_user,
         department_id=department_id,
         status=status,
         limit=limit,
@@ -81,9 +82,9 @@ async def get_document(
     current_user: User = Depends(require_permission("documents:read")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Retrieves document details with extracted chunk segments."""
+    """Retrieves document details with extracted chunk segments, enforcing DocumentPolicy."""
     service = DocumentService(db)
-    return await service.get_document_with_chunks(document_id)
+    return await service.get_document_with_chunks(document_id, current_user=current_user)
 
 
 @router.get("/{document_id}/download")
@@ -92,9 +93,9 @@ async def download_document(
     current_user: User = Depends(require_permission("documents:read")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Downloads raw file bytes of an institutional document."""
+    """Downloads raw file bytes of an institutional document, enforcing DocumentPolicy."""
     service = DocumentService(db)
-    doc = await service.get_document_with_chunks(document_id)
+    doc = await service.get_document_with_chunks(document_id, current_user=current_user)
     file_bytes = await storage_provider.read_file(doc.file_path)
     
     return Response(

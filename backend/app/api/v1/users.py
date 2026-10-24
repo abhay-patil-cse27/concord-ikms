@@ -18,8 +18,14 @@ async def list_users(
     current_user: User = Depends(require_permission("users:read")),
     db: AsyncSession = Depends(get_db)
 ):
-    """Lists institutional users. Requires 'users:read' permission."""
-    return await IdentityService.get_users(db, limit=limit)
+    """Lists institutional users. Platform admins see all users; lower roles see only their own profile."""
+    from app.core.access.policy import _get_user_roles
+    roles = _get_user_roles(current_user)
+    if "platform_admin" in roles:
+        return await IdentityService.get_users(db, limit=limit)
+    # Non-admin sees only their own profile
+    user_res = await IdentityService.get_user_by_id(db, current_user.id)
+    return [user_res] if user_res else []
 
 
 @router.post("", response_model=UserResponse, summary="Create User Account")

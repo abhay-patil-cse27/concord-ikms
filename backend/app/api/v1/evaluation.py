@@ -23,9 +23,9 @@ async def get_benchmark_overview(
 
 @router.post("/run")
 async def run_live_benchmark(
-    current_user: User = Depends(require_permission("documents:write")),
+    current_user: User = Depends(require_permission("system:admin")),
     db: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
-    """Triggers an on-demand live benchmark evaluation across lexical, vector, and hybrid modes."""
+    """Triggers an on-demand live benchmark evaluation across lexical, vector, and hybrid modes. Admin only."""
     runner = BenchmarkRunner()
     return await runner.run_benchmark(db=db, current_user=current_user, top_k=5)

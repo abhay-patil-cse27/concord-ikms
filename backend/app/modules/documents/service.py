@@ -162,13 +162,33 @@ class DocumentService:
 
     async def list_documents(
         self,
+        current_user: Optional[User] = None,
         department_id: Optional[str] = None,
         status: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
     ) -> List[Document]:
-        """Lists institutional documents with optional department and status filtering."""
+        """Lists institutional documents with department/public visibility policy filtering."""
+        from sqlalchemy import or_
+        from app.core.access.policy import _get_user_roles, _get_user_dept_ids
+
         query = select(Document).order_by(Document.created_at.desc())
+        
+        # Enforce multi-tenant data isolation if current_user provided
+        if current_user:
+            roles = _get_user_roles(current_user)
+            if "platform_admin" not in roles:
+                user_depts = _get_user_dept_ids(current_user)
+                # Lower roles see only public documents, or documents of departments they belong to, or documents they own
+                query = query.where(
+                    or_(
+                        Document.visibility == "public",
+                        Document.owner_id == current_user.id,
+                        Document.uploader_id == current_user.id,
+                        Document.department_id.in_(user_depts) if user_depts else False
+                    )
+                )
+
         if department_id:
             query = query.where(Document.department_id == str(department_id))
         if status:
@@ -178,8 +198,8 @@ class DocumentService:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_document_with_chunks(self, document_id: str) -> Document:
-        """Retrieves a document with all parsed chunks eagerly loaded."""
+    async def get_document_with_chunks(self, document_id: str, current_user: Optional[User] = None) -> Document:
+        """Retrieves a document with parsed chunks eagerly loaded, checking DocumentPolicy authorization."""
         query = (
             select(Document)
             .options(selectinload(Document.chunks))
@@ -189,6 +209,11 @@ class DocumentService:
         doc = result.scalar_one_or_none()
         if not doc:
             raise NotFoundError(f"Document with ID {document_id} not found")
+
+        if current_user:
+            from app.core.access.policy import document_policy
+            document_policy.authorize_read(current_user, doc, resource_name="Document")
+
         return doc
 
     async def delete_document(
