@@ -8,6 +8,7 @@ import MessageBlock from '../components/rag/MessageBlock';
 import Composer from '../components/rag/Composer';
 import CitationDrawer from '../components/rag/CitationDrawer';
 import { BrutalToast } from '../components/brutal';
+import { exportThreadToMarkdown } from '../lib/exportThread';
 
 /**
  * RAGAssistantView
@@ -148,6 +149,46 @@ export default function RAGAssistantView() {
 
   const activeTitle = conversations.find(c => c.id === activeConversationId)?.title || 'Autonomous Grounded Q&A';
 
+  const handleCopyMarkdown = async () => {
+    if (!history || history.length === 0) {
+      setToast({ message: 'Conversation thread is empty.', type: 'warning' });
+      return;
+    }
+
+    try {
+      const markdown = exportThreadToMarkdown({
+        title: activeTitle,
+        history,
+        date: new Date().toLocaleString(),
+      });
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(markdown);
+      } else {
+        // Fallback for non-secure contexts or legacy browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = markdown;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
+      setToast({
+        message: 'Conversation copied as Markdown with source citations!',
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Failed to copy Markdown:', err);
+      setToast({
+        message: 'Could not copy to clipboard. Please check browser permissions.',
+        type: 'error',
+      });
+    }
+  };
+
   return (
     <div className="flex h-full w-full border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal-lg bg-brutal-paper dark:bg-brutal-black overflow-hidden relative min-h-0">
       
@@ -182,6 +223,8 @@ export default function RAGAssistantView() {
           showSidebar={showSessionsSidebar}
           onToggleSidebar={() => setShowSessionsSidebar(!showSessionsSidebar)}
           onPrint={handlePrint}
+          onCopyMarkdown={handleCopyMarkdown}
+          isCopyDisabled={!history || history.length === 0}
           conversationTitle={activeTitle}
         />
 

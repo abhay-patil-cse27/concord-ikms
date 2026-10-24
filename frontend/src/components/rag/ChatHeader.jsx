@@ -1,15 +1,17 @@
 import React from 'react';
-import { Bot, PanelLeft, PanelLeftClose, Printer, ShieldCheck } from 'lucide-react';
+import { Bot, PanelLeft, PanelLeftClose, Printer, Copy } from 'lucide-react';
 import { BrutalBadge, BrutalButton } from '../brutal';
 
 /**
  * ChatHeader
- * Top bar for RAG Assistant coordinating sidebar drawer trigger, institutional tags, and print report.
+ * Top bar for RAG Assistant coordinating sidebar drawer trigger, institutional tags, and copy/print exports.
  */
 export default function ChatHeader({
   showSidebar,
   onToggleSidebar,
   onPrint,
+  onCopyMarkdown,
+  isCopyDisabled = false,
   conversationTitle = 'Autonomous Grounded Q&A',
 }) {
   return (
@@ -37,7 +39,7 @@ export default function ChatHeader({
         </div>
       </div>
 
-      {/* Right: Security Badge & Export Report */}
+      {/* Right: Security Badges & Copy/Export Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <BrutalBadge tone="yellow" size="sm" className="hidden sm:inline-flex">
           GROQ LLM
@@ -46,6 +48,21 @@ export default function ChatHeader({
         <BrutalBadge tone="black" size="sm" className="hidden md:inline-flex">
           ZERO HALLUCINATION GATE
         </BrutalBadge>
+
+        {onCopyMarkdown && (
+          <BrutalButton
+            variant="secondary"
+            size="sm"
+            onClick={onCopyMarkdown}
+            disabled={isCopyDisabled}
+            icon={Copy}
+            aria-label="Copy conversation as Markdown"
+            title="Copy conversation as Markdown"
+            className="no-print"
+          >
+            <span className="hidden lg:inline">Copy MD</span>
+          </BrutalButton>
+        )}
 
         {onPrint && (
           <button
@@ -63,3 +80,4 @@ export default function ChatHeader({
     </div>
   );
 }
+
