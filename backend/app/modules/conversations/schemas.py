@@ -20,6 +20,8 @@ class ConversationResponse(BaseModel):
     id: str
     title: str
     user_id: str
+    owner_id: Optional[str] = None
+    visibility: Optional[str] = "private"
     department_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime

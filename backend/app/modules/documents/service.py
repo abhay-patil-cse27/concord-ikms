@@ -64,6 +64,8 @@ class DocumentService:
             sha256_hash=sha256_hash,
             department_id=str(department_id),
             uploader_id=str(uploader_id),
+            owner_id=str(uploader_id),
+            visibility="department",
             status="processing",
             chunk_count=0,
         )

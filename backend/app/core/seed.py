@@ -229,6 +229,8 @@ async def seed_database(db: AsyncSession) -> None:
                 sha256_hash=hashlib.sha256(text_bytes).hexdigest(),
                 department_id=dept.id if dept else None,
                 uploader_id=admin_u.id if admin_u else None,
+                owner_id=admin_u.id if admin_u else None,
+                visibility="department",
                 status="processed",
                 lifecycle_status=d_meta["lifecycle_status"],
                 version=d_meta["version"],

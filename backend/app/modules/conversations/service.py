@@ -55,12 +55,15 @@ class ConversationService:
         db: AsyncSession,
         user_id: str,
         title: Optional[str] = None,
-        department_id: Optional[str] = None
+        department_id: Optional[str] = None,
+        visibility: str = "private"
     ) -> Conversation:
         conv = Conversation(
             id=str(uuid.uuid4()),
             title=title or "New Institutional Inquiry",
             user_id=user_id,
+            owner_id=user_id,
+            visibility=visibility or "private",
             department_id=department_id
         )
         db.add(conv)
@@ -154,6 +157,7 @@ class ConversationService:
         user_msg = ConversationMessage(
             id=str(uuid.uuid4()),
             conversation_id=conv.id,
+            owner_id=current_user.id,
             role="user",
             content=query
         )
@@ -178,6 +182,7 @@ class ConversationService:
         asst_msg = ConversationMessage(
             id=str(uuid.uuid4()),
             conversation_id=conv.id,
+            owner_id=current_user.id,
             role="assistant",
             content=rag_res.answer,
             citations=citations_data,

@@ -21,6 +21,8 @@ class Document(Base):
 
     department_id: Mapped[str] = mapped_column(String(36), ForeignKey("departments.id", ondelete="CASCADE"), index=True, nullable=False)
     uploader_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    visibility: Mapped[str] = mapped_column(String(32), default="department", index=True, nullable=False)  # 'private' | 'department' | 'public'
 
     # Lifecycle & Versioning (Milestone 5)
     # Status: pending, processing, processed, failed
