@@ -32,10 +32,15 @@ class DocumentService:
         title: Optional[str] = None,
         ip_address: Optional[str] = None,
     ) -> Document:
-        """Processes and chunks an uploaded document synchronously/transactionally."""
+        # Path Traversal Defense: Strip path separators and keep only safe basename
+        import os
+        safe_filename = os.path.basename(filename).replace("\\", "/").split("/")[-1].strip()
+        if not safe_filename:
+            safe_filename = f"upload_{uuid.uuid4().hex[:8]}.pdf"
+
         sha256_hash = hashlib.sha256(file_bytes).hexdigest()
         file_size = len(file_bytes)
-        display_title = title.strip() if title and title.strip() else filename
+        display_title = title.strip() if title and title.strip() else safe_filename
 
         # Check for duplicate document in the same department
         dup_query = select(Document).where(

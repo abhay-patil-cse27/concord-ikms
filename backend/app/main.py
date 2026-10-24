@@ -70,6 +70,12 @@ async def request_correlation_and_timing_middleware(request: Request, call_next)
         response.headers["X-Request-ID"] = req_id
         response.headers["X-Response-Time-Ms"] = str(duration_ms)
         
+        # Enterprise Security & Hardening Headers (OWASP ASVS 4.1)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
         logger.info(f"{request.method} {request.url.path} -> {response.status_code} ({duration_ms}ms)")
         return response
     except Exception as exc:

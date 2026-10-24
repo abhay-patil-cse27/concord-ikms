@@ -95,7 +95,14 @@ class ChromaVectorStore:
 
         where_clause = None
         if department_id:
-            where_clause = {"department_id": department_id}
+            # Defensive NoSQL injection prevention: ensure department_id is a clean alphanumeric string or UUID
+            import re
+            cleaned_dept_id = str(department_id).strip()
+            if re.match(r"^[a-zA-Z0-9_\-]+$", cleaned_dept_id):
+                where_clause = {"department_id": cleaned_dept_id}
+            else:
+                logger.warning(f"Rejected potentially malformed/injected department_id filter: '{department_id}'")
+                where_clause = {"department_id": "__INVALID_REJECTED__"}
 
         results = col.query(
             query_texts=[query],

@@ -37,10 +37,13 @@ class PromptGuard:
         re.compile(r"```(system|prompt|instruction)", re.IGNORECASE),
     ]
 
-    # 3. Explicit harmful/toxic indicators
+    # 3. Explicit harmful/toxic indicators and direct attack payloads
+    # Tuned to prevent false positives on legitimate computer science questions (e.g. "what is SQL in DBMS?")
     HARMFUL_PATTERNS = [
-        re.compile(r"(?i)\b(how\s+to\s+hack|exploit\s+vulnerability|sql\s+injection\s+payload|bypass\s+firewall)\b", re.IGNORECASE),
+        re.compile(r"(?i)\b(how\s+to\s+hack\b|exploit\s+vulnerability|bypass\s+firewall)\b", re.IGNORECASE),
         re.compile(r"(?i)\b(make\s+a\s+bomb|create\s+malware|ransomware\s+script|steal\s+passwords)\b", re.IGNORECASE),
+        # Detect active SQL injection attempt signatures
+        re.compile(r"(?i)(union\s+select|drop\s+table\b|insert\s+into\b|exec\s+xp_|;\s*drop\s+|--\s*$|'\s*or\s+'?1'?\s*=\s*'?1)", re.IGNORECASE),
     ]
 
     # Standard institutional refusal message
