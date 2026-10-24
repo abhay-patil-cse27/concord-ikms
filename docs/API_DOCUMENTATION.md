@@ -196,22 +196,57 @@ sequenceDiagram
   }
   ```
 
-### `POST /conversations/` & `POST /conversations/{id}/messages`
-- **Description:** Manages persistent multi-turn conversational sessions with dialogue history and contextual query resolution.
+### `GET /conversations`
+- **Description:** Lists recent conversation sessions belonging to the authenticated user.
+- **Access Rule:** Scoped strictly to threads where `owner_id == current_user.id`. Other users' threads are never returned.
+- **Query Parameters:** `limit` (default: 30)
+
+### `POST /conversations`
+- **Description:** Explicitly creates a new multi-turn conversation session.
+- **Security Rule:** `owner_id` is derived server-side from the verified JWT token. Any `owner_id` or `user_id` in the request payload is ignored.
+
+### `GET /conversations/{conversation_id}`
+- **Description:** Retrieves message history and citations for a conversation thread.
+- **Access Rule:** Enforces `ConversationPolicy`. If the requestor is not the owner, returns **`404 Not Found`** (anti-probing). Platform administrators cannot inspect private conversation dialogues of other users.
+
+### `DELETE /conversations/{conversation_id}`
+- **Description:** Deletes a conversation session and cascades deletion of its message turns.
+- **Access Rule:** Owner only. Non-owners receive **`404 Not Found`**.
+
+### `POST /conversations/ask`
+- **Description:** Executes a turn in an active or new conversation, resolving pronouns from preceding turns and grounding responses with ChromaDB vector citations.
+- **Access Rule:** Requires `documents:read`. Grounding citations strictly respect departmental RBAC boundaries.
 
 ---
 
-## 6. Evaluation & Benchmarking (`/evaluation`)
+## 6. Resource Access & Isolation Matrix
+
+| Endpoint | Method | Resource | Access Rule | Unowned / Unauthorized Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `/conversations` | `GET` | Threads List | `owner_id == current_user.id` | Returns only own threads |
+| `/conversations/{id}` | `GET` | Thread Detail | `owner_id == current_user.id` | **`404 Not Found`** |
+| `/conversations/{id}` | `DELETE` | Thread Delete | `owner_id == current_user.id` | **`404 Not Found`** |
+| `/conversations` | `POST` | Thread Create | Bound to token user ID | N/A (Server sets owner) |
+| `/documents` | `GET` | Documents List | Department membership or `visibility == 'public'` | Filtered by tenant/visibility |
+| `/documents/{id}` | `GET` | Document Detail | Department membership or public | **`404 Not Found`** |
+| `/documents/{id}/download` | `GET` | Raw Binary | Department membership or public | **`404 Not Found`** |
+| `/audit/events` | `GET` | Security Logs | `platform_admin` only | **`403 Forbidden`** |
+| `/users` | `GET` | Users List | `platform_admin` (all) / Others (self profile only) | Scoped to self |
+| `/evaluation/run` | `POST` | Live Benchmark | `platform_admin` (`system:admin`) | **`403 Forbidden`** |
+
+---
+
+## 7. Evaluation & Benchmarking (`/evaluation`)
 
 ### `GET /evaluation/metrics`
 - **Description:** Returns the comparative retrieval architecture matrix (BM25 vs Vector vs CONCORD Hybrid).
 
 ### `POST /evaluation/run`
-- **Description:** Triggers live execution across 5 canonical test scenarios, calculating Hit Rate@5, MRR@5, and security leakage.
+- **Description:** Triggers live execution across 5 canonical test scenarios, calculating Hit Rate@5, MRR@5, and security leakage. Requires `system:admin`.
 
 ---
 
-## 7. System Health & Maintenance (`/healthz`, `/readyz`, `/admin`)
+## 8. System Health & Maintenance (`/healthz`, `/readyz`, `/admin`)
 
 ### `GET /healthz`
 - **Description:** Liveness probe returning service name and environment.
