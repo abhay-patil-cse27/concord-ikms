@@ -33,7 +33,7 @@ async def query_knowledge_base(
         lifecycle_status=request.lifecycle_status
     )
 
-    # Log search audit event
+    # Log search audit event (Metadata only - privacy enforced)
     from app.modules.audit.schemas import AuditEventCreate
     await AuditService.log_event(
         db=db,
@@ -43,7 +43,7 @@ async def query_knowledge_base(
             resource_type="search",
             resource_id=None,
             details={
-                "query": request.query,
+                "query_length": len(request.query),
                 "mode": request.mode,
                 "results_count": len(response.results),
                 "latency_ms": response.latency_ms

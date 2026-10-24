@@ -31,11 +31,12 @@ class IdentityService:
         return user
 
     @staticmethod
-    async def get_users(db: AsyncSession, limit: int = 100) -> List[User]:
+    async def get_users(db: AsyncSession, limit: int = 100, offset: int = 0) -> List[User]:
         result = await db.execute(
             select(User)
             .options(selectinload(User.roles).selectinload(Role.permissions))
             .order_by(User.full_name)
+            .offset(offset)
             .limit(limit)
         )
         return list(result.scalars().all())

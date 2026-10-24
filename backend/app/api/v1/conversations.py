@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
 from app.core.access.policy import ConversationPolicy, get_conversation_policy
+from app.core.pagination import PaginationParams
 from app.modules.identity.models import User
 from app.modules.conversations.service import ConversationService
 from app.modules.conversations.schemas import (
@@ -20,14 +21,14 @@ router = APIRouter(prefix="/conversations", tags=["Conversational Memory"])
 
 @router.get("", response_model=List[ConversationResponse])
 async def list_conversations(
-    limit: int = 30,
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     policy: ConversationPolicy = Depends(get_conversation_policy)
 ):
     """List recent conversation sessions belonging to the authenticated user."""
     service = ConversationService()
-    convs = await service.list_user_conversations(db, current_user.id, limit=limit)
+    convs = await service.list_user_conversations(db, current_user.id, limit=pagination.limit)
     return [
         ConversationResponse(
             id=c.id,
@@ -139,5 +140,26 @@ async def ask_with_conversation(
         department_id=payload.department_id,
         top_k=payload.top_k,
         include_superseded=payload.include_superseded
+    )
+
+    # Log turn audit event with metadata only - no private conversation content
+    from app.modules.audit.service import AuditService
+    from app.modules.audit.schemas import AuditEventCreate
+    await AuditService.log_event(
+        db=db,
+        data=AuditEventCreate(
+            action="conversation.turn",
+            user_id=current_user.id,
+            resource_type="conversation",
+            resource_id=result.get("conversation_id"),
+            details={
+                "query_length": len(payload.query),
+                "answer_length": len(result.get("answer", "")),
+                "citations_count": len(result.get("citations", [])),
+                "model_used": result.get("model_used"),
+                "latency_ms": result.get("latency_ms"),
+            },
+            status="success"
+        )
     )
     return result

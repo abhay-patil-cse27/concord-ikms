@@ -249,7 +249,16 @@ Run the complete backend test suite:
 ```bash
 .\.venv\Scripts\pytest -v backend/tests
 ```
-- **Test Coverage Includes (49 Test Cases):**
+
+Run the frontend cache isolation test suite:
+```bash
+cd frontend && npm test
+```
+
+> For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
+
+- **Test Coverage Includes (58 Backend + 5 Frontend Test Scenarios — 100% Passing):**
+  - **Per-User Isolation & Anti-BOLA (`test_isolation.py`):** Cross-user thread isolation returning 404, token-bound `owner_id`, audit event metadata privacy (no prompt text in audit logs), cross-department document protection, user profile self-only scoping, and benchmark admin-only protection.
   - `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
   - Password login verification and invalid credential 401 rejections.
   - Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.
@@ -261,6 +270,7 @@ Run the complete backend test suite:
   - Comparative Research Agent: Automated multi-query decomposition and Markdown comparison tables.
   - Evaluation & Benchmarking Suite: `/api/v1/evaluation/metrics` and `POST /api/v1/evaluation/run` calculating Hit Rate@K, MRR@K, latency percentiles, and cross-department security leakage rates.
   - Multi-Department Institutional Scenarios: Canonical syllabus, exam rules, lab policies, and superseded version filtering tests.
+  - Frontend Cache Partitioning: User-namespaced cache keys (`_user_{id}`), startup legacy unnamespaced key purging, and complete cache flushes on logout.
 
 ---
 

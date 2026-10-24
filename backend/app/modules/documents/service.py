@@ -221,14 +221,19 @@ class DocumentService:
         self,
         document_id: str,
         user_id: str,
+        current_user: Optional[User] = None,
         ip_address: Optional[str] = None,
     ) -> bool:
-        """Deletes a document, its database chunks, and raw storage file."""
+        """Deletes a document, enforcing DocumentPolicy write/delete authorization."""
         query = select(Document).where(Document.id == str(document_id))
         res = await self.db.execute(query)
         doc = res.scalar_one_or_none()
         if not doc:
             raise NotFoundError(f"Document with ID {document_id} not found")
+
+        if current_user:
+            from app.core.access.policy import document_policy
+            document_policy.authorize_delete(current_user, doc, resource_name="Document")
 
         # Delete from disk/storage
         try:
@@ -271,9 +276,10 @@ class DocumentService:
         version: Optional[str] = None,
         superseded_by_id: Optional[str] = None,
         user_id: Optional[str] = None,
+        current_user: Optional[User] = None,
         ip_address: Optional[str] = None,
     ) -> Document:
-        """Updates the lifecycle status and version relationships of an institutional document."""
+        """Updates the lifecycle status and version relationships, enforcing DocumentPolicy write authorization."""
         valid_statuses = {"active", "superseded", "archived", "draft"}
         if lifecycle_status not in valid_statuses:
             raise ValidationError(f"Invalid lifecycle status '{lifecycle_status}'. Allowed: {valid_statuses}")
@@ -283,6 +289,10 @@ class DocumentService:
         doc = res.scalar_one_or_none()
         if not doc:
             raise NotFoundError(f"Document with ID {document_id} not found")
+
+        if current_user:
+            from app.core.access.policy import document_policy
+            document_policy.authorize_write(current_user, doc, resource_name="Document")
 
         doc.lifecycle_status = lifecycle_status
         if version:

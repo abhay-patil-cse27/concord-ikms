@@ -17,6 +17,8 @@ from app.modules.documents.schemas import (
 )
 from app.modules.documents.service import DocumentService
 
+from app.core.pagination import PaginationParams
+
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 
@@ -58,10 +60,9 @@ async def upload_document(
 
 @router.get("", response_model=List[DocumentRead])
 async def list_documents(
+    pagination: PaginationParams = Depends(),
     department_id: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
     current_user: User = Depends(require_permission("documents:read")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -71,8 +72,8 @@ async def list_documents(
         current_user=current_user,
         department_id=department_id,
         status=status,
-        limit=limit,
-        offset=offset,
+        limit=pagination.limit,
+        offset=pagination.offset,
     )
 
 
@@ -113,7 +114,7 @@ async def update_document_lifecycle(
     current_user: User = Depends(require_permission("documents:write")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Updates document lifecycle state (active, superseded, archived) and version pointer."""
+    """Updates document lifecycle state, enforcing DocumentPolicy write rules."""
     service = DocumentService(db)
     client_ip = request.client.host if request.client else None
     doc = await service.update_lifecycle(
@@ -122,6 +123,7 @@ async def update_document_lifecycle(
         version=payload.version,
         superseded_by_id=payload.superseded_by_id,
         user_id=str(current_user.id),
+        current_user=current_user,
         ip_address=client_ip,
     )
     return DocumentRead.model_validate(doc)
@@ -134,9 +136,14 @@ async def delete_document(
     current_user: User = Depends(require_permission("documents:delete")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Permanently deletes a document, its database chunks, and disk storage."""
+    """Permanently deletes a document, enforcing DocumentPolicy delete rules."""
     service = DocumentService(db)
     client_ip = request.client.host if request.client else None
-    await service.delete_document(document_id, user_id=str(current_user.id), ip_address=client_ip)
+    await service.delete_document(
+        document_id=document_id,
+        user_id=str(current_user.id),
+        current_user=current_user,
+        ip_address=client_ip
+    )
     return None
 

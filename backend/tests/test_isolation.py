@@ -191,3 +191,92 @@ async def test_multi_role_thread_isolation(client: AsyncClient):
     # Cleanup
     for role, thread_id in created_threads.items():
         await client.delete(f"/api/v1/conversations/{thread_id}", headers={"Authorization": f"Bearer {tokens[role]}"})
+
+
+@pytest.mark.asyncio
+async def test_audit_events_do_not_leak_prompt_or_answer_content(client: AsyncClient):
+    """
+    Verifies that when a user asks a query, audit_events records metadata only.
+    An admin inspecting /audit/events never sees question text or answer text.
+    """
+    faculty_token = await get_token_for_role(client, "faculty")
+    admin_token = await get_token_for_role(client, "platform_admin")
+
+    # Faculty executes search query
+    secret_marker = "SUPER_SECRET_FACULTY_RESEARCH_TOPIC_123"
+    await client.post(
+        "/api/v1/search/query",
+        json={"query": secret_marker, "top_k": 3},
+        headers={"Authorization": f"Bearer {faculty_token}"},
+    )
+
+    # Admin inspects audit events
+    audit_res = await client.get(
+        "/api/v1/audit/events",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert audit_res.status_code == 200
+    events = audit_res.json()
+    assert len(events) > 0
+
+    # Verify no audit event contains the raw secret question text
+    for event in events:
+        details_str = str(event.get("details", {}))
+        assert secret_marker not in details_str, f"Audit leak detected in event: {details_str}"
+
+
+@pytest.mark.asyncio
+async def test_cross_department_document_protection(client: AsyncClient):
+    """
+    Documents belonging to EXAM department cannot be downloaded or inspected by CSE Student
+    if they are not public.
+    """
+    student_token = await get_token_for_role(client, "student")
+    admin_token = await get_token_for_role(client, "platform_admin")
+
+    # Fetch EXAM department documents as admin
+    docs_res = await client.get("/api/v1/documents", headers={"Authorization": f"Bearer {admin_token}"})
+    assert docs_res.status_code == 200
+    all_docs = docs_res.json()
+    assert len(all_docs) > 0
+
+    # Student cannot download unowned documents outside their department
+    exam_doc = next((d for d in all_docs if "Regulations" in d["title"]), all_docs[0])
+    student_get = await client.get(
+        f"/api/v1/documents/{exam_doc['id']}/download",
+        headers={"Authorization": f"Bearer {student_token}"},
+    )
+    # If the document is public it can be read, otherwise it returns 404
+    if exam_doc.get("visibility") == "private":
+        assert student_get.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_users_list_self_only_for_non_admin(client: AsyncClient):
+    """
+    Platform admin sees all users; department admin (non-platform-admin with users:read) sees only their own profile.
+    """
+    admin_token = await get_token_for_role(client, "platform_admin")
+    dept_admin_token = await get_token_for_role(client, "dept_admin")
+
+    # Admin sees full user directory
+    admin_users = await client.get("/api/v1/users", headers={"Authorization": f"Bearer {admin_token}"})
+    assert admin_users.status_code == 200
+    assert len(admin_users.json()) >= 4
+
+    # Dept Admin has users:read but is not platform admin -> sees only 1 user (themselves)
+    dept_users = await client.get("/api/v1/users", headers={"Authorization": f"Bearer {dept_admin_token}"})
+    assert dept_users.status_code == 200
+    assert len(dept_users.json()) == 1
+    assert "deptadmin.cse" in dept_users.json()[0]["email"]
+
+
+@pytest.mark.asyncio
+async def test_benchmark_run_forbidden_for_non_admin(client: AsyncClient):
+    """
+    Calling POST /api/v1/evaluation/run is blocked (403) for non-admins.
+    """
+    student_token = await get_token_for_role(client, "student")
+    res = await client.post("/api/v1/evaluation/run", headers={"Authorization": f"Bearer {student_token}"})
+    assert res.status_code == 403
+

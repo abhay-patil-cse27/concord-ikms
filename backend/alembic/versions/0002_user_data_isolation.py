@@ -58,4 +58,25 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    pass
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    tables = inspector.get_table_names()
+
+    if 'documents' in tables:
+        with op.batch_alter_table('documents') as batch_op:
+            batch_op.drop_index('ix_documents_visibility')
+            batch_op.drop_index('ix_documents_owner_id')
+            batch_op.drop_column('visibility')
+            batch_op.drop_column('owner_id')
+
+    if 'conversation_messages' in tables:
+        with op.batch_alter_table('conversation_messages') as batch_op:
+            batch_op.drop_index('ix_conversation_messages_owner_id')
+            batch_op.drop_column('owner_id')
+
+    if 'conversations' in tables:
+        with op.batch_alter_table('conversations') as batch_op:
+            batch_op.drop_index('ix_conversations_visibility')
+            batch_op.drop_index('ix_conversations_owner_id')
+            batch_op.drop_column('visibility')
+            batch_op.drop_column('owner_id')

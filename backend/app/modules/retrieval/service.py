@@ -53,7 +53,7 @@ class RetrievalService:
         allowed_dept_id: Optional[str] = None
         if not is_global_admin:
             # Enforce user's assigned department
-            allowed_dept_id = current_user.department_id
+            allowed_dept_id = getattr(current_user, "primary_department_id", None)
         elif target_department_id:
             allowed_dept_id = target_department_id
 
@@ -74,6 +74,17 @@ class RetrievalService:
 
         # Milestone 6 (Governance): Only approved documents can be retrieved by search and RAG
         stmt = stmt.where(Document.approval_status == "approved")
+
+        # Step 2 & 3 Data Isolation: Private documents are ONLY visible to their owner or platform_admin
+        if not is_global_admin:
+            from sqlalchemy import or_
+            stmt = stmt.where(
+                or_(
+                    Document.visibility.in_(["department", "public"]),
+                    Document.owner_id == current_user.id,
+                    Document.uploader_id == current_user.id
+                )
+            )
 
         result = await db.execute(stmt)
         chunks: List[DocumentChunk] = result.scalars().all()

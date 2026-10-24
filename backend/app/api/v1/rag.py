@@ -29,7 +29,7 @@ async def ask_grounded_rag(
         current_user=current_user
     )
 
-    # Log audit record for institutional RAG query
+    # Log audit record for institutional RAG query (Metadata only - privacy enforced)
     await AuditService.log_event(
         db=db,
         data=AuditEventCreate(
@@ -38,11 +38,12 @@ async def ask_grounded_rag(
             resource_type="rag",
             resource_id=None,
             details={
-                "query": request.query,
+                "query_length": len(request.query),
                 "confidence": response.confidence,
                 "model_used": response.model_used,
                 "citations_count": len(response.citations),
-                "latency_ms": response.latency_ms
+                "latency_ms": response.latency_ms,
+                "department_id": request.department_id,
             },
             status="success"
         )

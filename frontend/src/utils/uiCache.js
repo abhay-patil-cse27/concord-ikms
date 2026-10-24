@@ -18,6 +18,19 @@ const CACHE_KEYS = {
 // Current active user ID for cache isolation
 let activeUserId = null;
 
+// Purge legacy unnamespaced cache keys on module load
+try {
+  if (typeof window !== 'undefined') {
+    const rawKeys = Object.values(CACHE_KEYS);
+    rawKeys.forEach((key) => {
+      if (sessionStorage.getItem(key)) sessionStorage.removeItem(key);
+      if (localStorage.getItem(key)) localStorage.removeItem(key);
+    });
+  }
+} catch (e) {
+  // Ignore in SSR / non-browser test runners
+}
+
 export const uiCache = {
   setActiveUser: (userId) => {
     activeUserId = userId || null;
