@@ -13,6 +13,7 @@ from app.core.storage import storage_provider
 from app.modules.documents.models import Document, DocumentChunk
 from app.modules.documents.parsers import get_parser_for_mime_or_ext
 from app.modules.documents.chunker import get_chunker_for_document
+from app.modules.identity.models import User
 from app.modules.audit.service import AuditService
 from app.modules.audit.schemas import AuditEventCreate
 
