@@ -64,6 +64,26 @@ class RAGService:
     ) -> RAGAskResponse:
         start_time = time.perf_counter()
 
+        # Step 0: Input Guardrail & Safety Interceptor
+        from app.core.guardrails import PromptGuard
+
+        sanitized_query = PromptGuard.sanitize_input(request.query)
+        is_safe, refusal_reason = PromptGuard.check_prompt_safety(sanitized_query)
+        if not is_safe:
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            return RAGAskResponse(
+                query=sanitized_query,
+                answer=PromptGuard.STANDARD_REFUSAL_MESSAGE,
+                citations=[],
+                confidence="none",
+                model_used="guardrail:blocked",
+                latency_ms=round(latency_ms, 2),
+                retrieval_mode="blocked_by_guardrail"
+            )
+
+        # Update request query to clean sanitized query
+        request.query = sanitized_query
+
         # Step 0a: Conversational / Greeting Router (Healthy Conversational Agent)
         # Avoids triggering ChromaDB / RAG search on generic chatter
         if self.is_conversational_query(request.query):
@@ -71,9 +91,10 @@ class RAGService:
                 query=request.query
             )
             latency_ms = (time.perf_counter() - start_time) * 1000.0
+            safe_answer = PromptGuard.sanitize_output(conv_output.get("answer", ""))
             return RAGAskResponse(
                 query=request.query,
-                answer=conv_output.get("answer", ""),
+                answer=safe_answer,
                 citations=[],
                 confidence="high",
                 model_used=conv_output.get("model_used", "groq:conversational"),
@@ -131,9 +152,10 @@ class RAGService:
         # Step 3: Format response envelope
         citations = [CitationItem(**c) for c in llm_output.get("citations", [])]
 
+        safe_answer = PromptGuard.sanitize_output(llm_output.get("answer", ""))
         return RAGAskResponse(
             query=request.query,
-            answer=llm_output.get("answer", ""),
+            answer=safe_answer,
             citations=citations,
             confidence=llm_output.get("confidence", "medium"),
             model_used=llm_output.get("model_used", "unknown"),

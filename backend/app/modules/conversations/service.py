@@ -128,12 +128,15 @@ class ConversationService:
         """
         Executes a dialogue turn within an active or newly initialized conversation session.
         """
+        from app.core.guardrails import PromptGuard
+        clean_query = PromptGuard.sanitize_input(query)
+
         # 1. Resolve or create conversation
         if conversation_id:
             conv = await self.get_conversation(db, conversation_id, current_user)
         else:
             # Generate concise session title from first 6 words
-            title_words = query.strip().split()[:6]
+            title_words = clean_query.strip().split()[:6]
             session_title = " ".join(title_words)
             conv = await self.create_conversation(
                 db=db,
@@ -152,15 +155,15 @@ class ConversationService:
         existing_messages = list(msg_res.scalars().all())
 
         # 3. Contextual query rewriting
-        effective_query = self.contextualize_query(query, existing_messages)
+        effective_query = self.contextualize_query(clean_query, existing_messages)
 
-        # 3. Save User turn
+        # 4. Save User turn
         user_msg = ConversationMessage(
             id=str(uuid.uuid4()),
             conversation_id=conv.id,
             owner_id=current_user.id,
             role="user",
-            content=query
+            content=clean_query
         )
         db.add(user_msg)
         await db.flush()
