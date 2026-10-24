@@ -15,17 +15,30 @@ const CACHE_KEYS = {
   USERS: 'concord_cache_users',
 };
 
+// Current active user ID for cache isolation
+let activeUserId = null;
+
 export const uiCache = {
+  setActiveUser: (userId) => {
+    activeUserId = userId || null;
+  },
+
+  getActiveUser: () => activeUserId,
+
+  getNamespacedKey: (baseKey) => {
+    return activeUserId ? `${baseKey}_user_${activeUserId}` : baseKey;
+  },
+
   get: (key, defaultValue = null) => {
     try {
+      const namespacedKey = uiCache.getNamespacedKey(key);
       // First check sessionStorage, then fallback to localStorage
-      const sessionData = sessionStorage.getItem(key);
+      const sessionData = sessionStorage.getItem(namespacedKey);
       if (sessionData) return JSON.parse(sessionData);
       
-      const localData = localStorage.getItem(key);
+      const localData = localStorage.getItem(namespacedKey);
       if (localData) {
-        // Hydrate sessionStorage for faster access
-        sessionStorage.setItem(key, localData);
+        sessionStorage.setItem(namespacedKey, localData);
         return JSON.parse(localData);
       }
       return defaultValue;
@@ -37,9 +50,10 @@ export const uiCache = {
 
   set: (key, value) => {
     try {
+      const namespacedKey = uiCache.getNamespacedKey(key);
       const serialized = JSON.stringify(value);
-      sessionStorage.setItem(key, serialized);
-      localStorage.setItem(key, serialized);
+      sessionStorage.setItem(namespacedKey, serialized);
+      localStorage.setItem(namespacedKey, serialized);
     } catch (e) {
       console.warn('uiCache set error:', e);
     }
@@ -47,8 +61,9 @@ export const uiCache = {
 
   remove: (key) => {
     try {
-      sessionStorage.removeItem(key);
-      localStorage.removeItem(key);
+      const namespacedKey = uiCache.getNamespacedKey(key);
+      sessionStorage.removeItem(namespacedKey);
+      localStorage.removeItem(namespacedKey);
     } catch (e) {
       console.warn('uiCache remove error:', e);
     }
@@ -56,10 +71,19 @@ export const uiCache = {
 
   clearAll: () => {
     try {
-      Object.values(CACHE_KEYS).forEach((k) => {
-        sessionStorage.removeItem(k);
-        localStorage.removeItem(k);
-      });
+      // Clear all items with concord_cache prefix from both session and local storage
+      const clearPrefix = (storage) => {
+        const keysToRemove = [];
+        for (let i = 0; i < storage.length; i++) {
+          const k = storage.key(i);
+          if (k && k.startsWith('concord_cache_')) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => storage.removeItem(k));
+      };
+      clearPrefix(sessionStorage);
+      clearPrefix(localStorage);
     } catch (e) {
       console.warn('uiCache clearAll error:', e);
     }

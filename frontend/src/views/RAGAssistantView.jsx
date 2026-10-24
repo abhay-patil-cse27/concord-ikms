@@ -53,7 +53,23 @@ export default function RAGAssistantView() {
     }
   }, [history, loading]);
 
-  // Setup Web Speech Recognition
+  // Reset chat session state when user changes (role switch or logout/login)
+  useEffect(() => {
+    createNewSession();
+  }, [user?.id, createNewSession]);
+
+  // Toast notifications for unauthorized 404 / 403 or server errors
+  useEffect(() => {
+    if (error) {
+      const isNotFound = error.toLowerCase().includes('not found') || error.includes('404');
+      const isForbidden = error.toLowerCase().includes('permission') || error.includes('403');
+      if (isNotFound) {
+        setToast({ message: 'Conversation thread not found or inaccessible.', type: 'error' });
+      } else if (isForbidden) {
+        setToast({ message: 'Access denied: You lack authorization for this resource.', type: 'error' });
+      }
+    }
+  }, [error]);
   useEffect(() => {
     const SpeechRecognition = typeof window !== 'undefined'
       ? (window.SpeechRecognition || window.webkitSpeechRecognition)

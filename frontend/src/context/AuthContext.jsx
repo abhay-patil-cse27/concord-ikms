@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../api/client';
+import { uiCache } from '../utils/uiCache';
 
 const AuthContext = createContext(null);
 
@@ -14,11 +15,14 @@ export function AuthProvider({ children }) {
       api.getMe()
         .then((userData) => {
           setUser(userData);
+          uiCache.setActiveUser(userData.id);
           setError(null);
         })
         .catch((err) => {
           console.warn('Session expired or invalid:', err);
           localStorage.removeItem('concord_token');
+          uiCache.clearAll();
+          uiCache.setActiveUser(null);
           setUser(null);
         })
         .finally(() => setLoading(false));
@@ -31,8 +35,11 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
+      // Clear previous user cache on new login
+      uiCache.clearAll();
       const data = await api.login(email, password);
       localStorage.setItem('concord_token', data.access_token);
+      uiCache.setActiveUser(data.user.id);
       setUser(data.user);
       return data.user;
     } catch (err) {
@@ -47,8 +54,11 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
+      // Flush previous cache before switching demo persona
+      uiCache.clearAll();
       const data = await api.demoLogin(roleCode);
       localStorage.setItem('concord_token', data.access_token);
+      uiCache.setActiveUser(data.user.id);
       setUser(data.user);
       return data.user;
     } catch (err) {
@@ -61,6 +71,8 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('concord_token');
+    uiCache.clearAll();
+    uiCache.setActiveUser(null);
     setUser(null);
   };
 
