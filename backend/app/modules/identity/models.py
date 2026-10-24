@@ -20,7 +20,7 @@ class User(Base):
 
     # Relationships
     roles = relationship("Role", secondary="user_roles", back_populates="users", lazy="selectin")
-    memberships = relationship("Membership", back_populates="user", cascade="all, delete-orphan")
+    memberships = relationship("Membership", back_populates="user", cascade="all, delete-orphan", lazy="selectin")
 
 
 class Role(Base):
