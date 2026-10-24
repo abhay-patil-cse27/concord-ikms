@@ -24,7 +24,7 @@ export default function BrutalBadge({
     yellow: 'bg-brutal-yellow text-brutal-black border-brutal-black shadow-brutal-sm',
     black: 'bg-brutal-black text-brutal-white border-brutal-black dark:border-brutal-yellow shadow-brutal-sm',
     paper: 'bg-brutal-paper text-brutal-black border-brutal-black',
-    red: 'bg-brutal-accent text-brutal-white border-brutal-black shadow-brutal-sm',
+    red: 'bg-brutal-accent text-brutal-black border-brutal-black shadow-brutal-sm',
     green: 'bg-brutal-success text-brutal-white border-brutal-black shadow-brutal-sm',
   };
 
