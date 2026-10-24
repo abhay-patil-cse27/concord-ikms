@@ -36,10 +36,10 @@ flowchart LR
 ### Step 1: Landing Page & Architectural Overview (Time: 0:00 – 1:15)
 - **What to click:** Start at `http://localhost:5173/` (Landing View).
 - **What to say:**
-  > *"Good morning, respected examiners. Today we present **CONCORD**, an Institutional Knowledge Management System built for autonomous educational institutions like Kolhapur Institute of Technology. Educational institutions struggle with knowledge fragmentation—academic regulations, exam circulars, and course syllabi are scattered across PDFs, portals, and departmental drives. Standard chatbots hallucinate or leak confidential documents across departments. CONCORD solves this through three pillars: zero-hallucination grounded RAG with strict bracket citations, cryptographic SHA-256 tamper-evident audit logging, and index-level RBAC multi-tenancy."*
+  > *"Good morning, respected examiners. Today we present **CONCORD**, an Institutional Knowledge Management System built for autonomous educational institutions like Kolhapur Institute of Technology. Educational institutions struggle with knowledge fragmentation—academic regulations, exam circulars, and course syllabi are scattered across PDFs, portals, and departmental drives. Standard chatbots often hallucinate rules or inadvertently expose confidential documents across departments. CONCORD addresses this through three pillars: evidence-grounded RAG with verifiable bracket citations to minimize hallucination risk, cryptographic SHA-256 tamper-evident audit logging, and index-level RBAC multi-tenancy."*
 - **What the examiner should notice:**
   - The high-voltage Yellow Brutalist design system with crisp typography and responsive layout.
-  - The architectural metrics strip showcasing P95 latency (< 1200ms), 100% Hit Rate@5, and 0.0% cross-tenant data leakage.
+  - The architectural metrics strip showcasing P95 latency (< 1200ms), 100% Hit Rate@5 on our 5 canonical benchmark queries, and 0.0% cross-tenant data leakage observed across authorized test scenarios.
 
 ---
 
@@ -56,7 +56,7 @@ flowchart LR
 ### Step 3: Multi-Source Document Ingestion & Deduplication (Time: 2:30 – 3:45)
 - **What to click:** Navigate to **"Knowledge Ingestion"** (`DocumentsView`). Show the active documents table.
 - **What to say:**
-  > *"Institutional knowledge comes in varied formats. Our ingestion pipeline supports PDF, DOCX, XLSX, CSV, and scanned documents via OCR. Every uploaded file is digested via SHA-256 to guarantee content integrity and prevent duplicate storage. Furthermore, documents pass through specialized chunkers: sliding-window chunkers for narrative regulations, and tabular chunkers that preserve row-column relationships for grading tables. Documents also follow a strict lifecycle: Draft → In Review → Active → Superseded."*
+  > *"Institutional knowledge comes in varied formats. Our ingestion pipeline supports PDF, DOCX, XLSX, CSV, and scanned documents via OCR *(verify before viva: ensure local tesseract binary is installed if demonstrating scanned image uploads)*. Every uploaded file is digested via SHA-256 to guarantee content integrity and prevent duplicate storage. Furthermore, documents pass through specialized chunkers: sliding-window chunkers for narrative regulations, and tabular chunkers that preserve row-column relationships for grading tables. Documents also follow a strict lifecycle: Draft → In Review → Active → Superseded."*
 - **What the examiner should notice:**
   - Cryptographic SHA-256 hashes displayed for each document.
   - Active vs. Superseded status tags.
@@ -82,7 +82,7 @@ flowchart LR
   4. Click the **"Copy MD"** button in the header.
 - **What to say:**
   > *"Here is our core cognitive layer. Notice what happened with our first message: CONCORD has an Adaptive Intent Router (ADR-0006). When I sent a greeting, the system recognized it as conversational chit-chat. It responded warmly without querying the vector database or citing random course documents.*  
-  > *Now look at the second question: the system detected an institutional inquiry, executed hybrid RRF retrieval, and strictly grounded the response on retrieved chunks. Notice the inline bracket citation [1]. The LLM cannot hallucinate rules—if evidence is absent, it politely refuses. When I click [1], the side drawer slides out showing the exact source document, page number, and RRF score. And with one click on 'Copy MD', faculty or students can export the complete verified Q&A transcript with formal academic citations."*
+  > *Now look at the second question: the system detected an institutional inquiry, executed hybrid RRF retrieval, and strictly grounded the response on retrieved chunks. Notice the inline bracket citation [1]. The LLM prompt explicitly restricts answers to retrieved evidence—if evidence is absent, it politely refuses rather than guessing. When I click [1], the side drawer slides out showing the exact source document, page number, and RRF score. And with one click on 'Copy MD', faculty or students can export the complete verified Q&A transcript with formal academic citations."*
 - **What the examiner should notice:**
   - Greeting has 0 citations and warm conversational introduction.
   - Policy query has inline `[1]` citations.
@@ -94,17 +94,17 @@ flowchart LR
 ### Step 6: Empirical Evaluation & Live Benchmarks (Time: 6:45 – 8:00)
 - **What to click:** Navigate to **"Evaluation & Benchmarks"** (`BenchmarkView`). Click **"Run Live Benchmark"**.
 - **What to say:**
-  > *"Rather than relying on subjective impressions, CONCORD includes an automated empirical benchmark runner. It evaluates retrieval across canonical test scenarios measuring Mean Reciprocal Rank (MRR@5), Hit Rate@5, P95 latency, and Cross-Tenant Security Leakage. As you can see from the live run, our Hybrid RRF + FlashRank pipeline achieves 100% Hit Rate@5 and 0.0% security leakage."*
+  > *"Rather than relying on subjective impressions, CONCORD includes an automated empirical benchmark runner. It evaluates retrieval across a canonical test suite of 5 diverse institutional queries measuring Mean Reciprocal Rank (MRR@5), Hit Rate@5, P95 latency, and Cross-Tenant Security Leakage. On this benchmark set, our Hybrid RRF + FlashRank pipeline achieves 100% Hit Rate@5 (5/5 queries) and 0.0% security leakage observed."*
 - **What the examiner should notice:**
   - Live benchmark execution progress bar.
-  - Performance KPI cards and comparative table showing BM25 vs Vector vs CONCORD Hybrid.
+  - Performance KPI cards and comparative table showing BM25 vs Vector vs CONCORD Hybrid across the 5 benchmark queries.
 
 ---
 
 ### Step 7: SHA-256 Tamper-Evident Audit Ledger (Time: 8:00 – 9:00)
 - **What to click:** Switch persona to **Super Admin** or navigate to **"Audit Ledger"** (`AuditLogsView`). Click **"Verify Ledger Integrity"**.
 - **What to say:**
-  > *"Every security event—logins, document uploads, policy revisions, and administrative queries—is hashed and appended to a cryptographic SHA-256 audit chain. Much like a blockchain ledger, each entry contains the SHA-256 hash of the previous event. When I click 'Verify Ledger Integrity', the system re-computes the cryptographic hashes end-to-end. This guarantees that internal administrators cannot tamper with or delete audit trails."*
+  > *"Every security event—logins, document uploads, policy revisions, and administrative queries—is hashed and appended to a cryptographic SHA-256 audit chain. Much like a blockchain ledger, each entry contains the SHA-256 hash of the previous event. When I click 'Verify Ledger Integrity', the system re-computes the cryptographic hashes end-to-end. This provides tamper evidence: if any record in the database is modified or deleted out-of-band, the cryptographic verification fails."*
 - **What the examiner should notice:**
   - Cryptographic event chain showing actor email, action code, timestamp, and SHA-256 hash.
   - Ledger verification banner confirming tamper-evident chain validity.
@@ -131,11 +131,11 @@ flowchart LR
 #### Q5: Why did you introduce an Adaptive Intent Router (ADR-0006)?
 > **Answer:** In early tests, typing *"Hi"* or *"Who are you?"* forced the system to search ChromaDB, retrieving arbitrary chunks (like the DevOps lab syllabus) and hallucinating institutional answers for simple greetings. The Intent Router classifies conversational pleasantries vs institutional queries, bypassing vector search for greetings while strictly enforcing RAG for academic inquiries.
 
-#### Q6: How do you mathematically guarantee Zero Hallucination?
-> **Answer:** Through three mechanisms:
-> 1. System prompt constraints: The LLM is strictly instructed to rely *exclusively* on provided evidence chunks and explicitly refuse if the fact is not in the text.
-> 2. Mandatory inline bracket citations `[1]`, `[2]`.
-> 3. Refusal fallback: If retrieval returns 0 authorized chunks, the API returns a direct refusal without calling the LLM.
+#### Q6: How does CONCORD minimize hallucinations? Can you claim "Zero Hallucination"?
+> **Answer:** While no generative LLM can be theoretically proven to have absolute zero hallucination across unbounded inputs, CONCORD minimizes hallucination through three strict engineering guardrails:
+> 1. Strict Evidence Grounding Prompt: The model is instructed under low temperature (0.1) to synthesize answers exclusively from retrieved chunks and explicitly refuse if the fact is absent.
+> 2. Mandatory Bracket Citations: Every statement must cite its evidence chunk `[1]`, `[2]`.
+> 3. Refusal Fallback: If retrieval returns 0 authorized chunks within the user's role scope, generation is aborted and a verified refusal message is returned directly without querying the LLM.
 
 #### Q7: What embedding model do you use, and what is its dimensional space?
 > **Answer:** We use the `sentence-transformers/all-MiniLM-L6-v2` ONNX pipeline producing **384-dimensional** dense vector representations, mapped in ChromaDB with cosine distance metric (`hnsw:space: cosine`). *(Note: In mock/offline unit test mode, a deterministic 384-d hash projection is used).*
