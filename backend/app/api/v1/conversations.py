@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_permission
+from app.core.access.policy import ConversationPolicy, get_conversation_policy
 from app.modules.identity.models import User
 from app.modules.conversations.service import ConversationService
 from app.modules.conversations.schemas import (
@@ -19,17 +20,21 @@ router = APIRouter(prefix="/conversations", tags=["Conversational Memory"])
 
 @router.get("", response_model=List[ConversationResponse])
 async def list_conversations(
+    limit: int = 30,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    policy: ConversationPolicy = Depends(get_conversation_policy)
 ):
     """List recent conversation sessions belonging to the authenticated user."""
     service = ConversationService()
-    convs = await service.list_user_conversations(db, current_user.id)
+    convs = await service.list_user_conversations(db, current_user.id, limit=limit)
     return [
         ConversationResponse(
             id=c.id,
             title=c.title,
             user_id=c.user_id,
+            owner_id=getattr(c, "owner_id", c.user_id),
+            visibility=getattr(c, "visibility", "private"),
             department_id=c.department_id,
             created_at=c.created_at,
             updated_at=c.updated_at,
@@ -43,20 +48,24 @@ async def list_conversations(
 async def create_new_conversation(
     payload: ConversationCreateRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    policy: ConversationPolicy = Depends(get_conversation_policy)
 ):
-    """Explicitly create a new conversation session."""
+    """Explicitly create a new conversation session. Owner ID is strictly bound to token."""
     service = ConversationService()
     conv = await service.create_conversation(
         db=db,
         user_id=current_user.id,
         title=payload.title,
-        department_id=payload.department_id
+        department_id=payload.department_id,
+        visibility="private"
     )
     return ConversationResponse(
         id=conv.id,
         title=conv.title,
         user_id=conv.user_id,
+        owner_id=conv.owner_id,
+        visibility=conv.visibility,
         department_id=conv.department_id,
         created_at=conv.created_at,
         updated_at=conv.updated_at,

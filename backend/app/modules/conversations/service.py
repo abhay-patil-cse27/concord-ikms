@@ -43,10 +43,9 @@ class ConversationService:
         if not conv:
             raise NotFoundError(f"Conversation {conversation_id} not found.")
 
-        # Platform admin or owner can access
-        user_roles = [r.code for r in current_user.roles] if hasattr(current_user, "roles") else []
-        if conv.user_id != current_user.id and "platform_admin" not in user_roles:
-            raise ForbiddenError("You do not have permission to access this conversation.")
+        # Authorize via ConversationPolicy: returns 404 (NotFoundError) on denial
+        from app.core.access.policy import conversation_policy
+        conversation_policy.authorize_read(current_user, conv, resource_name="Conversation")
 
         return conv
 
@@ -73,6 +72,8 @@ class ConversationService:
 
     async def delete_conversation(self, db: AsyncSession, conversation_id: str, current_user: User) -> None:
         conv = await self.get_conversation(db, conversation_id, current_user)
+        from app.core.access.policy import conversation_policy
+        conversation_policy.authorize_delete(current_user, conv, resource_name="Conversation")
         await db.delete(conv)
         await db.commit()
 
