@@ -23,13 +23,17 @@ export default function BrutalCard({
   action,
   headerVariant = 'default',
   variant = 'default',
+  tone,
   interactive = false,
+  hoverable,
   className = '',
   headerClassName = '',
   bodyClassName = '',
   onClick,
   ...props
 }) {
+  const isInteractive = Boolean(interactive || hoverable);
+  const activeVariant = tone || variant;
   const variantStyles = {
     default: 'bg-brutal-white dark:bg-brutal-dark border-brutal-black dark:border-brutal-yellow shadow-brutal dark:shadow-brutal-dark',
     yellow: 'bg-brutal-yellow text-brutal-black border-brutal-black shadow-brutal',
@@ -50,12 +54,12 @@ export default function BrutalCard({
   return (
     <motion.div
       onClick={onClick}
-      whileHover={interactive ? { x: -3, y: -3 } : undefined}
+      whileHover={isInteractive ? { x: -3, y: -3 } : undefined}
       transition={transitions.brutalPunch}
       className={cn(
         'border-2 border-brutal-black dark:border-brutal-yellow transition-all duration-150',
-        interactive && 'cursor-pointer hover:shadow-brutal-hover dark:hover:shadow-brutal-dark-lg',
-        variantStyles[variant],
+        isInteractive && 'cursor-pointer hover:shadow-brutal-hover dark:hover:shadow-brutal-dark-lg',
+        variantStyles[activeVariant] || variantStyles.default,
         className
       )}
       {...props}
