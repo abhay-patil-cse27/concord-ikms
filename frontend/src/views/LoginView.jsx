@@ -53,10 +53,16 @@ const DEMO_ACCOUNTS = [
 export default function LoginView({ onBack, preselectedRole }) {
   const { login, demoLogin, error } = useAuth();
   
-  // Initialize credentials (optionally match preselected role)
-  const initialAccount = DEMO_ACCOUNTS.find(a => a.role === preselectedRole) || DEMO_ACCOUNTS[0];
-  const [email, setEmail] = useState(initialAccount.email);
-  const [password, setPassword] = useState(initialAccount.password);
+  const isDemoMode = Boolean(
+    import.meta.env.DEV ||
+    import.meta.env.VITE_DEMO_MODE === 'true' ||
+    import.meta.env.VITE_DEMO === 'true'
+  );
+
+  // Initialize credentials (pre-filled only in DEMO mode)
+  const initialAccount = isDemoMode ? (DEMO_ACCOUNTS.find(a => a.role === preselectedRole) || DEMO_ACCOUNTS[0]) : null;
+  const [email, setEmail] = useState(initialAccount ? initialAccount.email : '');
+  const [password, setPassword] = useState(initialAccount ? initialAccount.password : '');
   const [loading, setLoading] = useState(false);
   const [quickLoginRole, setQuickLoginRole] = useState(null);
   const [localError, setLocalError] = useState(null);
@@ -137,86 +143,91 @@ export default function LoginView({ onBack, preselectedRole }) {
 
       {/* Main Authentication Canvas */}
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 py-10 md:py-16 flex items-center justify-center">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className={cn(
+          "w-full items-start",
+          isDemoMode ? "grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12" : "max-w-md mx-auto"
+        )}>
           
-          {/* Left Column: Quick Persona Cards (7 cols) */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <BrutalBadge tone="yellow" size="sm">
-                  SECURITY GATEWAY
-                </BrutalBadge>
-                <span className="font-mono text-xs font-bold text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wider">
-                  OWASP ASVS 4.1
-                </span>
+          {/* Left Column: Quick Persona Cards (7 cols) - Shown in DEV or when VITE_DEMO_MODE=true */}
+          {isDemoMode && (
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <BrutalBadge tone="yellow" size="sm">
+                    SECURITY GATEWAY
+                  </BrutalBadge>
+                  <span className="font-mono text-xs font-bold text-brutal-muted dark:text-brutal-muted-dark uppercase tracking-wider">
+                    OWASP ASVS 4.1
+                  </span>
+                </div>
+                <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl uppercase tracking-tight text-brutal-black dark:text-brutal-white">
+                  Institutional Personas
+                </h1>
+                <p className="font-sans text-sm text-brutal-black/80 dark:text-brutal-white/80 mt-2 font-medium">
+                  Click any pre-configured institutional persona for 1-click authentication or credential pre-fill.
+                </p>
               </div>
-              <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl uppercase tracking-tight text-brutal-black dark:text-brutal-white">
-                Institutional Personas
-              </h1>
-              <p className="font-sans text-sm text-brutal-black/80 dark:text-brutal-white/80 mt-2 font-medium">
-                Click any pre-configured institutional persona for 1-click authentication or credential pre-fill.
-              </p>
-            </div>
 
-            {/* Persona Quick-Login List */}
-            <div className="flex flex-col gap-3">
-              {DEMO_ACCOUNTS.map((acc) => {
-                const isSelected = email === acc.email;
-                const isLoggingInThis = quickLoginRole === acc.role;
+              {/* Persona Quick-Login List */}
+              <div className="flex flex-col gap-3">
+                {DEMO_ACCOUNTS.map((acc) => {
+                  const isSelected = email === acc.email;
+                  const isLoggingInThis = quickLoginRole === acc.role;
 
-                return (
-                  <div
-                    key={acc.role}
-                    className={cn(
-                      'p-4 border-3 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4',
-                      isSelected
-                        ? 'bg-brutal-white dark:bg-brutal-dark-surface border-brutal-black dark:border-brutal-yellow shadow-brutal translate-x-1'
-                        : 'bg-brutal-white/70 dark:bg-brutal-dark-surface/70 border-brutal-black/40 dark:border-brutal-yellow/40 hover:border-brutal-black dark:hover:border-brutal-yellow shadow-brutal-sm'
-                    )}
-                  >
-                    <div className="flex-1 cursor-pointer" onClick={() => handlePreFill(acc)}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-display font-black text-sm uppercase text-brutal-black dark:text-brutal-white">
-                          {acc.title}
-                        </span>
-                        <BrutalBadge tone={acc.badgeTone} size="sm">
-                          {acc.badge}
-                        </BrutalBadge>
+                  return (
+                    <div
+                      key={acc.role}
+                      className={cn(
+                        'p-4 border-3 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4',
+                        isSelected
+                          ? 'bg-brutal-white dark:bg-brutal-dark-surface border-brutal-black dark:border-brutal-yellow shadow-brutal translate-x-1'
+                          : 'bg-brutal-white/70 dark:bg-brutal-dark-surface/70 border-brutal-black/40 dark:border-brutal-yellow/40 hover:border-brutal-black dark:hover:border-brutal-yellow shadow-brutal-sm'
+                      )}
+                    >
+                      <div className="flex-1 cursor-pointer" onClick={() => handlePreFill(acc)}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-display font-black text-sm uppercase text-brutal-black dark:text-brutal-white">
+                            {acc.title}
+                          </span>
+                          <BrutalBadge tone={acc.badgeTone} size="sm">
+                            {acc.badge}
+                          </BrutalBadge>
+                        </div>
+                        <div className="font-mono text-[11px] text-brutal-muted dark:text-brutal-muted-dark truncate">
+                          {acc.email}
+                        </div>
+                        <div className="font-sans text-xs text-brutal-black/70 dark:text-brutal-white/70 mt-1 line-clamp-1">
+                          {acc.desc}
+                        </div>
                       </div>
-                      <div className="font-mono text-[11px] text-brutal-muted dark:text-brutal-muted-dark truncate">
-                        {acc.email}
-                      </div>
-                      <div className="font-sans text-xs text-brutal-black/70 dark:text-brutal-white/70 mt-1 line-clamp-1">
-                        {acc.desc}
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handlePreFill(acc)}
+                          className="py-1.5 px-3 border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs font-bold uppercase bg-brutal-paper dark:bg-brutal-dark hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+                        >
+                          Pre-fill
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleQuickDemoLogin(acc)}
+                          className="py-1.5 px-3 border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs font-black uppercase bg-brutal-yellow text-brutal-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                        >
+                          <span>{isLoggingInThis ? 'Authorizing...' : 'Instant Login'}</span>
+                          <ArrowRight size={13} strokeWidth={2.5} />
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handlePreFill(acc)}
-                        className="py-1.5 px-3 border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs font-bold uppercase bg-brutal-paper dark:bg-brutal-dark hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
-                      >
-                        Pre-fill
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => handleQuickDemoLogin(acc)}
-                        className="py-1.5 px-3 border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs font-black uppercase bg-brutal-yellow text-brutal-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                      >
-                        <span>{isLoggingInThis ? 'Authorizing...' : 'Instant Login'}</span>
-                        <ArrowRight size={13} strokeWidth={2.5} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Right Column: Credentials Form with BrutalCard (5 cols) */}
-          <div className="lg:col-span-5 w-full">
+          {/* Right Column: Credentials Form with BrutalCard (5 cols if demo, centered otherwise) */}
+          <div className={cn("w-full", isDemoMode ? "lg:col-span-5" : "")}>
             <BrutalCard
               tone="default"
               className="p-6 sm:p-8 border-3 shadow-brutal-lg flex flex-col gap-6"
