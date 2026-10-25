@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, PanelLeft, PanelLeftClose, Printer, Copy } from 'lucide-react';
+import { Bot, PanelLeft, PanelLeftClose, Printer, Copy, FileDown } from 'lucide-react';
 import { BrutalBadge, BrutalButton } from '../brutal';
 
 /**
@@ -11,6 +11,7 @@ export default function ChatHeader({
   onToggleSidebar,
   onPrint,
   onCopyMarkdown,
+  onExportDossier,
   isCopyDisabled = false,
   conversationTitle = 'Autonomous Grounded Q&A',
 }) {
@@ -62,6 +63,19 @@ export default function ChatHeader({
           >
             <span className="hidden lg:inline">Copy MD</span>
           </BrutalButton>
+        )}
+
+        {onExportDossier && (
+          <button
+            type="button"
+            onClick={onExportDossier}
+            disabled={isCopyDisabled}
+            className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black shadow-brutal-sm transition-colors no-print disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Download Formal Institutional Dossier (.html)"
+            aria-label="Export Institutional Dossier"
+          >
+            <FileDown size={15} />
+          </button>
         )}
 
         {onPrint && (

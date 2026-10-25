@@ -11,6 +11,7 @@ import CitationDrawer from '../components/rag/CitationDrawer';
 import ThinkingIndicator from '../components/rag/ThinkingIndicator';
 import { BrutalToast } from '../components/brutal';
 import { exportThreadToMarkdown } from '../lib/exportThread';
+import { exportAcademicDossierHTML } from '../utils/htmlDossierExporter';
 
 /**
  * RAGAssistantView
@@ -230,6 +231,34 @@ export default function RAGAssistantView() {
     }
   };
 
+  const handleExportDossier = () => {
+    if (!history || history.length === 0) {
+      setToast({ message: 'Conversation thread is empty.', type: 'warning' });
+      return;
+    }
+
+    try {
+      exportAcademicDossierHTML({
+        title: activeTitle,
+        history,
+        userName: user?.full_name || user?.email || 'Institutional Member',
+        userRole: user?.role_code || 'VERIFIED PERSONA',
+        departmentName: 'Kolhapur Institute of Technology',
+        date: new Date().toLocaleString(),
+      });
+      setToast({
+        message: 'Official Academic Knowledge Dossier downloaded!',
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Failed to export dossier:', err);
+      setToast({
+        message: 'Could not generate institutional dossier.',
+        type: 'error',
+      });
+    }
+  };
+
   return (
     <div className="flex h-full w-full border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal-lg bg-brutal-paper dark:bg-brutal-black overflow-hidden relative min-h-0">
       
@@ -268,6 +297,7 @@ export default function RAGAssistantView() {
           onToggleSidebar={() => setShowSessionsSidebar(!showSessionsSidebar)}
           onPrint={handlePrint}
           onCopyMarkdown={handleCopyMarkdown}
+          onExportDossier={handleExportDossier}
           isCopyDisabled={!history || history.length === 0}
           conversationTitle={activeTitle}
         />

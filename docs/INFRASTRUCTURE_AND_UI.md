@@ -218,6 +218,13 @@ To prevent code redundancy across views and components, specialized conversation
 - **Intelligent Preprocessing:** Strips bracketed citation markers (`[1]`, `[2]`), markdown formatting tokens (`#`, `**`, `*`, `` ` ``), and table delimiters so synthesized audio sounds like smooth, uninterrupted institutional prose.
 - **Brutalist Audio Animation:** Features animated audio wave bars (`animate-pulse`) when speaking, with dedicated pause, resume, and stop controls.
 
+### F. Formal Institutional Academic Dossier Exporter (`htmlDossierExporter.js`)
+- **Location:** [`frontend/src/utils/htmlDossierExporter.js`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/utils/htmlDossierExporter.js)
+- **Trigger Component:** [`frontend/src/components/rag/ChatHeader.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/rag/ChatHeader.jsx) (Download icon)
+- **Purpose:** Exports complete multi-turn conversation threads into standalone, formal HTML institutional dossiers formatted for official archiving, committee reviews, and academic accreditation audits.
+- **Institutional Design:** Features official letterhead, verified persona details, OWASP ASVS compliance badges, turn-by-turn question/verdict cards, and cryptographically anchored source citations with document titles, page numbers, and RRF similarity scores.
+- **Zero-Dependency Generation:** Built using pure client-side Blob generation with immediate download, requiring 0 external libraries or server endpoints.
+
 ---
 
 ## 8. OCR Engine & Tesseract Setup Guide
