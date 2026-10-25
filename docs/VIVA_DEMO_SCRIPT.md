@@ -74,19 +74,24 @@ flowchart LR
 
 ---
 
-### Step 5: Grounded RAG Assistant & Adaptive Intent Router (Time: 5:00 – 6:45)
+### Step 5: Grounded RAG Assistant, Real-Time SSE Streaming & PDF Highlighting (Time: 5:00 – 6:45)
 - **What to click:** Navigate to **"RAG Assistant"** (`RAGAssistantView`).
   1. First, send a generic greeting: `"Hello! Who are you and how can you help me?"`
   2. Next, ask a specific institutional query: `"What is the passing criteria for autonomous exam under 2024 regulations?"`
-  3. Click citation badge `[1]` in the assistant's response to open the **Citation Drawer**.
-  4. Click the **"Copy MD"** button in the header.
+  3. Watch the **typewriter token stream** generate in real-time (TTFT < 200ms).
+  4. Click citation badge `[1]` in the assistant's response to open the **Citation Drawer**.
+  5. Click **"PDF Highlight Inspector"** to launch the in-app dual-pane viewer jumping straight to Page 1 with the exact grounding sentence highlighted.
+  6. Click the **"Copy MD"** button in the header.
 - **What to say:**
-  > *"Here is our core cognitive layer. Notice what happened with our first message: CONCORD has an Adaptive Intent Router (ADR-0006). When I sent a greeting, the system recognized it as conversational chit-chat. It responded warmly without querying the vector database or citing random course documents.*  
-  > *Now look at the second question: the system detected an institutional inquiry, executed hybrid RRF retrieval, and strictly grounded the response on retrieved chunks. Notice the inline bracket citation [1]. The LLM prompt explicitly restricts answers to retrieved evidence—if evidence is absent, it politely refuses rather than guessing. When I click [1], the side drawer slides out showing the exact source document, page number, and RRF score. And with one click on 'Copy MD', faculty or students can export the complete verified Q&A transcript with formal academic citations."*
+  > *"Here is our core cognitive layer. Notice three advanced capabilities:*  
+  > *First, real-time Server-Sent Events (SSE) token streaming: rather than waiting for complete generation, tokens stream at under 200 milliseconds with an active typewriter cursor.*  
+  > *Second, verifiable evidence citations: the LLM is strictly grounded on retrieved regulation chunks, citing exact sources via bracketed tags [1].*  
+  > *Third, the dual-pane In-App PDF Highlight Inspector: clicking [1] allows faculty and students to inspect the original PDF document at the exact cited page, with the grounding excerpt highlighted side-by-side for 100% human verification.*  
+  > *And with one click on 'Copy MD', users can export the verified Q&A transcript with formal academic citations."*
 - **What the examiner should notice:**
-  - Greeting has 0 citations and warm conversational introduction.
+  - Dynamic typewriter micro-animation with blinking brutalist cursor.
   - Policy query has inline `[1]` citations.
-  - Slide-out Citation Drawer displays document title, version, page number, and exact text snippet.
+  - Dual-Pane PDF Highlight Inspector streaming the PDF at exact `#page` coordinates with excerpt highlight.
   - Copy MD triggers green BrutalToast notification confirming clipboard export.
 
 ---

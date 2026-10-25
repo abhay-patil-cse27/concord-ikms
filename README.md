@@ -12,7 +12,7 @@
 | Specification | Document | Core Focus & Coverage |
 | :--- | :--- | :--- |
 | **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`). |
-| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, and full security hardening (77 tests). |
+| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, and full security hardening (82 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
 | **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
@@ -98,35 +98,119 @@ sequenceDiagram
     participant Vec as Embedded ChromaDB
     participant LLM as Groq Cloud LLM
 
-    rect rgba(2, 132, 199, 0.12)
-    note over User,Vec: Phase 1: Ingestion & Governance Flow
-    User->>FE: Upload Circular / Syllabus (.pdf, .docx, .xlsx)
-    FE->>API: POST /api/v1/documents/upload
-    API->>API: SHA-256 Hash Deduplication & Format Chunker
-    API->>DB: Save Document (status='pending_approval')
-    HOD->>FE: Review Pending Document Queue
-    FE->>API: POST /api/v1/governance/documents/{id}/review (Approved)
-    API->>DB: Update status='approved', lifecycle='active'
-    API->>Vec: Sync Chunk Vectors (with department metadata)
+    %% Document Upload & Governance Cycle
+    rect rgb(30, 41, 59)
+    note over User,LLM: Phase 1: Ingestion, Governance & Indexing
+    HOD->>FE: Upload Circular / Syllabus (PDF/DOCX/XLSX)
+    FE->>API: POST /api/v1/documents/upload-async (File Bytes + Dept ID)
+    API->>API: Ingest, Parse, Tabular Chunk & Save (SHA-256)
+    API-->>FE: HTTP 202 (job_id, queued)
+    FE->>API: GET /api/v1/documents/jobs/{job_id} (Poll 0-100%)
+    HOD->>FE: Review Pending Document
+    FE->>API: POST /api/v1/governance/documents/{id}/review (Decision: Approved)
+    API->>Vec: Generate 384-d Embeddings & Upsert (Dept Filter Tagged)
+    API->>DB: Update Status to 'active' & Version Tag
     end
 
-    rect rgba(14, 165, 233, 0.08)
-    note over User,LLM: Phase 2: Grounded Adaptive Query Flow
-    User->>FE: Ask: "What is passing criteria for 2024 Exam?"
-    FE->>API: POST /api/v1/rag/ask
-    API->>Vec: Dense Vector Search (where={"department_id": user_dept})
+    %% Contextual RAG & Evidence Grounding
+    rect rgb(15, 23, 42)
+    note over User,LLM: Phase 2: Hybrid Retrieval, RAG & Verification
+    User->>FE: Ask Question ("What is passing criteria under 2024 regulations?")
+    FE->>API: POST /api/v1/conversations/ask-stream (Query + Session ID)
+    API->>API: PromptGuard Security Validation (0ms short-circuit if hostile)
+    API->>API: Query Normalization & Acronym Expansion
+    API->>Vec: Vector Similarity Search (Filter: Dept & Status='active')
     API->>DB: BM25 Lexical Keyword Search
-    API->>API: Reciprocal Rank Fusion (RRF) + FlashRank Re-rank
-    API->>LLM: Grounded System Prompt + Top Evidence Chunks
-    LLM-->>API: Stream Answer with Inline Citations [1]
-    API-->>FE: Return Verified Answer + Citation Metadata
-    FE-->>User: Interactive Answer with Clickable Trust Badges
+    API->>API: Reciprocal Rank Fusion (RRF k=60) & FlashRank Cross-Encoder Re-rank
+    API->>LLM: Grounded Generation (Restricted Strictly to Top Chunks)
+    LLM-->>API: SSE Stream (Tokens + Bracketed Inline Citations [1])
+    API-->>FE: Stream Event Tokens (Real-time Typewriter Effect)
+    User->>FE: Click Citation [1]
+    FE->>API: GET /api/v1/documents/{id}/download
+    FE->>FE: Open In-App Dual-Pane PDF Highlight Inspector (#page=N)
     end
 ```
 
 ---
 
-## 2. Directory Layout
+## 2. Key Differentiators
+
+1. **Zero Hallucination Grounding:** Prompts explicitly forbid speculative reasoning. Missing evidence triggers polite refusals instead of hallucinations.
+2. **Real-Time SSE Token Streaming:** High-speed typewriter effect via `POST /api/v1/conversations/ask-stream`, cutting perceived TTFT to <200ms.
+3. **In-App Dual-Pane PDF Highlight Inspector:** Direct in-app viewing of original PDF documents positioned at the exact cited `#page` with sentence grounding highlights.
+4. **Asynchronous Multi-Format Ingestion:** Background upload queue with brutalist progress tracking across extracting (25%), chunking (50%), and vectorizing (75%).
+5. **Tabular & Grid-Aware Document Chunker:** Table matrices in Word and PDF documents are atomically isolated as structured Markdown grids, keeping financial/grading tables intact.
+6. **Cryptographic Tamper-Evidence:** SHA-256 content verification, hash-chained audit ledgers, and privacy-hardened event logging (prompt queries are never stored).
+
+---
+
+## 3. Quickstart & Installation
+
+### Option A: Local Development (Recommended)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/abhay-patil-cse27/concord-ikms.git
+cd concord-ikms
+
+# 2. Setup Backend
+cd backend
+python -m venv .venv
+.\.venv\Scripts\activate      # Windows (or source .venv/bin/activate on Unix)
+pip install -r requirements.txt
+python -m alembic upgrade head
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+In a separate terminal:
+```bash
+# 3. Setup Frontend
+cd frontend
+npm install
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+---
+
+### Pre-Seeded Evaluator Personas
+
+| Persona | Role Code | Email | Password | Primary Scope |
+| :--- | :--- | :--- | :--- | :--- |
+| **Platform Administrator** | `platform_admin` | `admin@concord.kit.edu` | `Admin@12345` | Global Institutional Oversight |
+| **Department Admin (HOD CSE)** | `dept_admin` | `deptadmin.cse@concord.kit.edu` | `Dept@12345` | Department: `CSE` |
+| **Faculty Member** | `faculty` | `faculty.cse@concord.kit.edu` | `Faculty@12345` | Department: `CSE` |
+| **Enrolled Student** | `student` | `student.cse@concord.kit.edu` | `Student@12345` | Department: `CSE` |
+
+*Note: You can switch between these personas instantly using the "Switch Role" pills in the top navbar.*
+
+---
+
+## 4. Running Automated Tests
+
+Run the complete backend test suite:
+```bash
+.\.venv\Scripts\pytest -v backend/tests
+```
+
+Run the frontend cache isolation test suite:
+```bash
+cd frontend && npm test
+```
+
+> For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
+
+- **Test Coverage Includes (77 Backend + 5 Frontend = 82 Test Scenarios — 100% Passing):**
+  - **Per-User Isolation & Anti-BOLA (`test_isolation.py`):** Cross-user thread isolation returning 404, token-bound `owner_id`, audit event metadata privacy (no prompt text in audit logs), cross-department document protection, user profile self-only scoping, and benchmark admin-only protection.
+  - **Real-Time Token Streaming (`test_streaming.py`):** Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting.
+  - **Asynchronous Ingestion (`test_async_ingestion.py`):** Background upload queue (`/upload-async`), 4-stage job progress polling (`/jobs/{id}`), completion assertions.
+  - **LLM Safety & Guardrails (`test_guardrails.py` & `test_security_hardening.py`):** SQL injection blocking, ChromaDB NoSQL injection neutralization, path traversal stripping, OWASP ASVS HTTP headers.
+  - **Multi-Format Parsers & Tabular Chunking (`test_parsers.py`):** Word Markdown table extraction, atomic table grid preservation, Excel sheet extraction, OCR mocks.
+  - **Hybrid Retrieval & Benchmark Suite (`test_retrieval.py` & `test_evaluation.py`):** BM25 + Vector reciprocal rank fusion (RRF), FlashRank Cross-Encoder re-ranking, Hit Rate@5 = 100%, MRR@5 = 1.000, 0.0% security leakage.
+
+---
+
+## 5. Directory Layout
 
 ```
 IKMS/
@@ -165,116 +249,6 @@ IKMS/
 
 ---
 
-## 3. Quickstart: Local Development Setup
-
-### Option A: Local Native Development (Recommended for fast offline iteration)
-
-#### 1. Backend Setup
-```bash
-# 1. Activate virtual environment
-.\.venv\Scripts\activate
-
-# 2. Install dependencies (if not already installed)
-pip install -r backend/requirements.txt
-
-# 3. Apply database migrations
-alembic -c backend/alembic.ini upgrade head
-
-# 4. Start backend server (port 8000)
-cd backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-#### 2. Frontend Setup
-```bash
-# In a separate terminal:
-cd frontend
-npm install
-npm run dev
-```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
----
-
-### Option B: Containerized Setup via Docker Compose
-
-```bash
-# Ensure Docker Desktop is running, then launch all services:
-docker compose up --build
-```
-This starts:
-- `concord-postgres`: PostgreSQL 16 + pgvector on port `5432`
-- `concord-minio`: MinIO S3 object storage on ports `9000` and `9001`
-- `concord-backend`: FastAPI application on port `8000`
-- `concord-frontend`: React Vite application on port `5173`
-
----
-
-## 4. Pre-Seeded Personas & Demo Accounts
-
-For rapid viva and evaluator demonstration, the system automatically initializes with pre-seeded institutional personas:
-
----
-
-## 4. One-Click Quick Launch
-
-For immediate institutional demonstrations on Windows or Unix machines:
-
-- **Windows:** Double-click or run:
-  ```cmd
-  run_demo.bat
-  ```
-- **macOS / Linux:** Run:
-  ```bash
-  chmod +x run_demo.sh && ./run_demo.sh
-  ```
-
-This automatically initializes Python virtual environments, launches the FastAPI backend (:8000), starts the React Vite frontend (:5173), and opens `http://localhost:5173` in your default browser.
-
-### Pre-Seeded Evaluator Personas
-
-| Persona | Role Code | Email | Password | Primary Scope |
-| :--- | :--- | :--- | :--- | :--- |
-| **Platform Administrator** | `platform_admin` | `admin@concord.kit.edu` | `Admin@12345` | Global Institutional Oversight |
-| **Department Admin (HOD CSE)** | `dept_admin` | `deptadmin.cse@concord.kit.edu` | `Dept@12345` | Department: `CSE` |
-| **Faculty Member** | `faculty` | `faculty.cse@concord.kit.edu` | `Faculty@12345` | Department: `CSE` |
-| **Enrolled Student** | `student` | `student.cse@concord.kit.edu` | `Student@12345` | Department: `CSE` |
-
-*Note: You can switch between these personas instantly using the "Switch Role" pills in the top navbar.*
-
----
-
-## 5. Running Automated Tests
-
-Run the complete backend test suite:
-```bash
-.\.venv\Scripts\pytest -v backend/tests
-```
-
-Run the frontend cache isolation test suite:
-```bash
-cd frontend && npm test
-```
-
-> For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
-
-- **Test Coverage Includes (58 Backend + 5 Frontend Test Scenarios — 100% Passing):**
-  - **Per-User Isolation & Anti-BOLA (`test_isolation.py`):** Cross-user thread isolation returning 404, token-bound `owner_id`, audit event metadata privacy (no prompt text in audit logs), cross-department document protection, user profile self-only scoping, and benchmark admin-only protection.
-  - `/api/v1/healthz` and `/api/v1/readyz` probe liveness and DB connectivity.
-  - Password login verification and invalid credential 401 rejections.
-  - Server-side RBAC validation: ensuring students and faculty are rejected (403 Forbidden with standard error envelopes) from accessing restricted user management and audit log endpoints.
-  - Document ingestion lifecycle: multipart file upload, SHA-256 deduplication, raw file download, document deletion, and lifecycle version transitions (`PATCH /api/v1/documents/{id}/lifecycle`).
-  - Governance review queue: `GET /api/v1/governance/pending-documents` and `POST /api/v1/governance/documents/{id}/review` approval endpoints.
-  - Multi-format parsers: PDF (`pypdf`), DOCX (`python-docx`), Excel (`openpyxl`), Markdown, and plain text.
-  - Format-aware chunking strategies: `TabularChunker` (preserves rows & headers), `SemanticParagraphChunker` (preserves headings & paragraphs), and `SlidingWindowTextChunker` (boundary-aware sentence sliding).
-  - Hybrid Retrieval Engine: Neural ONNX transformer embeddings (384-d), BM25 lexical scoring, Reciprocal Rank Fusion (RRF), FlashRank Cross-Encoder re-ranking, lifecycle filtering, and search API queries.
-  - Comparative Research Agent: Automated multi-query decomposition and Markdown comparison tables.
-  - Evaluation & Benchmarking Suite: `/api/v1/evaluation/metrics` and `POST /api/v1/evaluation/run` calculating Hit Rate@K, MRR@K, latency percentiles, and cross-department security leakage rates.
-  - Multi-Department Institutional Scenarios: Canonical syllabus, exam rules, lab policies, and superseded version filtering tests.
-  - Frontend Cache Partitioning: User-namespaced cache keys (`_user_{id}`), startup legacy unnamespaced key purging, and complete cache flushes on logout.
-
----
-
 ## 6. Milestone Acceptance Status
 
 - **Milestone 0 (Discovery & Baseline):** Completed (Audited repository, ADR-0001 through ADR-0004, system architecture, relational data model, risk register, prioritized backlog).
@@ -287,7 +261,13 @@ cd frontend && npm test
 - **Milestone 5 (Trust, Freshness & Institutional Memory):** Completed (Document lifecycle state machine `active`/`superseded`/`archived`, version tracking, default current-policy search filtering, discrepancy and conflict detection prompts, and frontend Trust Badges).
 - **Milestone 6 (Agent Workflows & Human-in-the-Loop Governance):** Completed (Human-in-the-loop document approval queue and review endpoints, quarantined document retrieval protection, and Comparative Research Agent).
 - **Milestone 7 (Evaluation, Benchmarking & Hardening):** Completed (Automated benchmark runner, Hit Rate@5 = 100%, MRR@5 = 1.000, 0.0% RBAC security leakage rate, dedicated frontend `BenchmarkView.jsx` dashboard, and live test run execution).
-- **Milestone 8 (Institutional Demonstration & Viva Defense Readiness):** Completed (Pre-seeded multi-department data across CSE, ENTC, and Academic Examination Cell, interactive evaluator prompt presets, comprehensive `docs/VIVA_PRESENTATION_GUIDE.md`, and 47 passing tests).
+- **Milestone 8 (Institutional Demonstration & Viva Defense Readiness):** Completed (Pre-seeded multi-department data across CSE, ENTC, and Academic Examination Cell, interactive evaluator prompt presets, comprehensive `docs/VIVA_PRESENTATION_GUIDE.md`).
+- **Milestone 9 (Post-Baseline Enterprise Tracks — Completed & Verified):**
+  - **Track 1 (Real-Time SSE Streaming):** High-speed typewriter token generation via `POST /api/v1/conversations/ask-stream`, reducing perceived TTFT to <200ms.
+  - **Track 2 (Tabular Document Chunker):** Word/PDF table extraction preserving atomic Markdown table grids without mid-row splits.
+  - **Track 3 (Asynchronous Ingestion):** In-process `BackgroundJobManager` (`/upload-async`, `/jobs/{id}`) with multi-stage brutalist progress tracking.
+  - **Track 4 (In-App PDF Highlight Inspector):** Dual-pane `PDFViewerModal` linking inline citations directly to exact `#page` coordinates and highlighted sentences.
+  - **Verified Quality Standard:** 82 / 82 automated test scenarios passing (77 backend + 5 frontend).
 
 
 
