@@ -82,11 +82,13 @@ sequenceDiagram
 ### `POST /documents/upload`
 - **Description:** Multipart file upload. Automatically deduplicates via SHA-256 and routes to the appropriate chunker (`TabularChunker`, `SemanticParagraphChunker`, or `SlidingWindowTextChunker`).
   - **OCR Fallback Engine:** Automatically detects scanned image PDFs ($<30$ characters of text stream) and triggers the OCR provider pipeline (`PytesseractOCRProvider` / `GracefulFallbackOCRProvider`), tagging chunks with `is_ocr: true` and extraction engine.
+  - **Tabular Grid Preservation:** Word tables and structured Markdown matrices are preserved atomically with `has_table: true` and `chunk_type: "table_grid"`, ensuring academic fee structures, marks breakdown, and ordinance grading formulas are never fractured across chunk boundaries.
 - **Headers:** `Authorization: Bearer <token>` (Requires `documents:write`)
 - **Form Data:**
   - `file`: Binary file (`.pdf`, `.docx`, `.xlsx`, `.txt`, `.md`, `.csv`)
   - `department_id`: Department UUID
   - `title`: Optional display title
+
 
 ### `GET /documents`
 - **Description:** Lists documents filtered by department and user RBAC permissions.

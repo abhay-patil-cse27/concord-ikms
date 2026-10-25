@@ -126,6 +126,46 @@ class SemanticParagraphChunker(BaseChunker):
 
             for para in paragraphs:
                 para_len = len(para)
+                # Check if this paragraph is an atomic Markdown table block
+                is_table = ("| ---" in para or "|:---" in para or para.startswith("| "))
+
+                # If current paragraph is an atomic table and existing chunk has text, flush existing first
+                if is_table and current_chunk_paras:
+                    chunk_text = "\n\n".join(current_chunk_paras)
+                    chunks.append(
+                        DocumentChunkResult(
+                            index=global_index,
+                            content=chunk_text,
+                            char_count=len(chunk_text),
+                            metadata={
+                                "page_number": page.page_number,
+                                "chunk_type": "paragraph",
+                                "has_table": False,
+                                **page.metadata
+                            }
+                        )
+                    )
+                    global_index += 1
+                    current_chunk_paras = []
+                    current_len = 0
+
+                # If this paragraph is a table itself, emit it as an atomic tabular chunk
+                if is_table:
+                    chunks.append(
+                        DocumentChunkResult(
+                            index=global_index,
+                            content=para,
+                            char_count=len(para),
+                            metadata={
+                                "page_number": page.page_number,
+                                "chunk_type": "table_grid",
+                                "has_table": True,
+                                **page.metadata
+                            }
+                        )
+                    )
+                    global_index += 1
+                    continue
 
                 if current_len + para_len > self.max_chars and current_chunk_paras:
                     # Flush current chunk
@@ -135,7 +175,12 @@ class SemanticParagraphChunker(BaseChunker):
                             index=global_index,
                             content=chunk_text,
                             char_count=len(chunk_text),
-                            metadata={"page_number": page.page_number, "chunk_type": "paragraph", **page.metadata}
+                            metadata={
+                                "page_number": page.page_number,
+                                "chunk_type": "paragraph",
+                                "has_table": False,
+                                **page.metadata
+                            }
                         )
                     )
                     global_index += 1
@@ -152,7 +197,12 @@ class SemanticParagraphChunker(BaseChunker):
                         index=global_index,
                         content=chunk_text,
                         char_count=len(chunk_text),
-                        metadata={"page_number": page.page_number, "chunk_type": "paragraph", **page.metadata}
+                        metadata={
+                            "page_number": page.page_number,
+                            "chunk_type": "paragraph",
+                            "has_table": False,
+                            **page.metadata
+                        }
                     )
                 )
                 global_index += 1

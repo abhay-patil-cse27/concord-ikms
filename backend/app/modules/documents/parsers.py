@@ -65,24 +65,48 @@ class PDFParser(BaseDocumentParser):
 
 
 class DocxParser(BaseDocumentParser):
-    """Extracts text from Microsoft Word .docx documents."""
+    """Extracts text and structured tables from Microsoft Word .docx documents."""
 
     def extract_pages(self, file_bytes: bytes) -> List[ExtractedPage]:
         doc = docx.Document(io.BytesIO(file_bytes))
-        paragraphs_text = []
+        content_blocks = []
+        table_count = len(doc.tables)
+
         for p in doc.paragraphs:
             if p.text.strip():
-                paragraphs_text.append(p.text.strip())
+                content_blocks.append(p.text.strip())
                 
-        # Also include table text
-        for table in doc.tables:
-            for row in table.rows:
-                row_text = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-                if row_text:
-                    paragraphs_text.append(" | ".join(row_text))
+        # Format Word tables as standard Markdown table matrices
+        for t_idx, table in enumerate(doc.tables, start=1):
+            if not table.rows:
+                continue
 
-        combined_text = "\n\n".join(paragraphs_text)
-        return [ExtractedPage(text=combined_text, page_number=1, metadata={"paragraph_count": len(doc.paragraphs)})]
+            md_table_lines = []
+            header_cells = [cell.text.strip() for cell in table.rows[0].cells]
+            if header_cells and any(header_cells):
+                md_table_lines.append("| " + " | ".join(header_cells) + " |")
+                md_table_lines.append("| " + " | ".join(["---"] * len(header_cells)) + " |")
+
+            for row in table.rows[1:]:
+                row_cells = [cell.text.strip() for cell in row.cells]
+                if any(row_cells):
+                    md_table_lines.append("| " + " | ".join(row_cells) + " |")
+
+            if md_table_lines:
+                table_block = f"<!-- Table {t_idx} -->\n" + "\n".join(md_table_lines)
+                content_blocks.append(table_block)
+
+        combined_text = "\n\n".join(content_blocks)
+        return [ExtractedPage(
+            text=combined_text,
+            page_number=1,
+            metadata={
+                "paragraph_count": len(doc.paragraphs),
+                "table_count": table_count,
+                "has_tables": table_count > 0
+            }
+        )]
+
 
 
 class TextParser(BaseDocumentParser):

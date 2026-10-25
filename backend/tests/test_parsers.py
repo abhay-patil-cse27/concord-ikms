@@ -166,3 +166,60 @@ def test_excel_parser_extraction():
     assert "FeeStructure" in pages[0].text
     assert "Tuition | 85000 | 2026-08-30" in pages[0].text
     assert pages[0].metadata["row_count"] == 3
+
+
+def test_docx_markdown_table_grid_extraction():
+    """Verify DocxParser converts Word table matrices into clean Markdown tables."""
+    doc = docx.Document()
+    doc.add_heading("Autonomous Marks Distribution", level=1)
+    doc.add_paragraph("The internal and end-semester mark breakdown is given below:")
+    
+    table = doc.add_table(rows=3, cols=3)
+    table.rows[0].cells[0].text = "Component"
+    table.rows[0].cells[1].text = "Max Marks"
+    table.rows[0].cells[2].text = "Min Passing"
+
+    table.rows[1].cells[0].text = "ISE (In-Semester)"
+    table.rows[1].cells[1].text = "50"
+    table.rows[1].cells[2].text = "20"
+
+    table.rows[2].cells[0].text = "ESE (End-Semester)"
+    table.rows[2].cells[1].text = "50"
+    table.rows[2].cells[2].text = "20"
+
+    f_bytes = io.BytesIO()
+    doc.save(f_bytes)
+
+    parser = DocxParser()
+    pages = parser.extract_pages(f_bytes.getvalue())
+
+    assert len(pages) == 1
+    assert "| Component | Max Marks | Min Passing |" in pages[0].text
+    assert "| --- | --- | --- |" in pages[0].text
+    assert "| ESE (End-Semester) | 50 | 20 |" in pages[0].text
+    assert pages[0].metadata.get("has_tables") is True
+
+
+def test_semantic_paragraph_chunker_atomic_table_preservation():
+    """Verify SemanticParagraphChunker preserves Markdown table blocks as atomic chunks."""
+    markdown_doc = (
+        "# Regulation 2024\n\n"
+        "Here are the general passing guidelines for third-year engineering students.\n\n"
+        "| Course Code | Course Name | Credits | Passing Threshold |\n"
+        "| --- | --- | --- | --- |\n"
+        "| CS301 | Database Engineering | 4 | 40% |\n"
+        "| CS302 | Computer Networks | 4 | 40% |\n"
+        "| CS303 | Artificial Intelligence | 4 | 40% |\n\n"
+        "Students failing in more than 2 courses will be held back under KT regulations."
+    )
+    pages = [ExtractedPage(text=markdown_doc, page_number=1, metadata={"doc": "reg2024"})]
+    chunker = SemanticParagraphChunker(max_chars=300)
+    chunks = chunker.chunk_pages(pages)
+
+    # Ensure table was kept as an atomic unit
+    table_chunks = [c for c in chunks if c.metadata.get("has_table") is True]
+    assert len(table_chunks) == 1
+    assert "| CS301 | Database Engineering | 4 | 40% |" in table_chunks[0].content
+    assert "| CS303 | Artificial Intelligence | 4 | 40% |" in table_chunks[0].content
+    assert table_chunks[0].metadata["chunk_type"] == "table_grid"
+
