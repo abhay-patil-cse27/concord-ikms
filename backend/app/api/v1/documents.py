@@ -18,6 +18,7 @@ from app.modules.documents.schemas import (
     DocumentLifecycleUpdate,
     AsyncDocumentJobResponse,
     DocumentJobStatusResponse,
+    DocumentUrlUploadRequest,
 )
 from app.modules.documents.service import DocumentService, run_async_document_ingestion
 
@@ -105,6 +106,80 @@ async def upload_document_async(
         status="pending",
         phase="queued",
         message=f"Ingestion job {job_id} scheduled for {file.filename}.",
+    )
+
+
+@router.post("/upload-url", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_document_from_url(
+    request: Request,
+    payload: DocumentUrlUploadRequest,
+    current_user: User = Depends(require_permission("documents:write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Crawls and ingests a remote institutional portal link or web circular.
+    Protected by SSRF guardrails and parsed with SemanticHTMLTextExtractor.
+    """
+    import urllib.request
+    from urllib.parse import urlparse
+    from app.core.network_guard import validate_public_url
+    from app.modules.documents.web_parser import WebNoticeParser
+
+    # 1. Enforce strict SSRF & protocol defense
+    validated_url = validate_public_url(payload.url)
+
+    # 2. Fetch page with strict timeout & size boundary
+    req = urllib.request.Request(
+        validated_url,
+        headers={"User-Agent": "CONCORD-IKMS-Crawler/1.0 (Educational Institutional Knowledge Ingester)"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            content_type = response.headers.get("Content-Type", "")
+            raw_data = response.read(10 * 1024 * 1024)  # 10MB limit
+    except Exception as exc:
+        raise ValidationError(f"Failed to fetch content from URL: {exc}")
+
+    # 3. Decode & extract semantic Markdown
+    charset = "utf-8"
+    if "charset=" in content_type.lower():
+        charset = content_type.lower().split("charset=")[-1].split(";")[0].strip()
+
+    try:
+        html_str = raw_data.decode(charset, errors="replace")
+    except Exception:
+        html_str = raw_data.decode("utf-8", errors="replace")
+
+    domain = urlparse(validated_url).netloc
+    derived_title, markdown_prose = WebNoticeParser.parse_html_to_markdown(
+        html_str,
+        default_title=f"Web Notice from {domain}"
+    )
+
+    final_title = payload.title or derived_title
+    simulated_filename = f"web_notice_{domain.replace('.', '_')}_{uuid.uuid4().hex[:8]}.md"
+    file_bytes = markdown_prose.encode("utf-8")
+
+    if not file_bytes or len(file_bytes.strip()) == 0:
+        raise ValidationError("Extracted web page content was empty or unparseable.")
+
+    # 4. Ingest into document pipeline & vector store
+    service = DocumentService(db)
+    client_ip = request.client.host if request.client else None
+
+    doc = await service.ingest_document(
+        file_bytes=file_bytes,
+        filename=simulated_filename,
+        mime_type="text/markdown",
+        department_id=str(payload.department_id),
+        uploader_id=str(current_user.id),
+        title=final_title,
+        ip_address=client_ip,
+    )
+
+    return DocumentUploadResponse(
+        document=DocumentRead.model_validate(doc),
+        message=f"Web notice from '{domain}' successfully crawled, extracted, and indexed."
     )
 
 

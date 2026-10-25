@@ -80,3 +80,12 @@ class DocumentJobStatusResponse(BaseModel):
     message: str
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+
+
+class DocumentUrlUploadRequest(BaseModel):
+    url: str
+    department_id: str
+    title: Optional[str] = None
+    category: Optional[str] = "notice"
+    lifecycle_status: Optional[str] = "active"
+

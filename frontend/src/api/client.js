@@ -118,6 +118,11 @@ export const api = {
     }
     return data;
   },
+  uploadDocumentFromUrl: (urlPayload) =>
+    apiRequest('/documents/upload-url', {
+      method: 'POST',
+      body: JSON.stringify(urlPayload),
+    }),
   getDocumentJobStatus: (jobId) => apiRequest(`/documents/jobs/${jobId}`),
   deleteDocument: async (id) => {
     const token = localStorage.getItem('concord_token');

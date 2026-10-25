@@ -225,6 +225,14 @@ To prevent code redundancy across views and components, specialized conversation
 - **Institutional Design:** Features official letterhead, verified persona details, OWASP ASVS compliance badges, turn-by-turn question/verdict cards, and cryptographically anchored source citations with document titles, page numbers, and RRF similarity scores.
 - **Zero-Dependency Generation:** Built using pure client-side Blob generation with immediate download, requiring 0 external libraries or server endpoints.
 
+### G. Multi-Source Ingestion & URL Crawler Gateway (`UploadModal.jsx`)
+- **Location:** [`frontend/src/components/documents/UploadModal.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/documents/UploadModal.jsx)
+- **Backend Components:** [`backend/app/core/network_guard.py`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/backend/app/core/network_guard.py), [`backend/app/modules/documents/web_parser.py`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/backend/app/modules/documents/web_parser.py), `POST /api/v1/documents/upload-url`
+- **Source Differentiation Strategy:** Tabbed interface separating physical file drops from live university portal links.
+- **Category Scoping:** Allows operators to tag incoming knowledge assets (*Examination Circular*, *Academic Regulation Policy*, *Curriculum Syllabus*, *Fee/Grading Matrix Table*).
+- **Multi-File Batch Queue:** Accepts up to 15 documents simultaneously with sequential processing, per-file progress updates, and automatic queue management.
+- **SSRF Defense-in-Depth:** Validates public IP destinations and rejects loopbacks, RFC-1918 private subnets, and cloud metadata endpoints before fetching URLs.
+
 ---
 
 ## 8. OCR Engine & Tesseract Setup Guide

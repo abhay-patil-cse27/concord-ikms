@@ -58,10 +58,11 @@ graph TD
 | **AI Rate Limiting** | `backend/tests/test_rate_limiter.py` | Sliding-window token bucket quotas, per-IP isolation, HTTP 429 Retry-After responses. | `pytest` | 3 |
 | **Real-Time Token Streaming** | `backend/tests/test_streaming.py` | Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting. | `pytest` | 2 |
 | **Asynchronous Ingestion** | `backend/tests/test_async_ingestion.py` | Non-blocking background document upload (`/upload-async`), 4-stage job progress polling (`/jobs/{id}`), and completion assertions. | `pytest` | 1 |
+| **Web Notice Crawler & SSRF** | `backend/tests/test_web_ingestion.py` | Protocol enforcement, loopback & RFC-1918 private IP defense, AWS metadata IP blocking, HTML boilerplate purification. | `pytest` | 2 |
 | **Frontend Cache Isolation** | `frontend/tests/cacheIsolation.test.js` | User switching, cache namespacing (`_user_{id}`), startup legacy purge, `clearAll()`. | `node (Node.js Test)` | 5 |
 | **Frontend Speech Sanitization** | `frontend/tests/speechUtils.test.js` | Citation token removal (`[1]`), markdown formatting stripping, code block normalization, null safety. | `node (Node.js Test)` | 4 |
 
-**Total Automated Tests:** **87 automated test scenarios** (78 backend + 9 frontend, 100% passing).
+**Total Automated Tests:** **89 automated test scenarios** (80 backend + 9 frontend, 100% passing).
 
 ---
 

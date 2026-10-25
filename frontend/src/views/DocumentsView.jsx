@@ -32,10 +32,14 @@ export default function DocumentsView() {
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);
   const [fileToUpload, setFileToUpload] = useState(null);
+  const [filesList, setFilesList] = useState([]);
+  const [urlToUpload, setUrlToUpload] = useState('');
+  const [uploadCategory, setUploadCategory] = useState('notice');
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDeptId, setUploadDeptId] = useState('');
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // { progress: number, phase: string, message: string }
+  const [batchProgress, setBatchProgress] = useState(null); // { current: number, total: number, filename: string }
   const [uploadMsg, setUploadMsg] = useState(null);
 
   // Inspector modal state
@@ -81,71 +85,128 @@ export default function DocumentsView() {
     fetchData();
   }, [selectedDept]);
 
-  const handleUploadSubmit = async (e) => {
+  const handleUploadSubmit = async (e, activeTab = 'files') => {
     e.preventDefault();
-    if (!fileToUpload) return;
 
     setUploadLoading(true);
     setUploadMsg(null);
-    setUploadProgress({ progress: 5, phase: 'queued', message: 'Initiating upload stream...' });
 
-    try {
-      const formData = new FormData();
-      formData.append('file', fileToUpload);
-      formData.append('department_id', uploadDeptId);
-      if (uploadTitle.trim()) {
-        formData.append('title', uploadTitle.trim());
+    // MODE B: Web Portal URL Ingestion
+    if (activeTab === 'url') {
+      if (!urlToUpload || !urlToUpload.trim()) {
+        setUploadLoading(false);
+        return;
       }
 
-      // Submit asynchronous ingestion job
-      const jobRes = await api.uploadDocumentAsync(formData);
-      const jobId = jobRes.job_id;
-
-      // Poll job progress
-      let jobFinished = false;
-      let finalMessage = 'Document ingested and parsed successfully!';
-
-      for (let attempt = 0; attempt < 60; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        const statusRes = await api.getDocumentJobStatus(jobId);
-
-        setUploadProgress({
-          progress: statusRes.progress || 10,
-          phase: statusRes.phase || 'processing',
-          message: statusRes.message || 'Processing document...',
+      setUploadProgress({ progress: 20, phase: 'crawling', message: 'Fetching web portal document...' });
+      try {
+        const res = await api.uploadDocumentFromUrl({
+          url: urlToUpload.trim(),
+          department_id: uploadDeptId,
+          title: uploadTitle.trim() || null,
+          category: uploadCategory,
         });
 
-        if (statusRes.status === 'completed') {
-          jobFinished = true;
-          finalMessage = statusRes.message || finalMessage;
-          break;
-        } else if (statusRes.status === 'failed') {
-          throw new Error(statusRes.error || statusRes.message || 'Ingestion task failed');
+        setUploadProgress({ progress: 100, phase: 'indexed', message: 'Web notice indexed successfully!' });
+        setUploadMsg({ type: 'success', text: res.message || 'Web notice crawled & indexed!' });
+        setToast({ message: res.message || 'Web notice indexed into vector store!', type: 'success' });
+        setUrlToUpload('');
+        setUploadTitle('');
+        await fetchData();
+
+        setTimeout(() => {
+          setShowUpload(false);
+          setUploadMsg(null);
+          setUploadProgress(null);
+        }, 1500);
+      } catch (err) {
+        setUploadMsg({ type: 'error', text: err?.message || 'Failed to crawl and index URL.' });
+        setToast({ message: err?.message || 'URL ingestion failed.', type: 'error' });
+        setUploadProgress(null);
+      } finally {
+        setUploadLoading(false);
+      }
+      return;
+    }
+
+    // MODE A: File Documents (Single or Batch Queue)
+    const targetQueue = filesList.length > 0 ? filesList : fileToUpload ? [fileToUpload] : [];
+    if (targetQueue.length === 0) {
+      setUploadLoading(false);
+      return;
+    }
+
+    const totalCount = targetQueue.length;
+    let completedCount = 0;
+    let failureCount = 0;
+
+    for (let i = 0; i < totalCount; i++) {
+      const currentFile = targetQueue[i];
+      setBatchProgress({ current: i + 1, total: totalCount, filename: currentFile.name });
+      setUploadProgress({ progress: 15, phase: 'queued', message: `Uploading ${currentFile.name}...` });
+
+      try {
+        const formData = new FormData();
+        formData.append('file', currentFile);
+        formData.append('department_id', uploadDeptId);
+        if (uploadTitle.trim() && totalCount === 1) {
+          formData.append('title', uploadTitle.trim());
         }
+
+        const jobRes = await api.uploadDocumentAsync(formData);
+        const jobId = jobRes.job_id;
+
+        // Poll job progress
+        let jobFinished = false;
+        for (let attempt = 0; attempt < 60; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          const statusRes = await api.getDocumentJobStatus(jobId);
+
+          setUploadProgress({
+            progress: statusRes.progress || 20,
+            phase: statusRes.phase || 'processing',
+            message: statusRes.message || 'Processing document...',
+          });
+
+          if (statusRes.status === 'completed') {
+            jobFinished = true;
+            completedCount++;
+            break;
+          } else if (statusRes.status === 'failed') {
+            failureCount++;
+            break;
+          }
+        }
+      } catch (itemErr) {
+        failureCount++;
+        console.warn(`Upload error for ${currentFile.name}:`, itemErr);
       }
+    }
 
-      if (!jobFinished) {
-        throw new Error('Ingestion timed out. Processing may still be ongoing.');
-      }
+    const summaryText = totalCount > 1
+      ? `Batch complete: ${completedCount} of ${totalCount} documents ingested (${failureCount} errors).`
+      : completedCount === 1
+      ? 'Document ingested and parsed successfully!'
+      : 'Document upload failed.';
 
-      setUploadMsg({ type: 'success', text: finalMessage });
-      setToast({ message: finalMessage, type: 'success' });
-      setFileToUpload(null);
-      setUploadTitle('');
-      await fetchData();
+    const statusType = failureCount === 0 ? 'success' : completedCount > 0 ? 'warning' : 'error';
+    setUploadMsg({ type: statusType, text: summaryText });
+    setToast({ message: summaryText, type: statusType });
+    setFileToUpload(null);
+    setFilesList([]);
+    setUploadTitle('');
+    setBatchProgress(null);
+    await fetchData();
 
-      setTimeout(() => {
+    setTimeout(() => {
+      if (failureCount === 0) {
         setShowUpload(false);
         setUploadMsg(null);
         setUploadProgress(null);
-      }, 1500);
-    } catch (err) {
-      setUploadMsg({ type: 'error', text: err?.message || 'Upload failed.' });
-      setToast({ message: err?.message || 'Upload failed.', type: 'error' });
-      setUploadProgress(null);
-    } finally {
-      setUploadLoading(false);
-    }
+      }
+    }, 1800);
+
+    setUploadLoading(false);
   };
 
   const handleDelete = async (docId, title) => {
@@ -274,8 +335,15 @@ export default function DocumentsView() {
         setUploadTitle={setUploadTitle}
         fileToUpload={fileToUpload}
         setFileToUpload={setFileToUpload}
+        filesList={filesList}
+        setFilesList={setFilesList}
+        urlToUpload={urlToUpload}
+        setUrlToUpload={setUrlToUpload}
+        uploadCategory={uploadCategory}
+        setUploadCategory={setUploadCategory}
         uploadLoading={uploadLoading}
         uploadProgress={uploadProgress}
+        batchProgress={batchProgress}
         uploadMsg={uploadMsg}
         onSubmit={handleUploadSubmit}
       />
