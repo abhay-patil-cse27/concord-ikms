@@ -195,4 +195,9 @@ To prevent code redundancy across views and components, specialized conversation
 - **Zero Redundancy Integration:** Extracted from inline message rendering so it can be embedded in `MessageBlock.jsx`, search result cards, or audit inspector modals without duplicate state logic.
 - **Audit Persistence:** Transmits structured rating and optional explanatory notes directly to `POST /api/v1/audit/feedback`, creating an append-only cryptographic audit record for policy verification and RAG refinement.
 
-
+### C. Asynchronous Ingestion & Real-Time Progress Bar (`UploadModal.jsx`)
+- **Location:** [`frontend/src/components/documents/UploadModal.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/documents/UploadModal.jsx)
+- **Backend Architecture:** In-process non-blocking task runner via `BackgroundJobManager` (`backend/app/core/tasks.py`) and FastAPI `BackgroundTasks`.
+- **Zero Redundancy Design:** The `BackgroundJobManager` singleton tracks task status (`pending`, `running`, `completed`, `failed`), phase (`queued`, `extracting`, `chunking`, `embedding`, `done`, `error`), and percentage completion (0-100%) for any future async pipeline.
+- **Brutalist UI Representation:** Displays a real-time Yellow Brutalist progress track (`bg-brutal-yellow border-r-2 border-brutal-black`) alongside live phase updates (`1. Upload → 2. Extract → 3. Chunk → 4. Vectorize`) and percentage completion badges.
+- **Full Backward Compatibility:** The synchronous `POST /api/v1/documents/upload` endpoint is fully maintained for automated test suites and legacy integrations.

@@ -31,6 +31,9 @@ TestingSessionLocal = async_sessionmaker(
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def prepare_test_database():
     """Initializes tables and seeds test data."""
+    from app.core.database import set_session_factory, AsyncSessionLocal
+    set_session_factory(TestingSessionLocal)
+
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
@@ -42,6 +45,7 @@ async def prepare_test_database():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await test_engine.dispose()
+    set_session_factory(AsyncSessionLocal)
 
 
 @pytest_asyncio.fixture

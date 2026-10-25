@@ -31,6 +31,7 @@ class DocumentService:
         uploader_id: str,
         title: Optional[str] = None,
         ip_address: Optional[str] = None,
+        progress_callback: Optional[callable] = None,
     ) -> Document:
         # Path Traversal Defense: Strip path separators and keep only safe basename
         import os
@@ -78,11 +79,21 @@ class DocumentService:
         self.db.add(document)
         await self.db.flush()
 
+        if progress_callback:
+            await progress_callback(phase="extracting", progress=25, message=f"Extracting raw pages from {safe_filename}...")
+
         # Parse text
         try:
             parser = get_parser_for_mime_or_ext(filename, mime_type)
             extracted_pages = parser.extract_pages(file_bytes)
             
+            if progress_callback:
+                await progress_callback(
+                    phase="chunking",
+                    progress=50,
+                    message=f"Extracted {len(extracted_pages)} pages. Generating semantic chunks...",
+                )
+
             # Resolve format-specific chunking strategy
             from app.modules.documents.chunker import get_chunker_for_document
             chunker = get_chunker_for_document(filename, mime_type)
@@ -107,6 +118,13 @@ class DocumentService:
             logger.info(
                 f"Document {document.id} ({filename}) parsed successfully: {len(extracted_pages)} pages, {len(chunk_results)} chunks"
             )
+
+            if progress_callback:
+                await progress_callback(
+                    phase="embedding",
+                    progress=75,
+                    message=f"Syncing {len(chunk_results)} chunks to vector index...",
+                )
 
             # Sync vectors into ChromaDB embedded store
             try:
@@ -133,10 +151,23 @@ class DocumentService:
             except Exception as chroma_exc:
                 logger.warning(f"ChromaDB ingestion sync warning: {chroma_exc}")
 
+            if progress_callback:
+                await progress_callback(
+                    phase="completed",
+                    progress=100,
+                    message=f"Document ingested successfully into {len(chunk_results)} semantic chunks.",
+                )
+
         except Exception as exc:
             logger.error(f"Failed parsing document {document.id} ({filename}): {exc}")
             document.status = "failed"
             document.error_message = str(exc)
+            if progress_callback:
+                await progress_callback(
+                    phase="failed",
+                    progress=100,
+                    message=f"Ingestion failed: {exc}",
+                )
 
         await self.db.commit()
         await self.db.refresh(document)
@@ -429,4 +460,75 @@ class DocumentService:
             logger.warning(f"Failed to log approval audit: {audit_exc}")
 
         return doc
+
+
+async def run_async_document_ingestion(
+    job_id: str,
+    file_bytes: bytes,
+    filename: str,
+    mime_type: str,
+    department_id: str,
+    uploader_id: str,
+    title: Optional[str] = None,
+    ip_address: Optional[str] = None,
+):
+    """Background task runner for document ingestion with stage tracking."""
+    from app.core.database import get_session_factory
+    from app.core.tasks import job_manager
+    from app.modules.documents.schemas import DocumentRead
+
+    async def progress_cb(phase: str, progress: int, message: str):
+        status = "running"
+        if phase == "completed":
+            status = "completed"
+        elif phase == "failed":
+            status = "failed"
+        await job_manager.update_job(
+            job_id=job_id,
+            status=status,
+            phase=phase,
+            progress=progress,
+            message=message,
+        )
+
+    try:
+        await job_manager.update_job(
+            job_id=job_id,
+            status="running",
+            phase="extracting",
+            progress=10,
+            message=f"Starting ingestion for {filename}...",
+        )
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            service = DocumentService(session)
+            doc = await service.ingest_document(
+                file_bytes=file_bytes,
+                filename=filename,
+                mime_type=mime_type,
+                department_id=department_id,
+                uploader_id=uploader_id,
+                title=title,
+                ip_address=ip_address,
+                progress_callback=progress_cb,
+            )
+            doc_data = DocumentRead.model_validate(doc).model_dump(mode="json")
+            await job_manager.update_job(
+                job_id=job_id,
+                status="completed",
+                phase="done",
+                progress=100,
+                message=f"Document '{doc.title}' successfully ingested with {doc.chunk_count} chunks.",
+                result={"document": doc_data, "chunk_count": doc.chunk_count},
+            )
+    except Exception as exc:
+        logger.error(f"Async ingestion failed for job {job_id} ({filename}): {exc}", exc_info=True)
+        await job_manager.update_job(
+            job_id=job_id,
+            status="failed",
+            phase="error",
+            progress=100,
+            message=f"Ingestion failed: {str(exc)}",
+            error=str(exc),
+        )
 

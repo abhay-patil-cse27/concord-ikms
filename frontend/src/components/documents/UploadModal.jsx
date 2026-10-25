@@ -19,6 +19,7 @@ export default function UploadModal({
   fileToUpload,
   setFileToUpload,
   uploadLoading,
+  uploadProgress,
   uploadMsg,
   onSubmit,
 }) {
@@ -81,6 +82,48 @@ export default function UploadModal({
           </div>
         )}
 
+        {/* Real-time Ingestion Progress Bar */}
+        {uploadLoading && uploadProgress && (
+          <div className="flex flex-col gap-2 p-3 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm">
+            <div className="flex items-center justify-between text-xs font-mono font-bold">
+              <span className="uppercase text-brutal-black dark:text-brutal-white tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-brutal-yellow border border-brutal-black animate-pulse" />
+                {uploadProgress.phase || 'Ingesting'}: {uploadProgress.message || 'Processing document...'}
+              </span>
+              <span className="text-brutal-black dark:text-brutal-yellow font-black">
+                {uploadProgress.progress || 0}%
+              </span>
+            </div>
+            
+            {/* Brutalist Progress Track */}
+            <div className="w-full h-3 bg-brutal-white dark:bg-brutal-dark border-2 border-brutal-black dark:border-brutal-yellow overflow-hidden relative">
+              <div
+                className="h-full bg-brutal-yellow border-r-2 border-brutal-black transition-all duration-300 ease-out"
+                style={{ width: `${Math.max(4, Math.min(100, uploadProgress.progress || 0))}%` }}
+              />
+            </div>
+
+            {/* Stage Indicators */}
+            <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase text-brutal-muted dark:text-brutal-muted-dark pt-1">
+              <span className={cn(uploadProgress.progress >= 20 && 'text-brutal-black dark:text-brutal-white font-black')}>
+                1. Upload
+              </span>
+              <span>→</span>
+              <span className={cn(uploadProgress.progress >= 40 && 'text-brutal-black dark:text-brutal-white font-black')}>
+                2. Extract
+              </span>
+              <span>→</span>
+              <span className={cn(uploadProgress.progress >= 60 && 'text-brutal-black dark:text-brutal-white font-black')}>
+                3. Chunk
+              </span>
+              <span>→</span>
+              <span className={cn(uploadProgress.progress >= 80 && 'text-brutal-black dark:text-brutal-white font-black')}>
+                4. Vectorize
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Target Department Selection */}
         <div className="flex flex-col gap-1.5">
           <label className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white tracking-wider">
@@ -127,14 +170,15 @@ export default function UploadModal({
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            onClick={() => !uploadLoading && fileInputRef.current && fileInputRef.current.click()}
             className={cn(
               'border-3 border-dashed p-6 text-center cursor-pointer transition-all select-none',
               isDragOver
                 ? 'bg-brutal-yellow border-brutal-black scale-[0.99]'
                 : fileToUpload
                 ? 'bg-brutal-white dark:bg-brutal-dark-surface border-brutal-black dark:border-brutal-yellow shadow-brutal-sm'
-                : 'bg-brutal-paper dark:bg-brutal-dark-surface border-brutal-black/40 dark:border-brutal-yellow/40 hover:border-brutal-black hover:bg-brutal-yellow/10'
+                : 'bg-brutal-paper dark:bg-brutal-dark-surface border-brutal-black/40 dark:border-brutal-yellow/40 hover:border-brutal-black hover:bg-brutal-yellow/10',
+              uploadLoading && 'opacity-60 cursor-not-allowed'
             )}
           >
             <input
@@ -142,6 +186,7 @@ export default function UploadModal({
               type="file"
               accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md,.csv"
               onChange={(e) => setFileToUpload(e.target.files[0] || null)}
+              disabled={uploadLoading}
               className="hidden"
             />
 
@@ -195,7 +240,7 @@ export default function UploadModal({
             loading={uploadLoading}
             className="shadow-brutal"
           >
-            <span>{uploadLoading ? 'Chunking & Ingesting...' : 'Upload & Ingest'}</span>
+            <span>{uploadLoading ? (uploadProgress ? `Ingesting (${uploadProgress.progress}%)` : 'Ingesting...') : 'Upload & Ingest'}</span>
           </BrutalButton>
         </div>
 

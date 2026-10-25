@@ -35,6 +35,7 @@ export default function DocumentsView() {
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDeptId, setUploadDeptId] = useState('');
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null); // { progress: number, phase: string, message: string }
   const [uploadMsg, setUploadMsg] = useState(null);
 
   // Inspector modal state
@@ -86,6 +87,8 @@ export default function DocumentsView() {
 
     setUploadLoading(true);
     setUploadMsg(null);
+    setUploadProgress({ progress: 5, phase: 'queued', message: 'Initiating upload stream...' });
+
     try {
       const formData = new FormData();
       formData.append('file', fileToUpload);
@@ -94,20 +97,52 @@ export default function DocumentsView() {
         formData.append('title', uploadTitle.trim());
       }
 
-      const res = await api.uploadDocument(formData);
-      const msg = res?.message || 'Document ingested and parsed successfully!';
-      setUploadMsg({ type: 'success', text: msg });
-      setToast({ message: msg, type: 'success' });
+      // Submit asynchronous ingestion job
+      const jobRes = await api.uploadDocumentAsync(formData);
+      const jobId = jobRes.job_id;
+
+      // Poll job progress
+      let jobFinished = false;
+      let finalMessage = 'Document ingested and parsed successfully!';
+
+      for (let attempt = 0; attempt < 60; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        const statusRes = await api.getDocumentJobStatus(jobId);
+
+        setUploadProgress({
+          progress: statusRes.progress || 10,
+          phase: statusRes.phase || 'processing',
+          message: statusRes.message || 'Processing document...',
+        });
+
+        if (statusRes.status === 'completed') {
+          jobFinished = true;
+          finalMessage = statusRes.message || finalMessage;
+          break;
+        } else if (statusRes.status === 'failed') {
+          throw new Error(statusRes.error || statusRes.message || 'Ingestion task failed');
+        }
+      }
+
+      if (!jobFinished) {
+        throw new Error('Ingestion timed out. Processing may still be ongoing.');
+      }
+
+      setUploadMsg({ type: 'success', text: finalMessage });
+      setToast({ message: finalMessage, type: 'success' });
       setFileToUpload(null);
       setUploadTitle('');
       await fetchData();
+
       setTimeout(() => {
         setShowUpload(false);
         setUploadMsg(null);
-      }, 1200);
+        setUploadProgress(null);
+      }, 1500);
     } catch (err) {
       setUploadMsg({ type: 'error', text: err?.message || 'Upload failed.' });
       setToast({ message: err?.message || 'Upload failed.', type: 'error' });
+      setUploadProgress(null);
     } finally {
       setUploadLoading(false);
     }
@@ -240,6 +275,7 @@ export default function DocumentsView() {
         fileToUpload={fileToUpload}
         setFileToUpload={setFileToUpload}
         uploadLoading={uploadLoading}
+        uploadProgress={uploadProgress}
         uploadMsg={uploadMsg}
         onSubmit={handleUploadSubmit}
       />

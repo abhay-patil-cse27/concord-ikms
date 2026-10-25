@@ -1,21 +1,25 @@
 """Documents API Router."""
 from typing import List, Optional
-from fastapi import APIRouter, Depends, UploadFile, File, Form, Query, Request, status
+import uuid
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query, Request, BackgroundTasks, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_permission, get_current_user
 from app.core.storage import storage_provider
-from app.core.errors import ValidationError
+from app.core.errors import ValidationError, NotFoundError
+from app.core.tasks import job_manager
 from app.modules.identity.models import User
 from app.modules.documents.schemas import (
     DocumentRead,
     DocumentDetailRead,
     DocumentUploadResponse,
     DocumentLifecycleUpdate,
+    AsyncDocumentJobResponse,
+    DocumentJobStatusResponse,
 )
-from app.modules.documents.service import DocumentService
+from app.modules.documents.service import DocumentService, run_async_document_ingestion
 
 from app.core.pagination import PaginationParams
 
@@ -31,7 +35,7 @@ async def upload_document(
     current_user: User = Depends(require_permission("documents:write")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Uploads, extracts, chunks, and indexes an institutional document."""
+    """Uploads, extracts, chunks, and indexes an institutional document synchronously."""
     if not file.filename:
         raise ValidationError("Missing filename in upload payload")
 
@@ -55,6 +59,72 @@ async def upload_document(
     return DocumentUploadResponse(
         document=DocumentRead.model_validate(doc),
         message=f"Document successfully parsed and converted into {doc.chunk_count} semantic chunks.",
+    )
+
+
+@router.post("/upload-async", response_model=AsyncDocumentJobResponse, status_code=status.HTTP_202_ACCEPTED)
+async def upload_document_async(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    department_id: str = Form(...),
+    title: Optional[str] = Form(None),
+    current_user: User = Depends(require_permission("documents:write")),
+):
+    """Uploads and ingests document asynchronously, returning job ID for progress tracking."""
+    if not file.filename:
+        raise ValidationError("Missing filename in upload payload")
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise ValidationError("Uploaded file is empty (0 bytes)")
+
+    job_id = f"job_ingest_{uuid.uuid4().hex[:12]}"
+    client_ip = request.client.host if request.client else None
+
+    await job_manager.create_job(
+        job_id=job_id,
+        phase="queued",
+        message=f"Upload received for '{file.filename}'. Queued for processing.",
+    )
+
+    background_tasks.add_task(
+        run_async_document_ingestion,
+        job_id=job_id,
+        file_bytes=file_bytes,
+        filename=file.filename,
+        mime_type=file.content_type or "application/octet-stream",
+        department_id=str(department_id),
+        uploader_id=str(current_user.id),
+        title=title,
+        ip_address=client_ip,
+    )
+
+    return AsyncDocumentJobResponse(
+        job_id=job_id,
+        status="pending",
+        phase="queued",
+        message=f"Ingestion job {job_id} scheduled for {file.filename}.",
+    )
+
+
+@router.get("/jobs/{job_id}", response_model=DocumentJobStatusResponse)
+async def get_document_job_status(
+    job_id: str,
+    current_user: User = Depends(require_permission("documents:read")),
+):
+    """Retrieves real-time progress percentage and state for an asynchronous ingestion job."""
+    job = await job_manager.get_job(job_id)
+    if not job:
+        raise NotFoundError(f"Ingestion job '{job_id}' not found.")
+    return DocumentJobStatusResponse(
+        job_id=job.job_id,
+        status=job.status,
+        phase=job.phase,
+        progress=job.progress,
+        message=job.message,
+        result=job.result,
+        error=job.error,
     )
 
 

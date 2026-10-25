@@ -89,6 +89,34 @@ sequenceDiagram
   - `department_id`: Department UUID
   - `title`: Optional display title
 
+### `POST /documents/upload-async`
+- **Description:** Non-blocking asynchronous document ingestion. Immediately queues file for parsing, semantic chunking, and vectorization, returning a unique background `job_id`.
+- **Status Code:** `202 Accepted`
+- **Response Body:**
+  ```json
+  {
+    "job_id": "job_ingest_c4f828a10d82",
+    "status": "pending",
+    "phase": "queued",
+    "message": "Ingestion job job_ingest_c4f828a10d82 scheduled for syllabus.pdf."
+  }
+  ```
+
+### `GET /documents/jobs/{job_id}`
+- **Description:** Polls real-time ingestion stage and percentage progress for an asynchronous ingestion job.
+- **Response Body:**
+  ```json
+  {
+    "job_id": "job_ingest_c4f828a10d82",
+    "status": "completed",
+    "phase": "done",
+    "progress": 100,
+    "message": "Document 'Autonomous Syllabus' successfully ingested with 24 chunks.",
+    "result": { "document": { "id": "...", "title": "..." }, "chunk_count": 24 },
+    "error": null
+  }
+  ```
+
 
 ### `GET /documents`
 - **Description:** Lists documents filtered by department and user RBAC permissions.

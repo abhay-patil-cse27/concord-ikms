@@ -30,10 +30,24 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
+# Global holder that can be swapped or retrieved by background workers
+_session_factory = AsyncSessionLocal
+
+
+def set_session_factory(factory):
+    global _session_factory
+    _session_factory = factory
+
+
+def get_session_factory():
+    global _session_factory
+    return _session_factory
+
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency that provides a transactional async database session."""
-    async with AsyncSessionLocal() as session:
+    factory = get_session_factory()
+    async with factory() as session:
         try:
             yield session
         except Exception:

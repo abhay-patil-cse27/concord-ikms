@@ -99,6 +99,26 @@ export const api = {
     }
     return data;
   },
+  uploadDocumentAsync: async (formData) => {
+    const token = localStorage.getItem('concord_token');
+    const response = await fetch('/api/v1/documents/upload-async', {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const errorMsg = data?.error?.message || `HTTP ${response.status}: Async upload failed`;
+      const error = new Error(errorMsg);
+      error.status = response.status;
+      error.code = data?.error?.code || 'UPLOAD_FAILED';
+      throw error;
+    }
+    return data;
+  },
+  getDocumentJobStatus: (jobId) => apiRequest(`/documents/jobs/${jobId}`),
   deleteDocument: async (id) => {
     const token = localStorage.getItem('concord_token');
     const response = await fetch(`/api/v1/documents/${id}`, {

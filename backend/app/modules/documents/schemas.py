@@ -63,3 +63,20 @@ class DocumentLifecycleUpdate(BaseModel):
 class DocumentUploadResponse(BaseModel):
     document: DocumentRead
     message: str
+
+
+class AsyncDocumentJobResponse(BaseModel):
+    job_id: str
+    status: str
+    phase: str
+    message: str
+
+
+class DocumentJobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    phase: str
+    progress: int
+    message: str
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
