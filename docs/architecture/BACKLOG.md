@@ -207,6 +207,21 @@
   - [x] Complete test suite passing: 47/47 tests (`pytest backend/tests`).
   - [x] Production build clean: `npm run build` succeeds in 2.9s.
 
-
-
-
+## Milestone 9: Real-Time Streaming, Resilience, OCR & Security Hardening (Completed)
+- [x] **Step 9.1: Real-Time Token Streaming (SSE):**
+  - [x] Implemented `/api/v1/rag/ask-stream` with chunk-framing and zero-latency SSE token yield.
+  - [x] Frontend dynamic typewriter with academic verb spinner and citation drawer integration.
+- [x] **Step 9.2: Threat Modeling & ASVS 4.1 Security Hardening:**
+  - [x] Multi-tiered `PromptGuard` interceptor blocking prompt injections, delimiter smuggling, and SQL injection signatures.
+  - [x] OWASP ASVS HTTP headers, ChromaDB NoSQL injection neutralization, and path traversal stripping.
+  - [x] Sliding-window token bucket AI rate limiting (`AIRateLimiterMiddleware`).
+- [x] **Step 9.3: Asynchronous Non-Blocking Document Ingestion:**
+  - [x] Implemented `POST /api/v1/documents/upload-async` and `GET /api/v1/documents/jobs/{job_id}`.
+  - [x] 4-stage job progress polling (`queued` → `extracting` → `chunking` → `indexing` → `completed`).
+- [x] **Step 9.4: Scanned Circular Layout-Aware OCR Preprocessor & Parser:**
+  - [x] Implemented `ImagePreprocessor` with $1.5\times$ upscaling, contrast boost, and adaptive luminance binarization for faint institutional circular stamps.
+  - [x] Created `ScannedImageParser` for `.png`, `.jpg`, `.jpeg`, `.tiff`, `.bmp`, `.webp`.
+  - [x] Extended `UploadModal.jsx` drag-and-drop file inputs to accept scanned images.
+- [x] **Step 9.5: Automated Verification & Documentation:**
+  - [x] Unit test `test_scanned_image_preprocessor_and_parser` in `backend/tests/test_parsers.py`.
+  - [x] 83 total automated tests (78 backend + 5 frontend) 100% passing.
