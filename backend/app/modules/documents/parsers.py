@@ -156,6 +156,38 @@ class ExcelParser(BaseDocumentParser):
         return pages
 
 
+class ScannedImageParser(BaseDocumentParser):
+    """Extracts text from scanned circular image files (.png, .jpg, .jpeg, .tiff, .bmp, .webp)."""
+
+    def extract_pages(self, file_bytes: bytes) -> List[ExtractedPage]:
+        from app.modules.documents.ocr import get_ocr_provider
+        from app.modules.documents.preprocessor import ImagePreprocessor
+
+        ocr_provider = get_ocr_provider()
+        
+        # Preprocess and extract metadata
+        try:
+            _, meta = ImagePreprocessor.preprocess_image(file_bytes)
+        except Exception:
+            meta = {}
+
+        extracted_text = ocr_provider.extract_text_from_images([file_bytes])
+
+        meta.update({
+            "is_ocr": True,
+            "engine": "pytesseract" if ocr_provider.__class__.__name__ == "PytesseractOCRProvider" else "fallback_ocr",
+            "media_type": "scanned_image",
+        })
+
+        return [
+            ExtractedPage(
+                text=extracted_text.strip(),
+                page_number=1,
+                metadata=meta,
+            )
+        ]
+
+
 def get_parser_for_mime_or_ext(filename: str, mime_type: str) -> BaseDocumentParser:
     """Factory resolving appropriate parser based on file extension and MIME type."""
     fn_lower = filename.lower()
@@ -165,6 +197,8 @@ def get_parser_for_mime_or_ext(filename: str, mime_type: str) -> BaseDocumentPar
         return DocxParser()
     elif fn_lower.endswith((".xlsx", ".xlsm", ".xltx")) or "spreadsheetml" in mime_type or "excel" in mime_type:
         return ExcelParser()
+    elif fn_lower.endswith((".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".webp")) or "image" in mime_type:
+        return ScannedImageParser()
     elif fn_lower.endswith((".txt", ".md", ".csv", ".json", ".log")) or "text" in mime_type or "csv" in mime_type:
         return TextParser()
     else:

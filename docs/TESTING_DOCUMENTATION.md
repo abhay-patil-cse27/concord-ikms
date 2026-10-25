@@ -47,7 +47,7 @@ graph TD
 | **Document Lifecycle** | `backend/tests/test_documents.py` | Upload, SHA-256 deduplication, lifecycle transitions (`active` → `superseded`), governance approvals. | `pytest` | 5 |
 | **Conversations & Memory** | `backend/tests/test_conversations.py` | Multi-turn inquiry persistence, conversational pronoun contextualization (*"What about it?"* rewriting). | `pytest` | 1 |
 | **Vector Store & Chroma** | `backend/tests/test_chroma.py` | Embedded ChromaDB collection initialization, vector querying, metadata filtering. | `pytest` | 3 |
-| **Parsers & Chunkers** | `backend/tests/test_parsers.py` | PDF, DOCX, TXT semantic parsing, token counting, table preservation. | `pytest` | 9 |
+| **Parsers & Chunkers** | `backend/tests/test_parsers.py` | PDF, DOCX, TXT, Excel semantic parsing, token counting, atomic table preservation, scanned circular image preprocessing (1.5x upscaling, adaptive binarization) & OCR parser. | `pytest` | 12 |
 | **Grounded RAG Pipeline** | `backend/tests/test_rag.py` | Prompt augmentation, hallucination guardrails, citation metadata extraction. | `pytest` | 5 |
 | **Retrieval & Reranking** | `backend/tests/test_retrieval.py` | Hybrid BM25 + Vector reciprocal rank fusion (RRF), cross-encoder scoring. | `pytest` | 8 |
 | **Health & Readiness** | `backend/tests/test_health.py` | `/healthz`, `/readyz` DB latency checks, root status. | `pytest` | 3 |
@@ -60,7 +60,7 @@ graph TD
 | **Asynchronous Ingestion** | `backend/tests/test_async_ingestion.py` | Non-blocking background document upload (`/upload-async`), 4-stage job progress polling (`/jobs/{id}`), and completion assertions. | `pytest` | 1 |
 | **Frontend Cache Isolation** | `frontend/tests/cacheIsolation.test.js` | User switching, cache namespacing (`_user_{id}`), startup legacy purge, `clearAll()`. | `node (Node.js Test)` | 5 |
 
-**Total Automated Tests:** **82 automated test scenarios** (77 backend + 5 frontend, 100% passing).
+**Total Automated Tests:** **83 automated test scenarios** (78 backend + 5 frontend, 100% passing).
 
 ---
 

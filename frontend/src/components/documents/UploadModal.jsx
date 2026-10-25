@@ -58,7 +58,7 @@ export default function UploadModal({
       isOpen={show}
       onClose={onClose}
       title="Ingest Institutional Document"
-      subtitle="Supported: PDF, DOCX, XLSX, TXT, MD, CSV (Max 50MB)"
+      subtitle="Supported: PDF, DOCX, XLSX, TXT, MD, CSV, Scanned Images (PNG, JPG, TIFF) (Max 50MB)"
       size="md"
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
@@ -184,7 +184,7 @@ export default function UploadModal({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md,.csv"
+              accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md,.csv,.png,.jpg,.jpeg,.tiff,.bmp,.webp"
               onChange={(e) => setFileToUpload(e.target.files[0] || null)}
               disabled={uploadLoading}
               className="hidden"

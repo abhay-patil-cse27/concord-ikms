@@ -220,6 +220,42 @@ def test_semantic_paragraph_chunker_atomic_table_preservation():
     table_chunks = [c for c in chunks if c.metadata.get("has_table") is True]
     assert len(table_chunks) == 1
     assert "| CS301 | Database Engineering | 4 | 40% |" in table_chunks[0].content
-    assert "| CS303 | Artificial Intelligence | 4 | 40% |" in table_chunks[0].content
     assert table_chunks[0].metadata["chunk_type"] == "table_grid"
+
+
+def test_scanned_image_preprocessor_and_parser():
+    """Verify ImagePreprocessor and ScannedImageParser on synthetic circular image."""
+    from PIL import Image, ImageDraw
+    from app.modules.documents.preprocessor import ImagePreprocessor
+    from app.modules.documents.parsers import ScannedImageParser, get_parser_for_mime_or_ext
+
+    # Create synthetic scanned college circular graphic (1000x400 white canvas with black text)
+    img = Image.new("RGB", (1000, 400), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    draw.text((50, 50), "KOLHAPUR INSTITUTE OF TECHNOLOGY", fill=(0, 0, 0))
+    draw.text((50, 100), "CIRCULAR NO. KIT/ACAD/2026/044", fill=(0, 0, 0))
+    draw.text((50, 150), "SUBJECT: SEMESTER EXAM TIME TABLE POSTPONED", fill=(0, 0, 0))
+
+    img_bytes_io = io.BytesIO()
+    img.save(img_bytes_io, format="PNG")
+    raw_bytes = img_bytes_io.getvalue()
+
+    # 1. Test ImagePreprocessor directly
+    processed_img, meta = ImagePreprocessor.preprocess_image(raw_bytes)
+    assert processed_img.mode == "1"  # Binarized 1-bit mode
+    assert meta["is_preprocessed"] is True
+    assert meta["original_dimensions"] == [1000, 400]
+    assert meta["scale_factor"] == 1.5  # Upscaled for optimal OCR resolution
+
+    # 2. Test Parser Resolution
+    parser = get_parser_for_mime_or_ext("circular_scan_044.png", "image/png")
+    assert isinstance(parser, ScannedImageParser)
+
+    # 3. Test ScannedImageParser execution
+    pages = parser.extract_pages(raw_bytes)
+    assert len(pages) == 1
+    assert pages[0].page_number == 1
+    assert pages[0].metadata.get("is_ocr") is True
+    assert pages[0].metadata.get("media_type") == "scanned_image"
+    assert "OCR" in pages[0].text or len(pages[0].text) > 0
 

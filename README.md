@@ -200,12 +200,12 @@ cd frontend && npm test
 
 > For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
 
-- **Test Coverage Includes (77 Backend + 5 Frontend = 82 Test Scenarios — 100% Passing):**
+- **Test Coverage Includes (78 Backend + 5 Frontend = 83 Test Scenarios — 100% Passing):**
   - **Per-User Isolation & Anti-BOLA (`test_isolation.py`):** Cross-user thread isolation returning 404, token-bound `owner_id`, audit event metadata privacy (no prompt text in audit logs), cross-department document protection, user profile self-only scoping, and benchmark admin-only protection.
   - **Real-Time Token Streaming (`test_streaming.py`):** Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting.
   - **Asynchronous Ingestion (`test_async_ingestion.py`):** Background upload queue (`/upload-async`), 4-stage job progress polling (`/jobs/{id}`), completion assertions.
   - **LLM Safety & Guardrails (`test_guardrails.py` & `test_security_hardening.py`):** SQL injection blocking, ChromaDB NoSQL injection neutralization, path traversal stripping, OWASP ASVS HTTP headers.
-  - **Multi-Format Parsers & Tabular Chunking (`test_parsers.py`):** Word Markdown table extraction, atomic table grid preservation, Excel sheet extraction, OCR mocks.
+  - **Multi-Format Parsers & Scanned Circular OCR (`test_parsers.py`):** Layout-aware `ImagePreprocessor` (1.5x upscaling, contrast boost, luminance binarization for faint circular stamps), `ScannedImageParser` (PNG, JPG, TIFF, BMP, WEBP), Word Markdown table extraction, atomic table grid preservation, Excel sheet extraction, OCR mocks.
   - **Hybrid Retrieval & Benchmark Suite (`test_retrieval.py` & `test_evaluation.py`):** BM25 + Vector reciprocal rank fusion (RRF), FlashRank Cross-Encoder re-ranking, Hit Rate@5 = 100%, MRR@5 = 1.000, 0.0% security leakage.
 
 ---

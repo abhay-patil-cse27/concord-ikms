@@ -55,14 +55,15 @@ class PytesseractOCRProvider(BaseOCRProvider):
 
         try:
             import pytesseract
-            from PIL import Image
+            from app.modules.documents.preprocessor import ImagePreprocessor
 
             extracted_parts = []
             for img_bytes in image_bytes_list:
-                with Image.open(io.BytesIO(img_bytes)) as img:
-                    text = pytesseract.image_to_string(img)
-                    if text.strip():
-                        extracted_parts.append(text.strip())
+                # Preprocess image to enhance contrast, grayscale and binarize
+                preprocessed_img, _ = ImagePreprocessor.preprocess_image(img_bytes)
+                text = pytesseract.image_to_string(preprocessed_img)
+                if text.strip():
+                    extracted_parts.append(text.strip())
             return "\n\n".join(extracted_parts)
         except Exception as exc:
             logger.warning(f"Pytesseract extraction warning: {exc}")
@@ -71,19 +72,30 @@ class PytesseractOCRProvider(BaseOCRProvider):
 
 class GracefulFallbackOCRProvider(BaseOCRProvider):
     """
-    Zero-dependency, resilient fallback OCR provider.
+    Zero-dependency, resilient fallback OCR provider with layout-aware image preprocessing.
     Used when native OCR binaries are not present on host OS, ensuring
-    scanned files receive an identifiable placeholder status rather than crashing.
+    scanned files receive structured diagnostic metadata rather than crashing.
     """
 
     def is_available(self) -> bool:
         return True
 
     def extract_text_from_images(self, image_bytes_list: List[bytes]) -> str:
+        from app.modules.documents.preprocessor import ImagePreprocessor
+
         count = len(image_bytes_list)
+        meta_info = []
+        for img_bytes in image_bytes_list:
+            try:
+                _, meta = ImagePreprocessor.preprocess_image(img_bytes)
+                meta_info.append(f"{meta['original_dimensions'][0]}x{meta['original_dimensions'][1]} {meta['original_mode']}")
+            except Exception:
+                pass
+
+        dims_str = f" ({', '.join(meta_info)})" if meta_info else ""
         if count > 0:
-            return f"[Scanned Document Page — OCR processed {count} embedded raster graphic(s)]"
-        return "[Scanned Document Page — OCR processed graphical scan]"
+            return f"[Scanned Document Page — OCR preprocessed {count} embedded raster graphic(s){dims_str}]"
+        return "[Scanned Document Page — OCR preprocessed graphical scan]"
 
 
 _GLOBAL_OCR_PROVIDER: Optional[BaseOCRProvider] = None
