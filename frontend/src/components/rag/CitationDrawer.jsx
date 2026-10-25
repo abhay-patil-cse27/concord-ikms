@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { X, Layers, Award, FileText, Hash } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { X, Layers, Award, FileText, Hash, ExternalLink, Eye, Download } from 'lucide-react';
 import { BrutalBadge, BrutalButton } from '../brutal';
 
 /**
@@ -141,8 +141,25 @@ export default function CitationDrawer({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="pt-4 border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20 flex justify-end">
+        {/* Footer Actions */}
+        <div className="pt-4 border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20 flex items-center justify-between flex-wrap gap-2">
+          {citation.document_id ? (
+            <div className="flex items-center gap-2">
+              <a
+                href={`/api/v1/documents/${citation.document_id}/download`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-yellow text-brutal-black font-mono text-xs font-bold uppercase shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                title="Open or download original document file"
+              >
+                <Download size={13} />
+                <span>Download Document</span>
+              </a>
+            </div>
+          ) : (
+            <div />
+          )}
+
           <BrutalButton
             variant="secondary"
             size="sm"

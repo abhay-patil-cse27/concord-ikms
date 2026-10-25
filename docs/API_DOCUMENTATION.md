@@ -232,6 +232,7 @@ sequenceDiagram
 | `/documents/{id}` | `GET` | Document Detail | Department membership or public | **`404 Not Found`** |
 | `/documents/{id}/download` | `GET` | Raw Binary | Department membership or public | **`404 Not Found`** |
 | `/audit/events` | `GET` | Security Logs | `platform_admin` only | **`403 Forbidden`** |
+| `/audit/feedback` | `POST` | Answer Ratings & Hallucination Flagging | Authenticated users | **`401 Unauthorized`** |
 | `/users` | `GET` | Users List | `platform_admin` (all) / Others (self profile only) | Scoped to self |
 | `/evaluation/run` | `POST` | Live Benchmark | `platform_admin` (`system:admin`) | **`403 Forbidden`** |
 
