@@ -56,6 +56,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# AI Rate Limiting Middleware (Zero-dependency token bucket protection)
+from app.core.rate_limiter import RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
+
 
 @app.middleware("http")
 async def request_correlation_and_timing_middleware(request: Request, call_next):
