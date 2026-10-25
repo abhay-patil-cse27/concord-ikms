@@ -7,6 +7,7 @@ import SuggestedPrompts from '../components/rag/SuggestedPrompts';
 import MessageBlock from '../components/rag/MessageBlock';
 import Composer from '../components/rag/Composer';
 import CitationDrawer from '../components/rag/CitationDrawer';
+import ThinkingIndicator from '../components/rag/ThinkingIndicator';
 import { BrutalToast } from '../components/brutal';
 import { exportThreadToMarkdown } from '../lib/exportThread';
 
@@ -292,19 +293,8 @@ export default function RAGAssistantView() {
             ))
           )}
 
-          {/* Stepped Loading Indicator */}
-          {loading && (
-            <div className="flex items-center gap-2 p-4 bg-brutal-white dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow w-fit shadow-brutal-sm">
-              <span className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white">
-                Synthesizing
-              </span>
-              <div className="flex items-center gap-1.5 ml-2">
-                <span className="w-2.5 h-2.5 bg-brutal-yellow border border-brutal-black animate-pulse" />
-                <span className="w-2.5 h-2.5 bg-brutal-black dark:bg-brutal-yellow border border-brutal-black animate-pulse delay-150" />
-                <span className="w-2.5 h-2.5 bg-brutal-yellow border border-brutal-black animate-pulse delay-300" />
-              </div>
-            </div>
-          )}
+          {/* Dynamic Academic Thinking Indicator */}
+          {loading && <ThinkingIndicator />}
 
           {/* Error Message */}
           {error && (
