@@ -177,4 +177,22 @@ All user interactions and asynchronous tasks across CONCORD IKMS trigger unified
   - **User Directory (`UsersView`):** Account activation/deactivation toggles and permission guard alerts.
   - **Benchmarking Suite (`BenchmarkView`):** Metrics refresh and live benchmark execution assertions.
 
+---
+
+## 7. Reusable Conversational AI Components
+
+To prevent code redundancy across views and components, specialized conversational and AI telemetry elements are encapsulated as standalone, reusable components:
+
+### A. Academic Thinking Indicator (`ThinkingIndicator.jsx`)
+- **Location:** [`frontend/src/components/rag/ThinkingIndicator.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/rag/ThinkingIndicator.jsx)
+- **Purpose:** Rotates scholarly, institutional gerunds during LLM inference and vector retrieval to communicate active cognitive stages.
+- **Lexicon Source:** Curated in [`frontend/src/constants/thinkingVerbs.js`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/constants/thinkingVerbs.js) with 32 scholarly verbs (*Cross-referencing, Synthesizing, Formulating, Corroborating, Contextualizing, Deliberating, etc.*).
+- **Animation:** Powered by Framer Motion `AnimatePresence` with slide-fade transition every 1600ms, respecting `prefers-reduced-motion`.
+
+### B. Answer Feedback Loop (`AnswerFeedback.jsx`)
+- **Location:** [`frontend/src/components/rag/AnswerFeedback.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/rag/AnswerFeedback.jsx)
+- **Purpose:** Provides institutional users with a direct verification rating (👍 Helpful / 👎 Unhelpful) on AI assistant responses, with an optional expandable natural-language feedback accordion.
+- **Zero Redundancy Integration:** Extracted from inline message rendering so it can be embedded in `MessageBlock.jsx`, search result cards, or audit inspector modals without duplicate state logic.
+- **Audit Persistence:** Transmits structured rating and optional explanatory notes directly to `POST /api/v1/audit/feedback`, creating an append-only cryptographic audit record for policy verification and RAG refinement.
+
 
