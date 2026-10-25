@@ -1,3 +1,5 @@
+import { consumeSSE } from '../lib/sseStream';
+
 const API_BASE = '/api/v1';
 
 export async function apiRequest(endpoint, options = {}) {
@@ -172,6 +174,11 @@ export const api = {
     }),
   askConversational: (payload) =>
     apiRequest('/conversations/ask', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  askConversationalStream: (payload) =>
+    consumeSSE('/api/v1/conversations/ask-stream', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),

@@ -218,6 +218,16 @@ sequenceDiagram
 - **Description:** Executes a turn in an active or new conversation, resolving pronouns from preceding turns and grounding responses with ChromaDB vector citations.
 - **Access Rule:** Requires `documents:read`. Grounding citations strictly respect departmental RBAC boundaries.
 
+### `POST /conversations/ask-stream`
+- **Description:** Executes a conversational turn with real-time Server-Sent Events (SSE) token streaming. Drops Time-to-First-Token (TTFT) to `<200ms` with live typewriter rendering.
+- **Access Rule:** Requires `documents:read`. Enforces `PromptGuard` security interception before opening LLM stream.
+- **Event Flow:**
+  1. `event: session` — Emits `conversation_id` and auto-generated title.
+  2. `event: status` — Emits retrieval progress (`retrieving` with resolved query, then `generating`).
+  3. `event: citations` — Emits verified institutional source citations array before token synthesis.
+  4. `event: token` — Yields delta word/character chunks in real-time (`{"chunk": "..."}`).
+  5. `event: done` — Emits message completion, latency metrics, and message UUID.
+
 ---
 
 ## 6. Resource Access & Isolation Matrix

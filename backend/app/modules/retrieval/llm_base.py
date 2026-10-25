@@ -42,3 +42,17 @@ class BaseLLMProvider(ABC):
         - model_used: str
         """
         pass
+
+    async def stream_grounded_tokens(
+        self,
+        query: str,
+        evidence_chunks: List[Dict[str, Any]],
+        system_prompt: Optional[str] = None
+    ):
+        """
+        Yields tokens in real-time for grounded generation.
+        Default implementation yields the full answer as a single chunk if streaming not supported.
+        """
+        result = await self.generate_grounded_answer(query, evidence_chunks, system_prompt)
+        yield result.get("answer", "")
+

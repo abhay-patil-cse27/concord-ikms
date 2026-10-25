@@ -115,9 +115,37 @@ export function useRAG() {
     setLoading(true);
     setError(null);
 
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMsgId = `u-${Date.now()}`;
+    const asstMsgId = `a-${Date.now()}`;
+
+    // Add user turn immediately and prepare assistant slot for streaming
+    setHistory((prev) => [
+      ...prev,
+      {
+        id: userMsgId,
+        role: 'user',
+        content: q.trim(),
+        timestamp: nowStr,
+      },
+      {
+        id: asstMsgId,
+        role: 'assistant',
+        content: '',
+        citations: [],
+        confidence: 'high',
+        model_used: 'groq:streaming',
+        isStreaming: true,
+        timestamp: nowStr,
+      },
+    ]);
+
     try {
-      // Use conversational API endpoint to persist context & resolve pronouns
-      const data = await api.askConversational({
+      let accumulatedContent = '';
+      let receivedCitations = [];
+      let convId = activeConversationId;
+
+      const streamGen = api.askConversationalStream({
         query: q.trim(),
         conversation_id: activeConversationId,
         department_id: options.departmentId || null,
@@ -125,37 +153,84 @@ export function useRAG() {
         include_superseded: options.includeSuperseded || false,
       });
 
-      if (!activeConversationId && data.conversation_id) {
-        setActiveConversationId(data.conversation_id);
-        loadConversations();
+      for await (const chunk of streamGen) {
+        if (chunk.event === 'session' && chunk.data?.conversation_id) {
+          convId = chunk.data.conversation_id;
+          if (!activeConversationId) {
+            setActiveConversationId(convId);
+            loadConversations();
+          }
+        } else if (chunk.event === 'citations') {
+          receivedCitations = Array.isArray(chunk.data) ? chunk.data : [];
+          setHistory((prev) =>
+            prev.map((msg) =>
+              msg.id === asstMsgId ? { ...msg, citations: receivedCitations } : msg
+            )
+          );
+        } else if (chunk.event === 'token' && chunk.data?.chunk) {
+          accumulatedContent += chunk.data.chunk;
+          setHistory((prev) =>
+            prev.map((msg) =>
+              msg.id === asstMsgId ? { ...msg, content: accumulatedContent } : msg
+            )
+          );
+        } else if (chunk.event === 'error') {
+          throw new Error(chunk.data?.message || 'Streaming error encountered');
+        } else if (chunk.event === 'done') {
+          setHistory((prev) =>
+            prev.map((msg) =>
+              msg.id === asstMsgId ? { ...msg, isStreaming: false } : msg
+            )
+          );
+        }
       }
 
-      setResponse(data);
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setHistory((prev) => [
-        ...prev,
-        {
-          id: `u-${Date.now()}`,
-          role: 'user',
-          content: q.trim(),
-          timestamp: nowStr,
-        },
-        {
-          id: `a-${Date.now()}`,
-          role: 'assistant',
-          content: data.answer,
-          citations: data.citations,
-          confidence: data.confidence,
-          model_used: data.model_used,
-          latency_ms: data.latency_ms,
-          timestamp: nowStr,
-        },
-      ]);
-      return data;
-    } catch (err) {
-      const msg = err.message || 'Failed to generate grounded answer';
-      setError(msg);
-      return null;
+      setResponse({
+        query: q.trim(),
+        answer: accumulatedContent,
+        citations: receivedCitations,
+        confidence: 'high',
+        model_used: 'groq:llama-3.3-70b-versatile',
+      });
+      return { answer: accumulatedContent, citations: receivedCitations };
+    } catch (streamErr) {
+      console.warn('Real-time SSE stream failed, falling back to synchronous pipeline:', streamErr);
+      // Fallback: Remove placeholder assistant slot and run standard non-streaming ask
+      setHistory((prev) => prev.filter((m) => m.id !== asstMsgId));
+      try {
+        const data = await api.askConversational({
+          query: q.trim(),
+          conversation_id: activeConversationId,
+          department_id: options.departmentId || null,
+          top_k: options.topK || 5,
+          include_superseded: options.includeSuperseded || false,
+        });
+
+        if (!activeConversationId && data.conversation_id) {
+          setActiveConversationId(data.conversation_id);
+          loadConversations();
+        }
+
+        setResponse(data);
+        setHistory((prev) => [
+          ...prev,
+          {
+            id: asstMsgId,
+            role: 'assistant',
+            content: data.answer,
+            citations: data.citations,
+            confidence: data.confidence,
+            model_used: data.model_used,
+            latency_ms: data.latency_ms,
+            timestamp: nowStr,
+          },
+        ]);
+        return data;
+      } catch (err) {
+        const msg = err.message || 'Failed to generate grounded answer';
+        setError(msg);
+        return null;
+      }
     } finally {
       setLoading(false);
     }

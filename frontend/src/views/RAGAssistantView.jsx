@@ -292,13 +292,16 @@ export default function RAGAssistantView() {
                 content={msg.content}
                 timestamp={msg.timestamp}
                 citations={msg.citations}
+                isStreaming={msg.isStreaming}
                 onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
               />
             ))
           )}
 
-          {/* Dynamic Academic Thinking Indicator */}
-          {loading && <ThinkingIndicator />}
+          {/* Dynamic Academic Thinking Indicator (active before tokens stream) */}
+          {loading && !history.some((m) => m.role === 'assistant' && m.isStreaming && m.content) && (
+            <ThinkingIndicator />
+          )}
 
           {/* Error Message */}
           {error && (

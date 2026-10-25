@@ -163,3 +163,37 @@ async def ask_with_conversation(
         )
     )
     return result
+
+
+@router.post("/ask-stream")
+async def ask_with_conversation_stream(
+    payload: ConversationalAskRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("documents:read"))
+):
+    """
+    Execute a conversational query turn with real-time SSE token streaming.
+    Yields standardized events: session, status, citations, token, done.
+    """
+    from fastapi.responses import StreamingResponse
+
+    service = ConversationService()
+    generator = service.stream_ask_in_conversation(
+        db=db,
+        query=payload.query,
+        current_user=current_user,
+        conversation_id=payload.conversation_id,
+        department_id=payload.department_id,
+        top_k=payload.top_k,
+        include_superseded=payload.include_superseded
+    )
+    return StreamingResponse(
+        generator,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+

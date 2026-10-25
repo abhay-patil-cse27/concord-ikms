@@ -19,6 +19,7 @@ export default function MessageBlock({
   timestamp,
   citations = [],
   onOpenCitation,
+  isStreaming = false,
 }) {
   const isUser = role === 'user';
 
@@ -139,6 +140,9 @@ export default function MessageBlock({
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={renderers}>
                 {content}
               </ReactMarkdown>
+              {isStreaming && (
+                <span className="inline-block w-2 h-4 ml-1 bg-brutal-yellow border border-brutal-black animate-pulse align-middle" />
+              )}
             </div>
           )}
         </div>
@@ -164,7 +168,7 @@ export default function MessageBlock({
         )}
 
         {/* Operational Feedback Loop (👍 / 👎 / Inaccuracy Flagging) */}
-        {!isUser && <AnswerFeedback content={content} />}
+        {!isUser && !isStreaming && content && <AnswerFeedback content={content} />}
       </div>
     </motion.div>
   );

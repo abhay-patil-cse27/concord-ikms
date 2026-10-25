@@ -208,6 +208,83 @@ class GroqCloudLLMProvider(BaseLLMProvider):
             logger.error(f"Groq API call failed: {exc}. Utilizing offline fallback.")
             return OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
 
+    async def stream_grounded_tokens(
+        self,
+        query: str,
+        evidence_chunks: List[Dict[str, Any]],
+        system_prompt: Optional[str] = None
+    ):
+        """Streams LLM tokens chunk by chunk using Groq Cloud API."""
+        if not evidence_chunks:
+            yield "No relevant institutional documents found within your authorized scope to answer this query."
+            return
+
+        evidence_text = ""
+        for idx, chunk in enumerate(evidence_chunks, start=1):
+            doc_title = chunk.get("document_title", "Institutional Record")
+            page_no = chunk.get("page_number", 1)
+            content = chunk.get("content", "").strip()
+            doc_lifecycle = chunk.get("lifecycle_status", "active")
+            doc_version = chunk.get("version", "v1.0")
+            evidence_text += f"\n[Evidence {idx}] (Document: {doc_title}, Version: {doc_version}, Status: {doc_lifecycle}, Page: {page_no}):\n{content}\n"
+
+        user_content = f"Question: {query}\n\nVerified Institutional Evidence:\n{evidence_text}\n\nPlease formulate an authoritative, grounded answer citing [1], [2], etc.:"
+
+        if not self.api_key:
+            res = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, [])
+            yield res.get("answer", "")
+            return
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt or GROUNDED_SYSTEM_PROMPT},
+                {"role": "user", "content": user_content}
+            ],
+            "temperature": 0.1,
+            "max_tokens": 1024,
+            "top_p": 0.9,
+            "stream": True
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                async with client.stream(
+                    "POST",
+                    self.api_url,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json=payload
+                ) as response:
+                    if response.status_code != 200:
+                        fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, [])
+                        yield fallback.get("answer", "")
+                        return
+
+                    async for line in response.aiter_lines():
+                        if not line:
+                            continue
+                        line = line.strip()
+                        if line.startswith("data: "):
+                            data_str = line[6:].strip()
+                            if data_str == "[DONE]":
+                                break
+                            try:
+                                chunk_json = json.loads(data_str)
+                                delta = chunk_json.get("choices", [{}])[0].get("delta", {})
+                                token = delta.get("content", "")
+                                if token:
+                                    yield token
+                            except Exception:
+                                continue
+        except Exception as exc:
+            logger.error(f"Groq API streaming failed: {exc}. Falling back to non-streaming fallback.")
+            fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, [])
+            yield fallback.get("answer", "")
+
+
 
 class OfflineFallbackLLMProvider(BaseLLMProvider):
     """

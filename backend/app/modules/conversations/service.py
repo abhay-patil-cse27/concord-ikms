@@ -212,3 +212,145 @@ class ConversationService:
             "model_used": rag_res.model_used,
             "latency_ms": rag_res.latency_ms
         }
+
+    async def stream_ask_in_conversation(
+        self,
+        db: AsyncSession,
+        query: str,
+        current_user: User,
+        conversation_id: Optional[str] = None,
+        department_id: Optional[str] = None,
+        top_k: int = 5,
+        include_superseded: bool = False
+    ):
+        """
+        Executes a dialogue turn with real-time SSE streaming.
+        Reuses PromptGuard, query contextualization, retrieval, and conversation persistence.
+        """
+        import time
+        from app.core.guardrails import PromptGuard
+        from app.core.sse import format_sse_event
+
+        start_time = time.perf_counter()
+        clean_query = PromptGuard.sanitize_input(query)
+
+        # Step 0: Input Guardrail Check
+        is_safe, refusal_reason = PromptGuard.check_prompt_safety(clean_query)
+        if not is_safe:
+            yield format_sse_event("error", {"message": PromptGuard.STANDARD_REFUSAL_MESSAGE})
+            yield format_sse_event("done", {"status": "blocked_guardrail"})
+            return
+
+        # 1. Resolve or create conversation
+        if conversation_id:
+            conv = await self.get_conversation(db, conversation_id, current_user)
+        else:
+            title_words = clean_query.strip().split()[:6]
+            session_title = " ".join(title_words)
+            conv = await self.create_conversation(
+                db=db,
+                user_id=current_user.id,
+                title=session_title,
+                department_id=department_id or getattr(current_user, "department_id", None)
+            )
+
+        # Notify client of conversation context
+        yield format_sse_event("session", {
+            "conversation_id": conv.id,
+            "conversation_title": conv.title
+        })
+
+        # 2. Fetch existing messages for query rewriting
+        msg_stmt = (
+            select(ConversationMessage)
+            .where(ConversationMessage.conversation_id == conv.id)
+            .order_by(ConversationMessage.created_at)
+        )
+        msg_res = await db.execute(msg_stmt)
+        existing_messages = list(msg_res.scalars().all())
+
+        effective_query = self.contextualize_query(clean_query, existing_messages)
+
+        # 3. Save User turn
+        user_msg = ConversationMessage(
+            id=str(uuid.uuid4()),
+            conversation_id=conv.id,
+            owner_id=current_user.id,
+            role="user",
+            content=clean_query
+        )
+        db.add(user_msg)
+        await db.flush()
+
+        # Step 4: Hybrid Search Retrieval
+        yield format_sse_event("status", {"state": "retrieving", "effective_query": effective_query})
+
+        lifecycle_filter = "all" if include_superseded else "active"
+        search_res = await self.rag_service.retrieval_service.search(
+            db=db,
+            query=effective_query,
+            current_user=current_user,
+            top_k=top_k,
+            target_department_id=department_id or conv.department_id,
+            mode="hybrid",
+            lifecycle_status=lifecycle_filter
+        )
+
+        evidence_chunks = [item.model_dump() for item in search_res.results]
+
+        # Assemble citations metadata
+        citations_data = []
+        for idx, chunk in enumerate(evidence_chunks, start=1):
+            citations_data.append({
+                "citation_index": idx,
+                "chunk_id": chunk.get("chunk_id"),
+                "document_id": chunk.get("document_id"),
+                "document_title": chunk.get("document_title", "Institutional Record"),
+                "document_filename": chunk.get("document_filename"),
+                "page_number": chunk.get("page_number", 1),
+                "snippet": chunk.get("content", "")[:180] + "...",
+                "score": chunk.get("score"),
+                "lifecycle_status": chunk.get("lifecycle_status", "active"),
+                "version": chunk.get("version", "v1.0"),
+            })
+
+        # Emit citations before generating tokens
+        yield format_sse_event("citations", citations_data)
+        yield format_sse_event("status", {"state": "generating"})
+
+        # Step 5: Stream Tokens from LLM
+        accumulated_text = ""
+        llm = self.rag_service.llm_provider
+        async for token in llm.stream_grounded_tokens(effective_query, evidence_chunks):
+            accumulated_text += token
+            yield format_sse_event("token", {"chunk": token})
+
+        # Sanitize final response
+        safe_answer = PromptGuard.sanitize_output(accumulated_text.strip())
+        latency_ms = (time.perf_counter() - start_time) * 1000.0
+
+        # Step 6: Persist Assistant turn to DB
+        asst_msg = ConversationMessage(
+            id=str(uuid.uuid4()),
+            conversation_id=conv.id,
+            owner_id=current_user.id,
+            role="assistant",
+            content=safe_answer,
+            citations=citations_data,
+            confidence="high" if citations_data else "medium",
+            model_used=f"groq:{getattr(llm, 'model', 'stream')}",
+            latency_ms=round(latency_ms, 2)
+        )
+        db.add(asst_msg)
+        await db.commit()
+        await db.refresh(conv)
+
+        # Emit final completion
+        yield format_sse_event("done", {
+            "conversation_id": conv.id,
+            "message_id": asst_msg.id,
+            "latency_ms": round(latency_ms, 2),
+            "citations_count": len(citations_data),
+            "status": "success"
+        })
+
