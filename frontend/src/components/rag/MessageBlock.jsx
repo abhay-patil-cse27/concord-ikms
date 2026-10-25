@@ -24,15 +24,20 @@ export default function MessageBlock({
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(null);
 
   const handleFeedback = async (rating, reason = null) => {
-    try {
-      setFeedbackSubmitted(rating);
-      await api.submitFeedback({
-        rating,
-        reason,
-        message_content: content,
-      });
-    } catch (err) {
-      console.warn('Failed to record answer feedback:', err);
+    // If user clicks the already selected rating, toggle it off (deselect)
+    const newRating = feedbackSubmitted === rating ? null : rating;
+    setFeedbackSubmitted(newRating);
+
+    if (newRating) {
+      try {
+        await api.submitFeedback({
+          rating: newRating,
+          reason,
+          message_content: content,
+        });
+      } catch (err) {
+        console.warn('Failed to record answer feedback:', err);
+      }
     }
   };
 
@@ -187,9 +192,8 @@ export default function MessageBlock({
               <button
                 type="button"
                 onClick={() => handleFeedback('helpful')}
-                disabled={feedbackSubmitted !== null}
                 className={cn(
-                  'px-2 py-0.5 border border-brutal-black dark:border-brutal-yellow flex items-center gap-1 transition-all text-[11px] font-bold',
+                  'px-2 py-0.5 border border-brutal-black dark:border-brutal-yellow flex items-center gap-1 transition-all text-[11px] font-bold cursor-pointer',
                   feedbackSubmitted === 'helpful'
                     ? 'bg-brutal-yellow text-brutal-black shadow-brutal-sm'
                     : 'bg-brutal-paper dark:bg-brutal-dark hover:bg-brutal-yellow/50'
@@ -203,9 +207,8 @@ export default function MessageBlock({
               <button
                 type="button"
                 onClick={() => handleFeedback('unhelpful', 'Reported Inaccuracy')}
-                disabled={feedbackSubmitted !== null}
                 className={cn(
-                  'px-2 py-0.5 border border-brutal-black dark:border-brutal-yellow flex items-center gap-1 transition-all text-[11px] font-bold',
+                  'px-2 py-0.5 border border-brutal-black dark:border-brutal-yellow flex items-center gap-1 transition-all text-[11px] font-bold cursor-pointer',
                   feedbackSubmitted === 'unhelpful'
                     ? 'bg-brutal-accent text-brutal-white shadow-brutal-sm'
                     : 'bg-brutal-paper dark:bg-brutal-dark hover:bg-brutal-accent/20'
