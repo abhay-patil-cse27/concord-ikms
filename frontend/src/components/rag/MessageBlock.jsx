@@ -7,6 +7,7 @@ import { BrutalBadge, BrutalButton } from '../brutal';
 import { cn } from '../../lib/utils';
 import { variants } from '../../motion/presets';
 import AnswerFeedback from './AnswerFeedback';
+import SpeechPlaybackButton from './SpeechPlaybackButton';
 
 /**
  * MessageBlock
@@ -116,17 +117,22 @@ export default function MessageBlock({
             </span>
           </div>
 
-          {timestamp && (
-            <span className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark">
-              {(() => {
-                if (typeof timestamp === 'string' && (timestamp.includes(':') && !timestamp.includes('T') && !timestamp.includes('-'))) {
-                  return timestamp;
-                }
-                const parsed = new Date(timestamp);
-                return isNaN(parsed.getTime()) ? timestamp : parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              })()}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {!isUser && !isStreaming && content && (
+              <SpeechPlaybackButton content={content} />
+            )}
+            {timestamp && (
+              <span className="font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark">
+                {(() => {
+                  if (typeof timestamp === 'string' && (timestamp.includes(':') && !timestamp.includes('T') && !timestamp.includes('-'))) {
+                    return timestamp;
+                  }
+                  const parsed = new Date(timestamp);
+                  return isNaN(parsed.getTime()) ? timestamp : parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                })()}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Message Content */}

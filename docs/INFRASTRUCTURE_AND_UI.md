@@ -210,6 +210,14 @@ To prevent code redundancy across views and components, specialized conversation
   - **Left Pane (Evidence Grounding):** Highlights the exact sentence/paragraph segment used by RAG with page coordinates, RRF fusion score, and fast page navigation controls (`◀ / ▶`).
   - **Right Pane (Native PDF Stream):** Streams the original PDF at exact `#page=${n}&zoom=${z}` with interactive zoom controls (`ZoomIn / ZoomOut`), external tab jump, and original file download.
 
+### E. Interactive Text-to-Speech (TTS) Voice Readout (`SpeechPlaybackButton.jsx`)
+- **Location:** [`frontend/src/components/rag/SpeechPlaybackButton.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/rag/SpeechPlaybackButton.jsx)
+- **Custom Hook:** [`frontend/src/hooks/useSpeechSynthesis.js`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/hooks/useSpeechSynthesis.js)
+- **Sanitization Utility:** [`frontend/src/utils/speechUtils.js`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/utils/speechUtils.js)
+- **Purpose:** Enables high-fidelity spoken readout of AI assistant responses using the browser's native `window.speechSynthesis` API (100% offline-ready, 0ms external network latency).
+- **Intelligent Preprocessing:** Strips bracketed citation markers (`[1]`, `[2]`), markdown formatting tokens (`#`, `**`, `*`, `` ` ``), and table delimiters so synthesized audio sounds like smooth, uninterrupted institutional prose.
+- **Brutalist Audio Animation:** Features animated audio wave bars (`animate-pulse`) when speaking, with dedicated pause, resume, and stop controls.
+
 ---
 
 ## 8. OCR Engine & Tesseract Setup Guide

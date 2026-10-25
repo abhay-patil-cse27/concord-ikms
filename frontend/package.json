@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node tests/cacheIsolation.test.js"
+    "test": "node tests/cacheIsolation.test.js && node tests/speechUtils.test.js"
   },
   "dependencies": {
     "framer-motion": "^11.18.2",
