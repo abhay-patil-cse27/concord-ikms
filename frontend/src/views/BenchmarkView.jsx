@@ -121,9 +121,11 @@ export default function BenchmarkView() {
       )}
 
       {/* KPI Cards */}
-      {loading && !metricsData ? (
+      {!metricsData && loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <BrutalSkeleton count={4} height="h-32" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <BrutalSkeleton key={i} height="h-32" />
+          ))}
         </div>
       ) : (
         <BenchmarkKpis baseline={baseline} />

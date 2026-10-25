@@ -42,11 +42,13 @@ export default function BenchmarkHeader({
           size="md"
           onClick={onRefresh}
           disabled={running || loading}
-          loading={loading}
-          className="shadow-brutal-sm text-xs font-black uppercase"
+          className="shadow-brutal-sm text-xs font-black uppercase flex items-center gap-2"
         >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span>Refresh</span>
+          <RefreshCw
+            size={14}
+            className={`transition-transform duration-300 ${loading ? 'animate-spin text-brutal-black dark:text-brutal-yellow' : ''}`}
+          />
+          <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
         </BrutalButton>
 
         <BrutalButton
