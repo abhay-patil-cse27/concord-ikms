@@ -201,3 +201,11 @@ To prevent code redundancy across views and components, specialized conversation
 - **Zero Redundancy Design:** The `BackgroundJobManager` singleton tracks task status (`pending`, `running`, `completed`, `failed`), phase (`queued`, `extracting`, `chunking`, `embedding`, `done`, `error`), and percentage completion (0-100%) for any future async pipeline.
 - **Brutalist UI Representation:** Displays a real-time Yellow Brutalist progress track (`bg-brutal-yellow border-r-2 border-brutal-black`) alongside live phase updates (`1. Upload → 2. Extract → 3. Chunk → 4. Vectorize`) and percentage completion badges.
 - **Full Backward Compatibility:** The synchronous `POST /api/v1/documents/upload` endpoint is fully maintained for automated test suites and legacy integrations.
+
+### D. Dual-Pane PDF Document & Sentence Highlighting Inspector (`PDFViewerModal.jsx`)
+- **Location:** [`frontend/src/components/rag/PDFViewerModal.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/rag/PDFViewerModal.jsx)
+- **Purpose:** Seamless in-app PDF document inspection directly within the conversational interface and chunk governance inspector.
+- **Zero Redundancy Architecture:** Shared across [`CitationDrawer.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/rag/CitationDrawer.jsx) (grounding evidence provenance) and [`ChunkInspectorModal.jsx`](file:///c:/Users/Admin/Desktop/IKMS/IKMS/frontend/src/components/documents/ChunkInspectorModal.jsx) (administrator chunk verification).
+- **Dual-Pane Interface:**
+  - **Left Pane (Evidence Grounding):** Highlights the exact sentence/paragraph segment used by RAG with page coordinates, RRF fusion score, and fast page navigation controls (`◀ / ▶`).
+  - **Right Pane (Native PDF Stream):** Streams the original PDF at exact `#page=${n}&zoom=${z}` with interactive zoom controls (`ZoomIn / ZoomOut`), external tab jump, and original file download.

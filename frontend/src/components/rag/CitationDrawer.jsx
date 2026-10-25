@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Layers, Award, FileText, Hash, ExternalLink, Eye, Download, Maximize2 } from 'lucide-react';
-import { BrutalBadge, BrutalButton, BrutalModal } from '../brutal';
+import { BrutalBadge, BrutalButton } from '../brutal';
+import PDFViewerModal from './PDFViewerModal';
 
 /**
  * CitationDrawer
@@ -150,10 +151,10 @@ export default function CitationDrawer({
                 type="button"
                 onClick={() => setShowPreviewModal(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-yellow text-brutal-black font-mono text-xs font-bold uppercase shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
-                title="Preview document in an in-app window"
+                title="Open Dual-Pane PDF & Highlighting Inspector"
               >
                 <Eye size={13} />
-                <span>Quick Preview</span>
+                <span>PDF Highlight Inspector</span>
               </button>
 
               <a
@@ -182,51 +183,22 @@ export default function CitationDrawer({
 
       </div>
 
-      {/* In-App Document Quick Preview Modal */}
+      {/* Dual-Pane In-App PDF & Sentence Highlighting Inspector Modal */}
       {showPreviewModal && (
-        <BrutalModal
+        <PDFViewerModal
           isOpen={showPreviewModal}
           onClose={() => setShowPreviewModal(false)}
-          title={citation.document_title || citation.title || 'Institutional Document'}
-          subtitle={`Page ${citation.page_number || 1} • Chunk #${citation.chunk_index || 0}`}
-          maxWidth="max-w-4xl"
-          footer={
-            <div className="flex justify-between items-center w-full">
-              <a
-                href={`/api/v1/documents/${citation.document_id}/download`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-yellow text-brutal-black font-mono text-xs font-bold uppercase shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5"
-              >
-                <Download size={13} />
-                <span>Download Original PDF</span>
-              </a>
-              <BrutalButton variant="secondary" size="sm" onClick={() => setShowPreviewModal(false)}>
-                Close Preview
-              </BrutalButton>
-            </div>
-          }
-        >
-          <div className="h-[65vh] w-full border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark overflow-hidden flex flex-col">
-            <div className="p-3 bg-brutal-yellow text-brutal-black border-b-2 border-brutal-black flex items-center justify-between font-mono text-xs font-bold">
-              <span>ACTIVE EVIDENCE CHUNK AT PAGE {citation.page_number || 1}</span>
-              <span className="text-[10px] uppercase">RRF Rank Anchor</span>
-            </div>
-            <div className="p-4 bg-brutal-white dark:bg-brutal-dark-surface border-b-2 border-brutal-black/20 font-mono text-xs text-brutal-black dark:text-brutal-white leading-relaxed select-text">
-              <span className="font-bold uppercase text-brutal-accent mr-1">[Highlighted Grounding Evidence]:</span>
-              {citation.content}
-            </div>
-            <div className="flex-1 w-full bg-brutal-paper dark:bg-brutal-black">
-              <iframe
-                src={`/api/v1/documents/${citation.document_id}/download#page=${citation.page_number || 1}`}
-                title="Document Preview"
-                className="w-full h-full border-none"
-              />
-            </div>
-          </div>
-        </BrutalModal>
+          documentId={citation.document_id}
+          documentTitle={citation.document_title || citation.title}
+          filename={citation.document_filename || citation.filename}
+          pageNumber={citation.page_number || 1}
+          chunkIndex={citation.chunk_index || 0}
+          highlightText={citation.content}
+          score={citation.score}
+        />
       )}
 
     </div>
   );
 }
+
