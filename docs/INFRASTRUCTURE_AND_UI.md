@@ -209,3 +209,46 @@ To prevent code redundancy across views and components, specialized conversation
 - **Dual-Pane Interface:**
   - **Left Pane (Evidence Grounding):** Highlights the exact sentence/paragraph segment used by RAG with page coordinates, RRF fusion score, and fast page navigation controls (`◀ / ▶`).
   - **Right Pane (Native PDF Stream):** Streams the original PDF at exact `#page=${n}&zoom=${z}` with interactive zoom controls (`ZoomIn / ZoomOut`), external tab jump, and original file download.
+
+---
+
+## 8. OCR Engine & Tesseract Setup Guide
+
+CONCORD supports optical character recognition for scanned institutional documents, office circulars, and notices containing images via a layout-aware preprocessor and OCR provider strategy.
+
+### A. Provider Strategy & Zero-Crash Resilience
+- **`PytesseractOCRProvider`:** Utilizes `pytesseract` and native Tesseract OCR binaries when available in `PATH` or configured via `TESSERACT_CMD`.
+- **`GracefulFallbackOCRProvider`:** Automatically engages if native binaries are absent on the host OS. Extracts preprocessed resolution and color mode diagnostics, ensuring the ingestion pipeline and RAG search continue operating with 0% crashes.
+
+### B. Installing Native Tesseract OCR (Optional for Full OCR Extraction)
+
+#### 1. Windows (Local Development)
+- **Option 1 (Winget):**
+  ```powershell
+  winget install -e --id UB-Mannheim.TesseractOCR
+  ```
+- **Option 2 (Manual Installer):**
+  - Download installer from [UB-Mannheim/tesseract](https://github.com/UB-Mannheim/tesseract/wiki).
+  - Default installation directory: `C:\Program Files\Tesseract-OCR\tesseract.exe`.
+  - Set environment variable in `backend/.env`:
+    ```ini
+    TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+    ```
+
+#### 2. Linux / Ubuntu / Debian
+```bash
+sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+```
+
+#### 3. Containerized Docker Deployment
+The official backend container (`infra/docker/backend.Dockerfile`) has `tesseract-ocr` and `tesseract-ocr-eng` pre-installed:
+```dockerfile
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    libpq-dev \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
+```
+Running `docker-compose up` provides native OCR extraction out of the box with zero host machine dependencies.

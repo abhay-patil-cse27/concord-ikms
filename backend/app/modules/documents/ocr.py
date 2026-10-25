@@ -28,7 +28,8 @@ class PytesseractOCRProvider(BaseOCRProvider):
     """
 
     def __init__(self, tesseract_cmd: Optional[str] = None):
-        self._cmd = tesseract_cmd or os.getenv("TESSERACT_CMD")
+        from app.core.config import settings
+        self._cmd = tesseract_cmd or os.getenv("TESSERACT_CMD") or settings.TESSERACT_CMD or None
         self._checked = False
         self._available = False
 

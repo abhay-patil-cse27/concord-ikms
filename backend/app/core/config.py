@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Vector Store (Phase 4b - Embedded ChromaDB)
     CHROMA_PERSIST_DIR: str = "./data/chroma"
 
+    # OCR Engine (Tesseract path override if not in system PATH)
+    TESSERACT_CMD: str = ""
+
     @field_validator("CORS_ORIGINS", mode="before") 
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
