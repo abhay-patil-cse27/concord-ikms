@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bot, User, Quote, Layers, CheckCircle2 } from 'lucide-react';
+import { Bot, User, Quote, Layers, CheckCircle2, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { BrutalBadge } from '../brutal';
 import { cn } from '../../lib/utils';
 import { variants } from '../../motion/presets';
+import { api } from '../../api/client';
 
 /**
  * MessageBlock
@@ -20,6 +21,20 @@ export default function MessageBlock({
   onOpenCitation,
 }) {
   const isUser = role === 'user';
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(null);
+
+  const handleFeedback = async (rating, reason = null) => {
+    try {
+      setFeedbackSubmitted(rating);
+      await api.submitFeedback({
+        rating,
+        reason,
+        message_content: content,
+      });
+    } catch (err) {
+      console.warn('Failed to record answer feedback:', err);
+    }
+  };
 
   // Transform citations [1], [2] in markdown into custom clickable elements
   const renderers = {
@@ -159,6 +174,48 @@ export default function MessageBlock({
                 [{idx + 1}] {c.document_title || c.title || `Chunk #${c.chunk_index}`}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Operational Feedback Loop (👍 / 👎 / Inaccuracy Flagging) */}
+        {!isUser && (
+          <div className="mt-3 pt-2 border-t border-brutal-black/10 dark:border-brutal-yellow/10 flex items-center justify-between text-xs font-mono">
+            <span className="text-[10px] text-brutal-muted dark:text-brutal-muted-dark uppercase font-bold">
+              Was this verified answer helpful?
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleFeedback('helpful')}
+                disabled={feedbackSubmitted !== null}
+                className={cn(
+                  'px-2 py-0.5 border border-brutal-black dark:border-brutal-yellow flex items-center gap-1 transition-all text-[11px] font-bold',
+                  feedbackSubmitted === 'helpful'
+                    ? 'bg-brutal-yellow text-brutal-black shadow-brutal-sm'
+                    : 'bg-brutal-paper dark:bg-brutal-dark hover:bg-brutal-yellow/50'
+                )}
+                title="Helpful verified answer"
+              >
+                <ThumbsUp size={11} />
+                <span>Yes</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFeedback('unhelpful', 'Reported Inaccuracy')}
+                disabled={feedbackSubmitted !== null}
+                className={cn(
+                  'px-2 py-0.5 border border-brutal-black dark:border-brutal-yellow flex items-center gap-1 transition-all text-[11px] font-bold',
+                  feedbackSubmitted === 'unhelpful'
+                    ? 'bg-brutal-accent text-brutal-white shadow-brutal-sm'
+                    : 'bg-brutal-paper dark:bg-brutal-dark hover:bg-brutal-accent/20'
+                )}
+                title="Flag inaccuracy or outdated policy"
+              >
+                <ThumbsDown size={11} />
+                <span>No</span>
+              </button>
+            </div>
           </div>
         )}
       </div>

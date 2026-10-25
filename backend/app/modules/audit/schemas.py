@@ -27,3 +27,11 @@ class AuditEventResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackCreate(BaseModel):
+    rating: str  # "helpful" or "unhelpful"
+    message_content: Optional[str] = None
+    reason: Optional[str] = None  # e.g. "hallucination", "outdated_policy", "incomplete"
+    details: Optional[Dict[str, Any]] = None
+

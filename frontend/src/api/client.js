@@ -175,5 +175,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  // Operational Feedback & Hallucination Reporting
+  submitFeedback: (payload) =>
+    apiRequest('/audit/feedback', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
