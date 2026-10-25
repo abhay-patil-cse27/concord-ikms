@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useRAG } from '../hooks/useRAG';
 import { useAuth } from '../context/AuthContext';
 import ThreadSidebar from '../components/ui/ThreadSidebar';
@@ -241,19 +242,22 @@ export default function RAGAssistantView() {
         />
       )}
 
-      {/* Desktop / Collapsible Thread Sidebar */}
-      {showSessionsSidebar && (
-        <ThreadSidebar
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={selectConversation}
-          onCreateNewSession={handleCreateNewSession}
-          onDeleteSession={handleDeleteSession}
-          onCloseSidebar={() => setShowSessionsSidebar(false)}
-          userName={user?.full_name || user?.email || 'Institutional Member'}
-          userRole={user?.role_code || 'VERIFIED USER'}
-        />
-      )}
+      {/* Desktop / Collapsible Thread Sidebar with Smooth Spring Animation */}
+      <AnimatePresence initial={false}>
+        {showSessionsSidebar && (
+          <ThreadSidebar
+            key="thread-sidebar"
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            onSelectConversation={selectConversation}
+            onCreateNewSession={handleCreateNewSession}
+            onDeleteSession={handleDeleteSession}
+            onCloseSidebar={() => setShowSessionsSidebar(false)}
+            userName={user?.full_name || user?.email || 'Institutional Member'}
+            userRole={user?.role_code || 'VERIFIED USER'}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Main Conversation Canvas (ChatGPT-style fixed card window) */}
       <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 overflow-hidden bg-brutal-paper dark:bg-brutal-black">

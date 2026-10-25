@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
   Building2, 
@@ -21,7 +22,7 @@ import NavItem from './layout/NavItem';
 /**
  * Sidebar
  * Modular Yellow Brutalist sidebar navigation.
- * Desktop: Collapsible width with hard borders and tactile buttons.
+ * Desktop: Smooth spring transition for expanding and collapsing.
  * Mobile: Slide-in drawer with solid dark backdrop.
  */
 export default function Sidebar({
@@ -106,40 +107,36 @@ export default function Sidebar({
     }
   };
 
-  const sidebarContent = (
-    <aside
-      className={cn(
-        'h-full bg-brutal-white dark:bg-brutal-dark border-r-3 border-brutal-black dark:border-brutal-yellow flex flex-col justify-between select-none transition-all duration-200 z-30',
-        collapsed ? 'w-18' : 'w-64',
-        'p-3'
-      )}
-    >
+  const renderNavContent = (isMobile = false) => (
+    <div className="h-full flex flex-col justify-between select-none p-3 overflow-hidden">
       {/* Top Header & Collapse Toggle */}
       <div>
         <div className="flex items-center justify-between gap-2 px-1 pb-3 mb-2 border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20">
-          {!collapsed && (
-            <span className="font-mono text-[10px] font-black uppercase tracking-widest text-brutal-muted dark:text-brutal-muted-dark">
+          {(!collapsed || isMobile) && (
+            <span className="font-mono text-[10px] font-black uppercase tracking-widest text-brutal-muted dark:text-brutal-muted-dark truncate">
               Core Navigation
             </span>
           )}
 
           {/* Desktop collapse toggle */}
-          <button
-            type="button"
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
-            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-            aria-label={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-          </button>
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden md:flex p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+              title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              aria-label={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            >
+              {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            </button>
+          )}
 
           {/* Mobile close toggle */}
-          {onCloseMobile && (
+          {isMobile && onCloseMobile && (
             <button
               type="button"
               onClick={onCloseMobile}
-              className="md:hidden p-1.5 border-2 border-brutal-black bg-brutal-yellow text-brutal-black"
+              className="p-1.5 border-2 border-brutal-black bg-brutal-yellow text-brutal-black"
               aria-label="Close Navigation Drawer"
             >
               <X size={16} />
@@ -159,12 +156,12 @@ export default function Sidebar({
                   key={item.id}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 border-2 border-transparent text-brutal-muted/50 dark:text-brutal-muted-dark/40 font-mono text-xs font-bold uppercase cursor-not-allowed select-none',
-                    collapsed && 'justify-center'
+                    (collapsed && !isMobile) && 'justify-center'
                   )}
                   title={`${item.label} (Access Restricted)`}
                 >
                   <Lock size={16} className="flex-shrink-0" />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  {(!collapsed || isMobile) && <span className="truncate">{item.label}</span>}
                 </div>
               );
             }
@@ -177,7 +174,7 @@ export default function Sidebar({
                 tooltip={item.tooltip}
                 badge={item.badge}
                 isActive={isActive}
-                isCollapsed={collapsed}
+                isCollapsed={collapsed && !isMobile}
                 onClick={() => handleSelectTab(item.id)}
               />
             );
@@ -186,8 +183,13 @@ export default function Sidebar({
       </div>
 
       {/* Footer Scope Card */}
-      {!collapsed && (
-        <div className="mt-4 p-3 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm">
+      {(!collapsed || isMobile) && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          className="mt-4 p-3 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm"
+        >
           <div className="flex items-center gap-1.5 mb-1 text-brutal-black dark:text-brutal-yellow">
             <ShieldCheck size={14} />
             <span className="font-mono text-[10px] font-black uppercase tracking-wider">
@@ -200,33 +202,50 @@ export default function Sidebar({
           <div className="font-mono text-[9px] text-brutal-muted dark:text-brutal-muted-dark uppercase mt-0.5">
             0.0% Security Leakage Gate
           </div>
-        </div>
+        </motion.div>
       )}
-    </aside>
+    </div>
   );
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
-      <div className="hidden md:block h-full flex-shrink-0">
-        {sidebarContent}
-      </div>
+      {/* Desktop Persistent Animated Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ width: collapsed ? 76 : 256 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+        className="hidden md:flex flex-col h-full flex-shrink-0 bg-brutal-white dark:bg-brutal-dark border-r-3 border-brutal-black dark:border-brutal-yellow z-30 overflow-hidden"
+      >
+        {renderNavContent(false)}
+      </motion.aside>
 
       {/* Mobile Slide-in Drawer with Backdrop */}
-      {isMobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          {/* Flat dark backdrop */}
-          <div
-            onClick={onCloseMobile}
-            className="fixed inset-0 bg-brutal-black/80"
-            aria-hidden="true"
-          />
-          {/* Drawer Panel */}
-          <div className="relative w-72 max-w-[85vw] h-full z-10">
-            {sidebarContent}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <div className="md:hidden fixed inset-0 z-50 flex">
+            {/* Flat dark backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={onCloseMobile}
+              className="fixed inset-0 bg-brutal-black/80"
+              aria-hidden="true"
+            />
+            {/* Drawer Panel */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              className="relative w-72 max-w-[85vw] h-full z-10 bg-brutal-white dark:bg-brutal-dark border-r-3 border-brutal-black dark:border-brutal-yellow shadow-brutal-lg"
+            >
+              {renderNavContent(true)}
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 }

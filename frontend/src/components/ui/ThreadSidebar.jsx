@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { 
   SquarePen, 
   Search, 
@@ -14,6 +15,7 @@ import { cn } from '../../lib/utils';
  * ThreadSidebar
  * Yellow Brutalist inquiry thread list with recency groupings,
  * search filter, new chat shortcut, and active selection state.
+ * Smoothly animates width and opacity on expand/collapse.
  */
 export default function ThreadSidebar({
   conversations = [],
@@ -69,7 +71,14 @@ export default function ThreadSidebar({
     : 'US';
 
   return (
-    <aside className="w-72 flex-shrink-0 bg-brutal-white dark:bg-brutal-dark border-r-3 border-brutal-black dark:border-brutal-yellow flex flex-col h-full select-none">
+    <motion.aside
+      initial={{ width: 0, opacity: 0 }}
+      animate={{ width: 288, opacity: 1 }}
+      exit={{ width: 0, opacity: 0 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+      className="w-72 flex-shrink-0 bg-brutal-white dark:bg-brutal-dark border-r-3 border-brutal-black dark:border-brutal-yellow flex flex-col h-full select-none overflow-hidden"
+    >
+      <div className="w-72 flex flex-col h-full">
       
       {/* Header */}
       <div className="p-3 border-b-2 border-brutal-black/20 dark:border-brutal-yellow/20 flex items-center justify-between gap-2 bg-brutal-paper dark:bg-brutal-dark-surface">
@@ -205,6 +214,7 @@ export default function ThreadSidebar({
         </div>
       </div>
 
-    </aside>
+      </div>
+    </motion.aside>
   );
 }
