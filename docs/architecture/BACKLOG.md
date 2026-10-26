@@ -225,3 +225,41 @@
 - [x] **Step 9.5: Automated Verification & Documentation:**
   - [x] Unit test `test_scanned_image_preprocessor_and_parser` in `backend/tests/test_parsers.py`.
   - [x] 83 total automated tests (78 backend + 5 frontend) 100% passing.
+
+## Milestone 10: Multimodal Accessibility, Batch Processing & Institutional Crawlers (Completed & Verified)
+- [x] **Track 1: Natural Voice Readout & Speech Sanitization (TTS):**
+  - [x] Web Speech API integration in `SpeechPlaybackButton.jsx` with real-time utterance queueing.
+  - [x] Created `speechUtils.js` with regex-based normalization: strips bracket citations `[1], [2]`, markdown headers, bold/italic markers, and code blocks for smooth academic speech cadence.
+  - [x] Frontend test suite `frontend/tests/speechUtils.test.js` passing 4/4 tests.
+- [x] **Track 2: Web Notice URL Ingestion Crawler & SSRF Guard:**
+  - [x] Implemented `crawl_web_notice_url` in `backend/app/modules/documents/web_crawler.py` with BeautifulSoup4 body extraction.
+  - [x] Enterprise SSRF defense in `backend/app/core/network_guard.py`: DNS resolution, RFC-1918 private IP rejection, loopback blocking, cloud metadata (`169.254.169.254`) prevention, and HTTP/HTTPS scheme validation.
+  - [x] Endpoints: `POST /api/v1/documents/ingest-url` and `POST /api/v1/documents/ingest-url-async`.
+  - [x] Pytest suite `tests/test_web_ingestion.py` passing 2/2 tests.
+- [x] **Track 3: Multi-File Batch Drag-and-Drop Ingestion:**
+  - [x] Redesigned `UploadModal.jsx` to accept 5–10 files concurrently with multi-row itemized progress table.
+  - [x] Asynchronous multi-item job queue execution against `/api/v1/documents/upload-async`.
+  - [x] Verified batch queue stability with zero UI blocking.
+- [x] **Track 4: Academic Dossier HTML Exporter:**
+  - [x] Created `backend/app/modules/audit/dossier_exporter.py` generating self-contained institutional audit dossiers.
+  - [x] Complete NAAC/NBA compliance accreditation exports with cryptographic timestamps, confidence scoring breakdown, and institutional masthead.
+  - [x] Endpoint `GET /api/v1/audit/dossier/html` guarded by `audit:read`.
+- [x] **Track 5: Yellow-Brutalist UI Polish & Layout Stability:**
+  - [x] Resolved conflicting dual spinners in `BenchmarkHeader.jsx` by decoupling manual button loading state from child Lucide icon.
+  - [x] Fixed `BenchmarkView.jsx` skeleton count props and implemented stale-while-revalidate data retention to eliminate layout shifts (FOUC).
+  - [x] Verified full suite: 89/89 automated tests passing (80 backend + 9 frontend).
+
+## Milestone 11: Dual-Mode LLM Engine (Cloud API vs On-Premises Deployed Local LLM) (In Progress)
+- [ ] **Step 11.1: Backend Strategy & Ollama Provider:**
+  - [ ] Implement `LocalOllamaLLMProvider` in `backend/app/modules/retrieval/llm_providers.py` implementing `BaseLLMProvider`.
+  - [ ] Support streaming tokens, conversational fallback, and strict RAG grounding.
+- [ ] **Step 11.2: System Settings & Dynamic Runtime Router:**
+  - [ ] Add `LLM_PROVIDER_MODE`, `LOCAL_LLM_URL`, `LOCAL_LLM_MODEL` to `config.py`.
+  - [ ] Implement `GET /api/v1/system/llm-config`, `PUT /api/v1/system/llm-config`, and `POST /api/v1/system/llm-test`.
+  - [ ] Dynamic factory resolving active provider at runtime with zero server restart required.
+- [ ] **Step 11.3: Frontend Admin Control & Live Health Beacon:**
+  - [ ] Build `BrutalLLMEngineCard` in `DashboardView.jsx` with tactile Yellow Brutalist toggle and live latency indicator.
+  - [ ] Add API client methods in `frontend/src/api/client.js`.
+- [ ] **Step 11.4: Automated Test Suite & Verification:**
+  - [ ] Add unit tests for `LocalOllamaLLMProvider` and mock failure resilience.
+  - [ ] Verify 100% backward compatibility with existing Groq Cloud pipeline.

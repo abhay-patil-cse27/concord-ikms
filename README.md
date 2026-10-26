@@ -267,7 +267,13 @@ IKMS/
   - **Track 2 (Tabular Document Chunker):** Word/PDF table extraction preserving atomic Markdown table grids without mid-row splits.
   - **Track 3 (Asynchronous Ingestion):** In-process `BackgroundJobManager` (`/upload-async`, `/jobs/{id}`) with multi-stage brutalist progress tracking.
   - **Track 4 (In-App PDF Highlight Inspector):** Dual-pane `PDFViewerModal` linking inline citations directly to exact `#page` coordinates and highlighted sentences.
-  - **Verified Quality Standard:** 82 / 82 automated test scenarios passing (77 backend + 5 frontend).
+  - **Track 5 (Scanned Circular Layout-Aware OCR):** Adaptive luminance binarization and $1.5\times$ upscaling for faint circular stamps with multi-format OCR fallback.
+- **Milestone 10 (Multimodal Accessibility, Web Crawling & Accreditation Exporter — Completed):**
+  - **Natural Academic Voice Readout (TTS):** Dynamic voice synthesis in `SpeechPlaybackButton.jsx` with automatic regex stripping of bracket citations `[1]`, Markdown formatting, and code blocks for fluid spoken cadence.
+  - **Web Notice URL Crawler & SSRF Defense:** Automated HTML bulletin scraper with strict loopback/RFC-1918/cloud metadata SSRF guardrails (`/documents/ingest-url`).
+  - **Multi-File Batch Drag-and-Drop Ingestion:** Asynchronous multi-document upload queue in `UploadModal.jsx` supporting 5–10 concurrent documents.
+  - **Academic Dossier HTML Exporter:** Self-contained institutional compliance dossier generator for NAAC/NBA accreditation audits (`/audit/dossier/html`).
+  - **Verified Quality Standard:** **89 / 89 automated test scenarios passing** (80 backend + 9 frontend).
 
 
 

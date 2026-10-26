@@ -122,6 +122,19 @@ sequenceDiagram
 - **Description:** Lists documents filtered by department and user RBAC permissions.
 - **Query Params:** `?department_id=<id>`
 
+### `POST /documents/ingest-url` & `POST /documents/ingest-url-async`
+- **Description:** Ingests live web notices and HTML bulletins directly from verified institutional URLs (e.g. `https://kitcoek.in/notices/exam-schedule`).
+- **SSRF Defense:** Enforces strict protocol (`http`/`https`), DNS domain resolution, and blocks all loopback (`127.0.0.1`), RFC-1918 private IPs (`10.0.0.0/8`, `192.168.0.0/16`), and AWS/cloud metadata services (`169.254.169.254`).
+- **Request Body:**
+  ```json
+  {
+    "url": "https://kitcoek.in/notices/exam-schedule-2024",
+    "department_id": "dept-cse-uuid",
+    "title": "Semester Exam Schedule Notice"
+  }
+  ```
+- **Response (200 OK / 202 Accepted):** Returns created document metadata or async job tracking ID.
+
 ### `GET /documents/{document_id}`
 - **Description:** Returns full document metadata and extracted chunk segments.
 
@@ -272,6 +285,7 @@ sequenceDiagram
 | `/documents/{id}` | `GET` | Document Detail | Department membership or public | **`404 Not Found`** |
 | `/documents/{id}/download` | `GET` | Raw Binary | Department membership or public | **`404 Not Found`** |
 | `/audit/events` | `GET` | Security Logs | `platform_admin` only | **`403 Forbidden`** |
+| `/audit/dossier/html` | `GET` | Self-Contained Academic Dossier HTML | `audit:read` | **`403 Forbidden`** |
 | `/audit/feedback` | `POST` | Answer Ratings & Hallucination Flagging | Authenticated users | **`401 Unauthorized`** |
 | `/users` | `GET` | Users List | `platform_admin` (all) / Others (self profile only) | Scoped to self |
 | `/evaluation/run` | `POST` | Live Benchmark | `platform_admin` (`system:admin`) | **`403 Forbidden`** |
