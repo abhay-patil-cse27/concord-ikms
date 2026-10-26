@@ -55,6 +55,9 @@ data/
 minio_data/
 storage/
 
-# OS Specific
+# OS & IDE Specific
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
