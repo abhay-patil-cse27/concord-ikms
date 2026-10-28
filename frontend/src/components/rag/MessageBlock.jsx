@@ -21,6 +21,7 @@ export default function MessageBlock({
   citations = [],
   onOpenCitation,
   isStreaming = false,
+  model_used = null,
 }) {
   const isUser = role === 'user';
 
@@ -115,6 +116,15 @@ export default function MessageBlock({
             <span className="font-mono text-[11px] font-black uppercase tracking-wider">
               {isUser ? 'You (Verified Persona)' : 'CONCORD Grounded Memory'}
             </span>
+            {!isUser && model_used && (
+              <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 border border-brutal-black uppercase ${
+                model_used.startsWith('local:')
+                  ? 'bg-brutal-black text-brutal-yellow'
+                  : 'bg-brutal-yellow text-brutal-black'
+              }`}>
+                {model_used}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

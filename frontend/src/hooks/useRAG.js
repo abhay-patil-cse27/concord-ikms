@@ -177,9 +177,10 @@ export function useRAG() {
         } else if (chunk.event === 'error') {
           throw new Error(chunk.data?.message || 'Streaming error encountered');
         } else if (chunk.event === 'done') {
+          const actualModel = chunk.data?.model_used || 'system';
           setHistory((prev) =>
             prev.map((msg) =>
-              msg.id === asstMsgId ? { ...msg, isStreaming: false } : msg
+              msg.id === asstMsgId ? { ...msg, isStreaming: false, model_used: actualModel } : msg
             )
           );
         }
@@ -190,7 +191,7 @@ export function useRAG() {
         answer: accumulatedContent,
         citations: receivedCitations,
         confidence: 'high',
-        model_used: 'groq:llama-3.3-70b-versatile',
+        model_used: 'active',
       });
       return { answer: accumulatedContent, citations: receivedCitations };
     } catch (streamErr) {

@@ -43,7 +43,7 @@ export default function ChatHeader({
       {/* Right: Security Badges & Copy/Export Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <BrutalBadge tone="yellow" size="sm" className="hidden sm:inline-flex">
-          GROQ LLM
+          DUAL-MODE LLM
         </BrutalBadge>
 
         <BrutalBadge tone="black" size="sm" className="hidden md:inline-flex">

@@ -329,6 +329,11 @@ class ConversationService:
         safe_answer = PromptGuard.sanitize_output(accumulated_text.strip())
         latency_ms = (time.perf_counter() - start_time) * 1000.0
 
+        # Determine model tag dynamically based on active provider
+        is_local = "local" in llm.__class__.__name__.lower()
+        model_name = getattr(llm, 'model', 'default')
+        actual_model_used = f"local:{model_name}" if is_local else f"groq:{model_name}"
+
         # Step 6: Persist Assistant turn to DB
         asst_msg = ConversationMessage(
             id=str(uuid.uuid4()),
@@ -338,7 +343,7 @@ class ConversationService:
             content=safe_answer,
             citations=citations_data,
             confidence="high" if citations_data else "medium",
-            model_used=f"groq:{getattr(llm, 'model', 'stream')}",
+            model_used=actual_model_used,
             latency_ms=round(latency_ms, 2)
         )
         db.add(asst_msg)
@@ -351,6 +356,7 @@ class ConversationService:
             "message_id": asst_msg.id,
             "latency_ms": round(latency_ms, 2),
             "citations_count": len(citations_data),
+            "model_used": actual_model_used,
             "status": "success"
         })
 

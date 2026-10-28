@@ -36,7 +36,11 @@ class ComparativeResearchAgent:
         llm_provider: Optional[BaseLLMProvider] = None,
     ):
         self.retrieval_service = retrieval_service or RetrievalService()
-        self.llm_provider = llm_provider or get_llm_provider()
+        self._llm_provider = llm_provider
+
+    @property
+    def llm_provider(self) -> BaseLLMProvider:
+        return self._llm_provider or get_llm_provider()
 
     def is_comparative_query(self, query: str) -> bool:
         """Determines if a query requires comparative multi-step research."""

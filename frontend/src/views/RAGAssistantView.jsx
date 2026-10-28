@@ -323,6 +323,7 @@ export default function RAGAssistantView() {
                 timestamp={msg.timestamp}
                 citations={msg.citations}
                 isStreaming={msg.isStreaming}
+                model_used={msg.model_used}
                 onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
               />
             ))

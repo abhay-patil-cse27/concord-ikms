@@ -14,7 +14,9 @@ import {
   Server,
   Activity,
   RefreshCw,
-  Radio
+  Radio,
+  HelpCircle,
+  Info
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
@@ -228,9 +230,26 @@ export default function DashboardView() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: Target Node Config */}
             <div className="flex flex-col gap-4 p-4 border-2 border-brutal-black/40 dark:border-brutal-yellow/30 bg-brutal-white dark:bg-brutal-dark-surface">
-              <div className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white flex items-center gap-2">
-                <Server size={14} className="text-brutal-black dark:text-brutal-yellow" />
-                OpenAI-Compatible Node Configuration
+              <div className="flex items-center justify-between">
+                <div className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white flex items-center gap-2">
+                  <Server size={14} className="text-brutal-black dark:text-brutal-yellow" />
+                  Local Inference Node (Ollama / Lab PC)
+                </div>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    className="p-1 hover:bg-brutal-yellow hover:text-brutal-black border border-brutal-black transition-colors"
+                    title="What does 'OpenAI Protocol' mean here?"
+                  >
+                    <HelpCircle size={13} />
+                  </button>
+                  <div className="hidden group-hover:block absolute right-0 top-6 w-72 p-3 bg-brutal-black text-brutal-white border-2 border-brutal-yellow shadow-brutal-lg z-50 font-mono text-[11px] leading-relaxed">
+                    <strong className="text-brutal-yellow block mb-1">Why does it mention OpenAI?</strong>
+                    This does <em>NOT</em> call OpenAI servers.
+                    <br /><br />
+                    It uses the universal <strong>OpenAI-compatible HTTP standard</strong> (<code>POST /v1/chat/completions</code>). Both <strong>Ollama</strong> and <strong>vLLM</strong> run on this standard so you can switch backends or move to a college lab GPU with zero code modifications!
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -343,7 +362,7 @@ export default function DashboardView() {
               </div>
 
               <div className="mt-3 pt-3 border-t border-brutal-black/20 font-mono text-[10px] text-brutal-muted">
-                Engine operates on standard OpenAI <code>/v1/chat/completions</code>. Completely detachable for future cloud or college lab server migration.
+                Engine operates on standard local <code>/v1/chat/completions</code>. Completely detachable for future cloud or college lab server migration.
               </div>
             </div>
           </div>
