@@ -214,5 +214,19 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  // Dual-Mode LLM Engine (Milestone 11)
+  getLLMConfig: () => apiRequest('/system/llm-config'),
+  updateLLMConfig: (payload) =>
+    apiRequest('/system/llm-config', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  testLLMNode: (payload) =>
+    apiRequest('/system/llm-test', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
+
 

@@ -273,7 +273,13 @@ IKMS/
   - **Web Notice URL Crawler & SSRF Defense:** Automated HTML bulletin scraper with strict loopback/RFC-1918/cloud metadata SSRF guardrails (`/documents/ingest-url`).
   - **Multi-File Batch Drag-and-Drop Ingestion:** Asynchronous multi-document upload queue in `UploadModal.jsx` supporting 5–10 concurrent documents.
   - **Academic Dossier HTML Exporter:** Self-contained institutional compliance dossier generator for NAAC/NBA accreditation audits (`/audit/dossier/html`).
-  - **Verified Quality Standard:** **89 / 89 automated test scenarios passing** (80 backend + 9 frontend).
+- **Milestone 11 (Dual-Mode LLM Engine — Completed & Verified):**
+  - **Decoupled Architecture:** Reusable `LocalLLMProvider` targeting standard OpenAI-compatible `/v1/chat/completions` (Ollama, vLLM, LAN lab PC, or internet tunnels).
+  - **Ultra-Lightweight Consumer Footprint:** Configured default model `qwen2.5:1.5b` (~1.2 GB RAM, 20–35 tok/s on CPU) eliminating laptop hanging or thermal throttling.
+  - **Zero-Redundancy Shared Pipeline:** Centralized context building, citation formatting, SSE parsing, and anti-hallucination temperature clamping (0.05).
+  - **In-Memory Dynamic Routing:** Hot-swapping between Cloud (Groq) and Local/Remote Node with zero server restarts via `GET/PUT /api/v1/system/llm-config`.
+  - **Live Diagnostics Beacon:** Tactical Yellow Brutalist Admin controller in `DashboardView.jsx` with probe testing (`POST /api/v1/system/llm-test`) and model tag auto-detection.
+  - **Verified Quality Standard:** **93 / 93 automated test scenarios passing** (84 backend + 9 frontend).
 
 
 

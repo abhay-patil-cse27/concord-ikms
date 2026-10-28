@@ -1,7 +1,8 @@
-"""Concrete LLM providers: Groq Cloud API and Local Offline Template Fallback."""
+"""Concrete LLM providers: Groq Cloud API, Local/Remote OpenAI-Compatible Node, and Offline Synthesizer."""
+import re
 import json
 import httpx
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple, AsyncIterator
 from app.core.config import settings
 from app.core.logging import logger
 from app.modules.retrieval.llm_base import BaseLLMProvider
@@ -38,6 +39,113 @@ ROLE & PERSONALITY:
 """
 
 
+# ==============================================================================
+# Shared Helper Functions (Eliminating Redundancy across All LLM Providers)
+# ==============================================================================
+
+def _build_evidence_context(evidence_chunks: List[Dict[str, Any]]) -> Tuple[str, List[Dict[str, Any]]]:
+    """
+    Transforms raw evidence chunks into a formatted institutional evidence text string
+    and standard citation metadata list with numbered indices [1], [2], etc.
+    """
+    evidence_text = ""
+    citations_metadata = []
+
+    for idx, chunk in enumerate(evidence_chunks, start=1):
+        doc_title = chunk.get("document_title", "Institutional Record")
+        page_no = chunk.get("page_number", 1)
+        content = chunk.get("content", "").strip()
+
+        doc_lifecycle = chunk.get("lifecycle_status", "active")
+        doc_version = chunk.get("version", "v1.0")
+        freshness = chunk.get("freshness", "current" if doc_lifecycle == "active" else doc_lifecycle)
+
+        evidence_text += (
+            f"\n[Evidence {idx}] (Document: {doc_title}, Version: {doc_version}, "
+            f"Status: {doc_lifecycle}, Page: {page_no}):\n{content}\n"
+        )
+        citations_metadata.append({
+            "citation_index": idx,
+            "chunk_id": chunk.get("chunk_id"),
+            "document_id": chunk.get("document_id"),
+            "document_title": doc_title,
+            "document_filename": chunk.get("document_filename"),
+            "page_number": page_no,
+            "snippet": content[:180] + "..." if len(content) > 180 else content,
+            "score": chunk.get("score"),
+            "lifecycle_status": doc_lifecycle,
+            "version": doc_version,
+            "freshness": freshness,
+        })
+
+    return evidence_text, citations_metadata
+
+
+def _build_chat_payload(
+    model: str,
+    system_prompt: str,
+    user_content: str,
+    temperature: float = 0.1,
+    max_tokens: int = 1024,
+    stream: bool = False,
+    conversation_history: Optional[List[Dict[str, str]]] = None
+) -> Dict[str, Any]:
+    """Constructs a standard OpenAI-compatible chat completion payload."""
+    messages = [{"role": "system", "content": system_prompt}]
+    if conversation_history:
+        for msg in conversation_history[-4:]:
+            messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
+    messages.append({"role": "user", "content": user_content})
+
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "top_p": 0.9,
+    }
+    if stream:
+        payload["stream"] = True
+    return payload
+
+
+def _clean_llm_response(text: str) -> str:
+    """Normalizes citations (e.g. 【1】 -> [1]), strips raw HTML, and consolidates blank lines."""
+    if not text:
+        return ""
+    text = re.sub(r'【(\d+)】', r'[\1]', text)
+    text = re.sub(r'\[Evidence\s*(\d+)\]', r'[\1]', text, flags=re.IGNORECASE)
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
+
+
+def _parse_sse_delta(line: str) -> Tuple[Optional[str], bool]:
+    """
+    Parses a single Server-Sent Events (SSE) data line into (token, is_done).
+    Returns (None, True) when '[DONE]' sentinel is encountered.
+    """
+    if not line:
+        return None, False
+    line = line.strip()
+    if not line.startswith("data: "):
+        return None, False
+    data_str = line[6:].strip()
+    if data_str == "[DONE]":
+        return None, True
+    try:
+        chunk_json = json.loads(data_str)
+        delta = chunk_json.get("choices", [{}])[0].get("delta", {})
+        token = delta.get("content", "")
+        return (token if token else None), False
+    except Exception:
+        return None, False
+
+
+# ==============================================================================
+# Providers
+# ==============================================================================
+
 class GroqCloudLLMProvider(BaseLLMProvider):
     """
     Production-grade LLM provider powered by Groq Cloud ultra-fast inference (Llama 3.3 70B / 8B).
@@ -66,22 +174,14 @@ class GroqCloudLLMProvider(BaseLLMProvider):
         if not self.api_key:
             return OfflineFallbackLLMProvider().conversational_synthesize(query)
 
-        messages = [
-            {"role": "system", "content": system_prompt or CONVERSATIONAL_SYSTEM_PROMPT}
-        ]
-        if conversation_history:
-            # Include up to the last 4 turns for context
-            for msg in conversation_history[-4:]:
-                messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
-        messages.append({"role": "user", "content": query})
-
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": 0.6,
-            "max_tokens": 512,
-            "top_p": 0.9,
-        }
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or CONVERSATIONAL_SYSTEM_PROMPT,
+            user_content=query,
+            temperature=0.6,
+            max_tokens=512,
+            conversation_history=conversation_history
+        )
 
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:
@@ -96,11 +196,9 @@ class GroqCloudLLMProvider(BaseLLMProvider):
 
                 if res.status_code == 200:
                     data = res.json()
-                    answer_text = data["choices"][0]["message"]["content"].strip()
-                    import re
-                    answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.IGNORECASE)
+                    answer_text = data["choices"][0]["message"]["content"]
                     return {
-                        "answer": answer_text,
+                        "answer": _clean_llm_response(answer_text),
                         "citations": [],
                         "confidence": "high",
                         "model_used": f"groq:{self.model}"
@@ -127,50 +225,23 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                 "model_used": "direct_refusal"
             }
 
-        # Build numbered evidence context
-        evidence_text = ""
-        citations_metadata = []
+        evidence_text, citations_metadata = _build_evidence_context(evidence_chunks)
+        user_content = (
+            f"Question: {query}\n\n"
+            f"Verified Institutional Evidence:\n{evidence_text}\n\n"
+            f"Please formulate an authoritative, grounded answer citing [1], [2], etc.:"
+        )
 
-        for idx, chunk in enumerate(evidence_chunks, start=1):
-            doc_title = chunk.get("document_title", "Institutional Record")
-            page_no = chunk.get("page_number", 1)
-            content = chunk.get("content", "").strip()
-
-            doc_lifecycle = chunk.get("lifecycle_status", "active")
-            doc_version = chunk.get("version", "v1.0")
-            freshness = chunk.get("freshness", "current" if doc_lifecycle == "active" else doc_lifecycle)
-
-            evidence_text += f"\n[Evidence {idx}] (Document: {doc_title}, Version: {doc_version}, Status: {doc_lifecycle}, Page: {page_no}):\n{content}\n"
-            citations_metadata.append({
-                "citation_index": idx,
-                "chunk_id": chunk.get("chunk_id"),
-                "document_id": chunk.get("document_id"),
-                "document_title": doc_title,
-                "document_filename": chunk.get("document_filename"),
-                "page_number": page_no,
-                "snippet": content[:180] + "..." if len(content) > 180 else content,
-                "score": chunk.get("score"),
-                "lifecycle_status": doc_lifecycle,
-                "version": doc_version,
-                "freshness": freshness,
-            })
-
-        user_content = f"Question: {query}\n\nVerified Institutional Evidence:\n{evidence_text}\n\nPlease formulate an authoritative, grounded answer citing [1], [2], etc.:"
-
-        # If no API key configured, use the Offline Deterministic Synthesizer fallback
         if not self.api_key:
             return OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
 
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt or GROUNDED_SYSTEM_PROMPT},
-                {"role": "user", "content": user_content}
-            ],
-            "temperature": 0.1,
-            "max_tokens": 1024,
-            "top_p": 0.9,
-        }
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or GROUNDED_SYSTEM_PROMPT,
+            user_content=user_content,
+            temperature=0.1,
+            max_tokens=1024
+        )
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -186,16 +257,8 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                 if res.status_code == 200:
                     data = res.json()
                     answer_text = data["choices"][0]["message"]["content"]
-                    # Normalize special unicode brackets (e.g. 【1】 or [Evidence 1] -> [1]) so citations parse cleanly
-                    import re
-                    answer_text = re.sub(r'【(\d+)】', r'[\1]', answer_text)
-                    answer_text = re.sub(r'\[Evidence\s*(\d+)\]', r'[\1]', answer_text, flags=re.IGNORECASE)
-                    # Clean out raw HTML break tags (<br>, <br/>, <br />) that degrade markdown rendering
-                    answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.IGNORECASE)
-                    # Clean repeated blank lines
-                    answer_text = re.sub(r'\n{3,}', '\n\n', answer_text).strip()
                     return {
-                        "answer": answer_text,
+                        "answer": _clean_llm_response(answer_text),
                         "citations": citations_metadata,
                         "confidence": "high",
                         "model_used": f"groq:{self.model}"
@@ -219,33 +282,26 @@ class GroqCloudLLMProvider(BaseLLMProvider):
             yield "No relevant institutional documents found within your authorized scope to answer this query."
             return
 
-        evidence_text = ""
-        for idx, chunk in enumerate(evidence_chunks, start=1):
-            doc_title = chunk.get("document_title", "Institutional Record")
-            page_no = chunk.get("page_number", 1)
-            content = chunk.get("content", "").strip()
-            doc_lifecycle = chunk.get("lifecycle_status", "active")
-            doc_version = chunk.get("version", "v1.0")
-            evidence_text += f"\n[Evidence {idx}] (Document: {doc_title}, Version: {doc_version}, Status: {doc_lifecycle}, Page: {page_no}):\n{content}\n"
-
-        user_content = f"Question: {query}\n\nVerified Institutional Evidence:\n{evidence_text}\n\nPlease formulate an authoritative, grounded answer citing [1], [2], etc.:"
+        evidence_text, citations_metadata = _build_evidence_context(evidence_chunks)
+        user_content = (
+            f"Question: {query}\n\n"
+            f"Verified Institutional Evidence:\n{evidence_text}\n\n"
+            f"Please formulate an authoritative, grounded answer citing [1], [2], etc.:"
+        )
 
         if not self.api_key:
-            res = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, [])
+            res = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
             yield res.get("answer", "")
             return
 
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt or GROUNDED_SYSTEM_PROMPT},
-                {"role": "user", "content": user_content}
-            ],
-            "temperature": 0.1,
-            "max_tokens": 1024,
-            "top_p": 0.9,
-            "stream": True
-        }
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or GROUNDED_SYSTEM_PROMPT,
+            user_content=user_content,
+            temperature=0.1,
+            max_tokens=1024,
+            stream=True
+        )
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -259,36 +315,193 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                     json=payload
                 ) as response:
                     if response.status_code != 200:
-                        fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, [])
+                        fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
                         yield fallback.get("answer", "")
                         return
 
                     async for line in response.aiter_lines():
-                        if not line:
-                            continue
-                        line = line.strip()
-                        if line.startswith("data: "):
-                            data_str = line[6:].strip()
-                            if data_str == "[DONE]":
-                                break
-                            try:
-                                chunk_json = json.loads(data_str)
-                                delta = chunk_json.get("choices", [{}])[0].get("delta", {})
-                                token = delta.get("content", "")
-                                if token:
-                                    yield token
-                            except Exception:
-                                continue
+                        token, is_done = _parse_sse_delta(line)
+                        if is_done:
+                            break
+                        if token:
+                            yield token
         except Exception as exc:
             logger.error(f"Groq API streaming failed: {exc}. Falling back to non-streaming fallback.")
-            fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, [])
+            fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
             yield fallback.get("answer", "")
 
+
+class LocalLLMProvider(BaseLLMProvider):
+    """
+    Decoupled, deployment-ready provider for Local and Remote OpenAI-compatible inference nodes.
+    Supports Ollama, vLLM, LM Studio, LocalAI, or any remote server via LAN, tunnel, or internet.
+    """
+
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        timeout: Optional[float] = None,
+        api_key: Optional[str] = None
+    ):
+        raw_url = (base_url or settings.LOCAL_LLM_URL).rstrip("/")
+        # Normalize endpoint to /v1/chat/completions (supports passing either base origin or /v1)
+        if raw_url.endswith("/v1/chat/completions"):
+            self.endpoint = raw_url
+        elif raw_url.endswith("/v1"):
+            self.endpoint = f"{raw_url}/chat/completions"
+        else:
+            self.endpoint = f"{raw_url}/v1/chat/completions"
+
+        self.model = model or settings.LOCAL_LLM_MODEL
+        self.timeout = timeout or settings.LOCAL_LLM_TIMEOUT_SECONDS
+        self.api_key = api_key or ""
+
+    def _get_headers(self) -> Dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
+
+    async def generate_conversational_answer(
+        self,
+        query: str,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        system_prompt: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Conversational response via local/remote inference node."""
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or CONVERSATIONAL_SYSTEM_PROMPT,
+            user_content=query,
+            temperature=0.6,
+            max_tokens=512,
+            conversation_history=conversation_history
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                res = await client.post(self.endpoint, headers=self._get_headers(), json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    answer_text = data["choices"][0]["message"]["content"]
+                    return {
+                        "answer": _clean_llm_response(answer_text),
+                        "citations": [],
+                        "confidence": "high",
+                        "model_used": f"local:{self.model}"
+                    }
+                else:
+                    logger.warning(f"Local LLM node responded with HTTP {res.status_code}: {res.text}")
+                    return OfflineFallbackLLMProvider().conversational_synthesize(query)
+        except Exception as exc:
+            logger.error(f"Local LLM node conversational request failed: {exc}")
+            return OfflineFallbackLLMProvider().conversational_synthesize(query)
+
+    async def generate_grounded_answer(
+        self,
+        query: str,
+        evidence_chunks: List[Dict[str, Any]],
+        system_prompt: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Grounded QA via local/remote inference node (temperature clamped to 0.05 for anti-hallucination)."""
+        if not evidence_chunks:
+            return {
+                "answer": "No relevant institutional documents found within your authorized scope to answer this query.",
+                "citations": [],
+                "confidence": "insufficient_evidence",
+                "model_used": "direct_refusal"
+            }
+
+        evidence_text, citations_metadata = _build_evidence_context(evidence_chunks)
+        user_content = (
+            f"Question: {query}\n\n"
+            f"Verified Institutional Evidence:\n{evidence_text}\n\n"
+            f"Please formulate an authoritative, grounded answer citing [1], [2], etc.:"
+        )
+
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or GROUNDED_SYSTEM_PROMPT,
+            user_content=user_content,
+            temperature=0.05,  # Anti-hallucination clamp for smaller models
+            max_tokens=1024
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                res = await client.post(self.endpoint, headers=self._get_headers(), json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    answer_text = data["choices"][0]["message"]["content"]
+                    return {
+                        "answer": _clean_llm_response(answer_text),
+                        "citations": citations_metadata,
+                        "confidence": "high",
+                        "model_used": f"local:{self.model}"
+                    }
+                else:
+                    logger.warning(f"Local LLM node responded with HTTP {res.status_code}: {res.text}. Falling back to synthesizer.")
+                    return OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
+        except Exception as exc:
+            logger.error(f"Local LLM node request failed: {exc}. Utilizing offline fallback.")
+            return OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
+
+    async def stream_grounded_tokens(
+        self,
+        query: str,
+        evidence_chunks: List[Dict[str, Any]],
+        system_prompt: Optional[str] = None
+    ):
+        """Streams grounded tokens chunk-by-chunk from local or remote node."""
+        if not evidence_chunks:
+            yield "No relevant institutional documents found within your authorized scope to answer this query."
+            return
+
+        evidence_text, citations_metadata = _build_evidence_context(evidence_chunks)
+        user_content = (
+            f"Question: {query}\n\n"
+            f"Verified Institutional Evidence:\n{evidence_text}\n\n"
+            f"Please formulate an authoritative, grounded answer citing [1], [2], etc.:"
+        )
+
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or GROUNDED_SYSTEM_PROMPT,
+            user_content=user_content,
+            temperature=0.05,
+            max_tokens=1024,
+            stream=True
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                async with client.stream(
+                    "POST",
+                    self.endpoint,
+                    headers=self._get_headers(),
+                    json=payload
+                ) as response:
+                    if response.status_code != 200:
+                        fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
+                        yield fallback.get("answer", "")
+                        return
+
+                    async for line in response.aiter_lines():
+                        token, is_done = _parse_sse_delta(line)
+                        if is_done:
+                            break
+                        if token:
+                            yield token
+        except Exception as exc:
+            logger.error(f"Local LLM node streaming failed: {exc}. Falling back to non-streaming synthesizer.")
+            fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
+            yield fallback.get("answer", "")
 
 
 class OfflineFallbackLLMProvider(BaseLLMProvider):
     """
-    Deterministic evidence extraction synthesizer when running offline or without an active Groq API key.
+    Deterministic evidence extraction synthesizer when running offline or without an active LLM provider.
     Extracts relevant statements directly from top-ranked chunks with proper citations.
     """
 
@@ -298,20 +511,7 @@ class OfflineFallbackLLMProvider(BaseLLMProvider):
         evidence_chunks: List[Dict[str, Any]],
         system_prompt: Optional[str] = None
     ) -> Dict[str, Any]:
-        citations = []
-        for idx, chunk in enumerate(evidence_chunks, start=1):
-            citations.append({
-                "citation_index": idx,
-                "chunk_id": chunk.get("chunk_id"),
-                "document_id": chunk.get("document_id"),
-                "document_title": chunk.get("document_title", "Institutional Record"),
-                "page_number": chunk.get("page_number", 1),
-                "snippet": chunk.get("content", "")[:180],
-                "score": chunk.get("score"),
-                "lifecycle_status": chunk.get("lifecycle_status", "active"),
-                "version": chunk.get("version", "v1.0"),
-                "freshness": "current"
-            })
+        _, citations = _build_evidence_context(evidence_chunks)
         return self.synthesize(query, evidence_chunks, citations)
 
     async def generate_conversational_answer(
@@ -353,7 +553,7 @@ class OfflineFallbackLLMProvider(BaseLLMProvider):
         answer = (
             f"Based on official institutional records ({top_chunk.get('document_title')}, Page {top_chunk.get('page_number', 1)}):\n\n"
             f"{summary_points}\n\n"
-            f"*(Generated via verified evidence extraction. To activate generative reasoning with Llama 3.3, add your free GROQ_API_KEY in .env)*"
+            f"*(Generated via verified evidence extraction fallback)*"
         )
 
         return {
@@ -364,7 +564,57 @@ class OfflineFallbackLLMProvider(BaseLLMProvider):
         }
 
 
-def get_llm_provider() -> BaseLLMProvider:
-    """Factory resolving the active LLM provider."""
-    return GroqCloudLLMProvider()
+# ==============================================================================
+# Dynamic Runtime State & Factory
+# ==============================================================================
 
+# In-memory runtime override (allows Admin toggle without restarting server process)
+_RUNTIME_LLM_CONFIG: Dict[str, Any] = {
+    "provider_mode": None,   # When None, defaults to settings.LLM_PROVIDER_MODE
+    "local_url": None,        # When None, defaults to settings.LOCAL_LLM_URL
+    "local_model": None,      # When None, defaults to settings.LOCAL_LLM_MODEL
+}
+
+
+def get_runtime_llm_config() -> Dict[str, Any]:
+    """Retrieves current effective LLM configuration."""
+    return {
+        "provider_mode": _RUNTIME_LLM_CONFIG["provider_mode"] or settings.LLM_PROVIDER_MODE,
+        "local_url": _RUNTIME_LLM_CONFIG["local_url"] or settings.LOCAL_LLM_URL,
+        "local_model": _RUNTIME_LLM_CONFIG["local_model"] or settings.LOCAL_LLM_MODEL,
+        "groq_model": settings.GROQ_MODEL,
+        "has_groq_key": bool(settings.GROQ_API_KEY),
+    }
+
+
+def set_runtime_llm_config(
+    provider_mode: Optional[str] = None,
+    local_url: Optional[str] = None,
+    local_model: Optional[str] = None
+) -> Dict[str, Any]:
+    """Updates runtime LLM configuration hot-swapped across all active RAG services."""
+    if provider_mode is not None:
+        if provider_mode not in ("cloud", "local"):
+            raise ValueError("provider_mode must be 'cloud' or 'local'")
+        _RUNTIME_LLM_CONFIG["provider_mode"] = provider_mode
+    if local_url is not None:
+        _RUNTIME_LLM_CONFIG["local_url"] = local_url.strip()
+    if local_model is not None:
+        _RUNTIME_LLM_CONFIG["local_model"] = local_model.strip()
+    return get_runtime_llm_config()
+
+
+def get_llm_provider() -> BaseLLMProvider:
+    """
+    Factory resolving active LLM provider dynamically.
+    Checks runtime state first, fallback to environment configuration.
+    """
+    cfg = get_runtime_llm_config()
+    mode = cfg.get("provider_mode", "cloud")
+
+    if mode == "local":
+        return LocalLLMProvider(
+            base_url=cfg["local_url"],
+            model=cfg["local_model"]
+        )
+    return GroqCloudLLMProvider()

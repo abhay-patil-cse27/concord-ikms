@@ -312,3 +312,66 @@ sequenceDiagram
 
 ### `POST /admin/reseed-demo`
 - **Description:** Reseeds canonical multi-department demo records into SQLite and ChromaDB. Guarded by `platform_admin`.
+
+---
+
+## 9. System & Dual-Mode LLM Engine (`/system`)
+
+### `GET /system/llm-config`
+- **Description:** Returns active LLM provider routing (`cloud` or `local`), node URL, model tag, and Groq configuration status.
+- **Authorization:** `platform_admin` only (`403 Forbidden` for non-admins).
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "config": {
+      "provider_mode": "cloud",
+      "local_url": "http://127.0.0.1:11434",
+      "local_model": "qwen2.5:1.5b",
+      "groq_model": "openai/gpt-oss-120b",
+      "has_groq_key": true
+    }
+  }
+  ```
+
+### `PUT /system/llm-config`
+- **Description:** Hot-swaps inference routing strategy, target OpenAI-compatible node URL, or model tag in-memory without server downtime.
+- **Authorization:** `platform_admin` only.
+- **Request Body:**
+  ```json
+  {
+    "provider_mode": "local",
+    "local_url": "http://127.0.0.1:11434",
+    "local_model": "qwen2.5:1.5b"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "LLM Engine configuration updated successfully.",
+    "config": { ... }
+  }
+  ```
+
+### `POST /system/llm-test`
+- **Description:** Probes an inference node URL (Ollama, vLLM, LAN lab PC, or tunnel) for reachability, latency, and available models.
+- **Authorization:** `platform_admin` only.
+- **Request Body:**
+  ```json
+  {
+    "node_url": "http://127.0.0.1:11434",
+    "timeout_seconds": 5.0
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "reachable": true,
+    "latency_ms": 14.2,
+    "status_message": "Node reachable (OpenAI-compatible /v1/models)",
+    "target_url": "http://127.0.0.1:11434",
+    "models": ["qwen2.5:1.5b", "llama3.2:3b"]
+  }
+  ```
+

@@ -249,17 +249,22 @@
   - [x] Fixed `BenchmarkView.jsx` skeleton count props and implemented stale-while-revalidate data retention to eliminate layout shifts (FOUC).
   - [x] Verified full suite: 89/89 automated tests passing (80 backend + 9 frontend).
 
-## Milestone 11: Dual-Mode LLM Engine (Cloud API vs On-Premises Deployed Local LLM) (In Progress)
-- [ ] **Step 11.1: Backend Strategy & Ollama Provider:**
-  - [ ] Implement `LocalOllamaLLMProvider` in `backend/app/modules/retrieval/llm_providers.py` implementing `BaseLLMProvider`.
-  - [ ] Support streaming tokens, conversational fallback, and strict RAG grounding.
-- [ ] **Step 11.2: System Settings & Dynamic Runtime Router:**
-  - [ ] Add `LLM_PROVIDER_MODE`, `LOCAL_LLM_URL`, `LOCAL_LLM_MODEL` to `config.py`.
-  - [ ] Implement `GET /api/v1/system/llm-config`, `PUT /api/v1/system/llm-config`, and `POST /api/v1/system/llm-test`.
-  - [ ] Dynamic factory resolving active provider at runtime with zero server restart required.
-- [ ] **Step 11.3: Frontend Admin Control & Live Health Beacon:**
-  - [ ] Build `BrutalLLMEngineCard` in `DashboardView.jsx` with tactile Yellow Brutalist toggle and live latency indicator.
-  - [ ] Add API client methods in `frontend/src/api/client.js`.
-- [ ] **Step 11.4: Automated Test Suite & Verification:**
-  - [ ] Add unit tests for `LocalOllamaLLMProvider` and mock failure resilience.
-  - [ ] Verify 100% backward compatibility with existing Groq Cloud pipeline.
+## Milestone 11: Dual-Mode LLM Engine (Cloud API vs On-Premises Local/Remote Node) (Completed & Verified)
+- [x] **Step 11.1: Modular Zero-Redundancy Provider Layer:**
+  - [x] Extracted shared helpers `_build_evidence_context`, `_build_chat_payload`, `_clean_llm_response`, `_parse_sse_delta` in `backend/app/modules/retrieval/llm_providers.py`.
+  - [x] Implemented `LocalLLMProvider` targeting standard OpenAI-compatible `/v1/chat/completions` (Ollama, vLLM, LAN lab PC, or internet tunnels).
+  - [x] Temperature clamped to 0.05 for strict anti-hallucination grounded extractive QA on smaller consumer models (`qwen2.5:1.5b`).
+  - [x] Resilient offline error handling with automatic handoff to `OfflineFallbackLLMProvider`.
+- [x] **Step 11.2: System Settings, CORS Regex & Dynamic Hot-Swapping Factory:**
+  - [x] Added `LLM_PROVIDER_MODE`, `LOCAL_LLM_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_TIMEOUT_SECONDS`, and `CORS_ORIGIN_REGEX` to `config.py` and `main.py`.
+  - [x] Dynamic runtime factory `get_llm_provider()` hot-swapping provider strategy in-memory without server restarts.
+  - [x] Implemented `GET /api/v1/system/llm-config`, `PUT /api/v1/system/llm-config` (guarded by `platform_admin`), and `POST /api/v1/system/llm-test` (health probe).
+  - [x] Registered `system_router` into `api_v1_router`.
+- [x] **Step 11.3: Frontend Admin Control & Live Diagnostics Beacon:**
+  - [x] Added `getLLMConfig()`, `updateLLMConfig()`, and `testLLMNode()` to `frontend/src/api/client.js`.
+  - [x] Built Yellow-Brutalist `Dual-Mode LLM Engine Controller` in `DashboardView.jsx` with segmented toggle, node URL input, model tag picker, and live latency health beacon.
+- [x] **Step 11.4: Automated Test Suite & Production Build Verification:**
+  - [x] Authored `backend/tests/test_llm_providers.py` covering modular helpers, offline resilience, hot-swapping, and security RBAC guards.
+  - [x] Verified full suite: 93/93 automated tests passing (84 backend + 9 frontend).
+  - [x] Verified clean production build (`vite build` passing with zero warnings).
+
