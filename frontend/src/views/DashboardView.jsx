@@ -195,7 +195,7 @@ export default function DashboardView() {
               </p>
             </div>
 
-            {/* Segmented Mode Control */}
+            {/* Segmented Mode Control with Dynamic Model Tags */}
             <div className="flex items-center border-2 border-brutal-black shadow-brutal-sm bg-brutal-white">
               <button
                 type="button"
@@ -208,7 +208,7 @@ export default function DashboardView() {
                 }`}
               >
                 <Cloud size={14} />
-                Cloud API (Groq)
+                Cloud ({llmConfig?.groq_model || 'openai/gpt-oss-120b'})
               </button>
               <button
                 type="button"
@@ -221,7 +221,7 @@ export default function DashboardView() {
                 }`}
               >
                 <Server size={14} />
-                Local / Remote Node
+                Local ({llmConfig?.local_model || localModelInput})
               </button>
             </div>
           </div>
@@ -234,21 +234,6 @@ export default function DashboardView() {
                 <div className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white flex items-center gap-2">
                   <Server size={14} className="text-brutal-black dark:text-brutal-yellow" />
                   Local Inference Node (Ollama / Lab PC)
-                </div>
-                <div className="group relative">
-                  <button
-                    type="button"
-                    className="p-1 hover:bg-brutal-yellow hover:text-brutal-black border border-brutal-black transition-colors"
-                    title="What does 'OpenAI Protocol' mean here?"
-                  >
-                    <HelpCircle size={13} />
-                  </button>
-                  <div className="hidden group-hover:block absolute right-0 top-6 w-72 p-3 bg-brutal-black text-brutal-white border-2 border-brutal-yellow shadow-brutal-lg z-50 font-mono text-[11px] leading-relaxed">
-                    <strong className="text-brutal-yellow block mb-1">Why does it mention OpenAI?</strong>
-                    This does <em>NOT</em> call OpenAI servers.
-                    <br /><br />
-                    It uses the universal <strong>OpenAI-compatible HTTP standard</strong> (<code>POST /v1/chat/completions</code>). Both <strong>Ollama</strong> and <strong>vLLM</strong> run on this standard so you can switch backends or move to a college lab GPU with zero code modifications!
-                  </div>
                 </div>
               </div>
 

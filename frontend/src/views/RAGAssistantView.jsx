@@ -12,11 +12,12 @@ import ThinkingIndicator from '../components/rag/ThinkingIndicator';
 import { BrutalToast } from '../components/brutal';
 import { exportThreadToMarkdown } from '../lib/exportThread';
 import { exportAcademicDossierHTML } from '../utils/htmlDossierExporter';
+import { api } from '../api/client';
 
 /**
  * RAGAssistantView
  * Yellow Brutalist grounded conversational assistant.
- * Powered by Groq LLM inference, RRF vector evidence, and multi-turn inquiry sessions.
+ * Powered by dynamic Dual-Mode LLM inference, RRF vector evidence, and multi-turn inquiry sessions.
  */
 export default function RAGAssistantView() {
   const { user } = useAuth();
@@ -43,11 +44,31 @@ export default function RAGAssistantView() {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeLLMBadge, setActiveLLMBadge] = useState(null);
 
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const silenceTimerRef = useRef(null);
   const transcriptAccumulatorRef = useRef('');
+
+  // Fetch active LLM mode to display dynamic model badge in header
+  useEffect(() => {
+    const fetchActiveEngine = async () => {
+      try {
+        const res = await api.getLLMConfig();
+        if (res?.config) {
+          const isLocal = res.config.provider_mode === 'local';
+          const modelTag = isLocal ? res.config.local_model : res.config.groq_model;
+          const engineLabel = isLocal ? `LOCAL: ${modelTag}` : `GROQ: ${modelTag}`;
+          setActiveLLMBadge(engineLabel);
+        }
+      } catch (e) {
+        // Fallback for non-admin tokens
+        setActiveLLMBadge('DUAL-MODE LLM');
+      }
+    };
+    fetchActiveEngine();
+  }, []);
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -300,6 +321,7 @@ export default function RAGAssistantView() {
           onExportDossier={handleExportDossier}
           isCopyDisabled={!history || history.length === 0}
           conversationTitle={activeTitle}
+          activeBadge={activeLLMBadge}
         />
 
         {/* Message Stream (Scrollable Container) */}
