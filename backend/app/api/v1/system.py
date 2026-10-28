@@ -85,7 +85,7 @@ async def test_llm_node(
             latency_ms = round((time.time() - start_time) * 1000, 2)
             if res.status_code == 200:
                 reachable = True
-                status_msg = "Node reachable (OpenAI-compatible /v1/models)"
+                status_msg = "Inference node online & ready"
                 try:
                     data = res.json()
                     for item in data.get("data", []):
@@ -100,7 +100,7 @@ async def test_llm_node(
                 latency_ms = round((time.time() - start_time) * 1000, 2)
                 if res_ollama.status_code == 200:
                     reachable = True
-                    status_msg = "Node reachable (Ollama native /api/tags)"
+                    status_msg = "Ollama node online & ready"
                     try:
                         data = res_ollama.json()
                         for model_item in data.get("models", []):
