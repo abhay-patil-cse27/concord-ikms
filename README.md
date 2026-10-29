@@ -11,7 +11,8 @@
 
 | Specification | Document | Core Focus & Coverage |
 | :--- | :--- | :--- |
-| **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`). |
+| **Setup & Quickstart Guide** | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | Comprehensive step-by-step developer onboarding, virtualenv setup, Ollama local LLM execution, and troubleshooting. |
+| **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`, `/system`). |
 | **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, and security hardening (94 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
@@ -146,12 +147,15 @@ sequenceDiagram
 
 ## 3. Quickstart & Installation
 
+> **Complete Step-by-Step Guide:** See **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** for detailed troubleshooting, Ollama local model setup, and environment options.
+
 ### Option A: Local Development (Recommended)
 
 ```bash
-# 1. Clone repository
+# 1. Clone repository & configure environment
 git clone https://github.com/abhay-patil-cse27/concord-ikms.git
 cd concord-ikms
+copy .env.example .env          # Windows (or cp .env.example .env on Linux/Mac)
 
 # 2. Setup Backend
 cd backend
@@ -159,6 +163,7 @@ python -m venv .venv
 .\.venv\Scripts\activate      # Windows (or source .venv/bin/activate on Unix)
 pip install -r requirements.txt
 python -m alembic upgrade head
+python scripts/seed_demo_data.py   # Seeds rich multi-department documents & ChromaDB
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
