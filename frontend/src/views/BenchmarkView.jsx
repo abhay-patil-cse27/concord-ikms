@@ -3,9 +3,10 @@ import { api } from '../api/client';
 import { uiCache } from '../utils/uiCache';
 import BenchmarkHeader from '../components/benchmark/BenchmarkHeader';
 import BenchmarkKpis from '../components/benchmark/BenchmarkKpis';
+import BenchmarkKpiSkeleton from '../components/benchmark/BenchmarkKpiSkeleton';
 import BenchmarkTable from '../components/benchmark/BenchmarkTable';
 import LiveRunReport from '../components/benchmark/LiveRunReport';
-import { BrutalSkeleton, BrutalToast } from '../components/brutal';
+import { BrutalToast } from '../components/brutal';
 
 /**
  * BenchmarkView
@@ -121,20 +122,17 @@ export default function BenchmarkView() {
       )}
 
       {/* KPI Cards */}
-      {!metricsData && loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <BrutalSkeleton key={i} height="h-32" />
-          ))}
-        </div>
+      {!metricsData ? (
+        <BenchmarkKpiSkeleton />
       ) : (
-        <BenchmarkKpis baseline={baseline} />
+        <BenchmarkKpis baseline={baseline} loading={loading} />
       )}
 
       {/* Comparative Paradigm Matrix Table */}
       <BenchmarkTable
         baseline={baseline}
         testCasesCount={metricsData?.total_benchmark_cases || 5}
+        loading={loading}
       />
 
       {/* Live Run Report */}
