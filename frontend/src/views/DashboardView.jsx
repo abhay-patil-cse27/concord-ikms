@@ -21,7 +21,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import HealthCard from '../components/HealthCard';
-import { BrutalCard, BrutalButton, BrutalBadge } from '../components/brutal';
+import { BrutalCard, BrutalButton, BrutalBadge, BrutalToast, BrutalModal } from '../components/brutal';
 
 /**
  * DashboardView
@@ -39,6 +39,13 @@ export default function DashboardView() {
   const [isSavingLLM, setIsSavingLLM] = useState(false);
   const [probeStatus, setProbeStatus] = useState(null); // { reachable: bool, latency_ms, status_message, models }
   const [isProbing, setIsProbing] = useState(false);
+
+  const [toast, setToast] = useState(null);
+  const [showReseedConfirm, setShowReseedConfirm] = useState(false);
+
+  const showToast = (type, title, message) => {
+    setToast({ type, title, message });
+  };
 
   const role = user?.roles?.[0];
   const permissions = role?.permissions || [];
@@ -70,9 +77,14 @@ export default function DashboardView() {
       const res = await api.updateLLMConfig({ provider_mode: targetMode });
       if (res?.config) {
         setLlmConfig(res.config);
+        showToast(
+          'success',
+          'Routing Strategy Updated',
+          `Inference mode seamlessly switched to ${targetMode === 'local' ? 'Local Inference Node (Ollama)' : 'Groq Cloud API'} with zero server downtime.`
+        );
       }
     } catch (err) {
-      alert(`Failed to switch mode: ${err.message}`);
+      showToast('error', 'Mode Switch Failed', err.message);
     } finally {
       setIsSavingLLM(false);
     }
@@ -87,10 +99,14 @@ export default function DashboardView() {
       });
       if (res?.config) {
         setLlmConfig(res.config);
-        alert('Inference node configuration updated successfully!');
+        showToast(
+          'success',
+          'Inference Node Updated',
+          'Local/Remote node endpoint and model parameters saved successfully!'
+        );
       }
     } catch (err) {
-      alert(`Update failed: ${err.message}`);
+      showToast('error', 'Configuration Update Failed', err.message);
     } finally {
       setIsSavingLLM(false);
     }
@@ -105,6 +121,19 @@ export default function DashboardView() {
         timeout_seconds: 5.0,
       });
       setProbeStatus(res);
+      if (res?.reachable) {
+        showToast(
+          'success',
+          'Inference Node Online',
+          `Connected to ${localUrlInput} (${res.latency_ms}ms roundtrip). Detected: ${res.models?.join(', ') || 'model ready'}`
+        );
+      } else {
+        showToast(
+          'warning',
+          'Node Unreachable',
+          res?.status_message || 'Inference node probe failed or target service offline.'
+        );
+      }
     } catch (err) {
       setProbeStatus({
         reachable: false,
@@ -112,8 +141,26 @@ export default function DashboardView() {
         status_message: err.message || 'Probe request failed',
         models: [],
       });
+      showToast('error', 'Probe Request Failed', err.message || 'Could not contact target host');
     } finally {
       setIsProbing(false);
+    }
+  };
+
+  const handleConfirmReseed = async () => {
+    setShowReseedConfirm(false);
+    try {
+      setReseedStatus('Reseeding...');
+      const res = await api.reseedDemoData();
+      showToast(
+        'success',
+        'Knowledge Base Reseeded',
+        res.message || 'Canonical demo records reseeded successfully into SQLite and ChromaDB.'
+      );
+    } catch (err) {
+      showToast('error', 'Reseed Operation Failed', err.message);
+    } finally {
+      setReseedStatus(null);
     }
   };
 
@@ -376,19 +423,7 @@ export default function DashboardView() {
               variant="primary"
               size="sm"
               icon={Layers}
-              onClick={async () => {
-                if (window.confirm('Reset and re-populate canonical demo knowledge records into SQLite and ChromaDB?')) {
-                  try {
-                    setReseedStatus('Reseeding...');
-                    const res = await api.reseedDemoData();
-                    alert(res.message || 'Demo records reseeded successfully!');
-                  } catch (err) {
-                    alert(`Reseed failed: ${err.message}`);
-                  } finally {
-                    setReseedStatus(null);
-                  }
-                }
-              }}
+              onClick={() => setShowReseedConfirm(true)}
             >
               {reseedStatus || 'Reseed Demo Knowledge Base'}
             </BrutalButton>
@@ -472,6 +507,48 @@ export default function DashboardView() {
           )}
         </BrutalCard>
       </div>
+
+      {/* Reusable React UI Toast Notification Banner */}
+      {toast && (
+        <BrutalToast
+          isOpen={true}
+          type={toast.type}
+          title={toast.title}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Reusable React UI Confirmation Modal for Reseed */}
+      <BrutalModal
+        isOpen={showReseedConfirm}
+        onClose={() => setShowReseedConfirm(false)}
+        title="Confirm Knowledge Base Reseed"
+        badge="Administrative Reset"
+        maxWidth="max-w-lg"
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full">
+            <BrutalButton
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowReseedConfirm(false)}
+            >
+              Cancel
+            </BrutalButton>
+            <BrutalButton
+              variant="danger"
+              size="sm"
+              onClick={handleConfirmReseed}
+            >
+              Confirm Reseed
+            </BrutalButton>
+          </div>
+        }
+      >
+        <p className="font-mono text-xs leading-relaxed text-brutal-black dark:text-brutal-white">
+          Reset and re-populate canonical cross-department documents (CSE, ENTC, Exam Regulations) into SQLite and ChromaDB? Existing demo documents will be refreshed.
+        </p>
+      </BrutalModal>
     </div>
   );
 }
