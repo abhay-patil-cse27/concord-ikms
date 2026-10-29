@@ -96,6 +96,43 @@ def test_academic_query_normalizer():
     assert "bda" in norm_bda
 
 
+def test_fuzzy_typing_and_relevance_gate():
+    from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+    from app.modules.retrieval.rag_service import RAGService
+
+    # 1. Multi-word phrase typo: "bid data" -> "big data"
+    norm, exp, corrections = AcademicQueryNormalizer.normalize_with_metadata("summarise bid data course?")
+    assert "big data" in norm
+    assert "bid data" in corrections
+    assert corrections["bid data"] == "big data"
+
+    # 2. Fuzzy Levenshtein edit distance: "atendance criteria"
+    norm2, exp2, corr2 = AcademicQueryNormalizer.normalize_with_metadata("what is the atendance criteria?")
+    assert "attendance" in norm2
+
+    # 3. Relevance Gating: Valid vs Unrelated chunks
+    valid_chunk = {
+        "chunk_id": "c1",
+        "content": "Title of Course: Big Data Analytics (UCSPC0701). Hadoop and Spark ecosystem.",
+        "score": 0.88
+    }
+    assert RAGService.is_chunk_relevant(valid_chunk, "summarize big data course") is True
+
+    irrelevant_chunk = {
+        "chunk_id": "c2",
+        "content": "Title of Course: Financial Analytics (UCSMM0741). Portfolio management.",
+        "score": 0.0036
+    }
+    assert RAGService.is_chunk_relevant(irrelevant_chunk, "summarize big data course") is False
+
+    zero_score_chunk = {
+        "chunk_id": "c3",
+        "content": "Campus hostel mess timing and dinner schedule.",
+        "score": 0.0
+    }
+    assert RAGService.is_chunk_relevant(zero_score_chunk, "summarize big data course") is False
+
+
 def test_flashrank_cross_encoder_reranking():
     from app.modules.retrieval.reranker import get_reranker
     reranker = get_reranker()

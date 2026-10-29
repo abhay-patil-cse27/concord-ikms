@@ -361,6 +361,7 @@ export default function RAGAssistantView() {
                   isStreaming={msg.isStreaming}
                   streamingState={msg.streamingState}
                   model_used={msg.model_used}
+                  corrections={msg.corrections}
                   onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
                   onStop={stop}
                 />

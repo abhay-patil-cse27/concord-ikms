@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Bot, User, Quote, Layers, CheckCircle2 } from 'lucide-react';
+import { Bot, User, Quote, Layers, CheckCircle2, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { BrutalBadge, BrutalButton } from '../brutal';
@@ -24,6 +24,7 @@ export default function MessageBlock({
   isStreaming = false,
   model_used = null,
   streamingState = null,
+  corrections = null,
   onStop,
 }) {
   const isUser = role === 'user';
@@ -162,6 +163,25 @@ export default function MessageBlock({
             isConversational={isConversational}
             onStop={onStop}
           />
+        )}
+
+        {/* Academic Auto-Correction Badge */}
+        {!isUser && corrections && Object.keys(corrections).length > 0 && (
+          <div className="mb-3 px-2.5 py-1.5 bg-brutal-yellow/20 dark:bg-brutal-yellow/10 border-2 border-brutal-black dark:border-brutal-yellow flex items-center gap-2 flex-wrap font-mono text-[11px]">
+            <Sparkles size={13} className="text-brutal-black dark:text-brutal-yellow shrink-0" />
+            <span className="font-bold text-brutal-black dark:text-brutal-white uppercase tracking-wider text-[10px]">
+              Academic Spell-Check:
+            </span>
+            {Object.entries(corrections).map(([orig, corr], i) => (
+              <span key={i} className="inline-flex items-center gap-1">
+                <span className="line-through opacity-60">"{orig}"</span>
+                <span className="text-brutal-black dark:text-brutal-yellow font-black">→</span>
+                <span className="font-black bg-brutal-yellow text-brutal-black px-1.5 py-0.2 border border-brutal-black shadow-[1px_1px_0px_#000]">
+                  "{corr}"
+                </span>
+              </span>
+            ))}
+          </div>
         )}
 
         {/* Message Content */}

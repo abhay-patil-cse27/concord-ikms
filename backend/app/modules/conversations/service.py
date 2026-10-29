@@ -154,8 +154,11 @@ class ConversationService:
         msg_res = await db.execute(msg_stmt)
         existing_messages = list(msg_res.scalars().all())
 
-        # 3. Contextual query rewriting
+        # 3. Contextual query rewriting & Academic typo normalizer
         effective_query = self.contextualize_query(clean_query, existing_messages)
+        from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+        norm_query, _, _ = AcademicQueryNormalizer.normalize_with_metadata(effective_query)
+        effective_query = norm_query or effective_query
 
         # 4. Save User turn
         user_msg = ConversationMessage(
@@ -270,6 +273,10 @@ class ConversationService:
         existing_messages = list(msg_res.scalars().all())
 
         effective_query = self.contextualize_query(clean_query, existing_messages)
+        # Academic Fuzzy Spell-Check and Query Normalization
+        from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+        norm_query, expanded_query, query_corrections = AcademicQueryNormalizer.normalize_with_metadata(effective_query)
+        effective_query = norm_query or effective_query
 
         # 3. Save User turn
         user_msg = ConversationMessage(
@@ -328,7 +335,11 @@ class ConversationService:
             return
 
         # Step 4: Hybrid Search Retrieval
-        yield format_sse_event("status", {"state": "retrieving", "effective_query": effective_query})
+        yield format_sse_event("status", {
+            "state": "retrieving",
+            "effective_query": effective_query,
+            "corrections": query_corrections
+        })
 
         lifecycle_filter = "all" if include_superseded else "active"
         search_res = await self.rag_service.retrieval_service.search(
@@ -344,7 +355,57 @@ class ConversationService:
         evidence_chunks = [item.model_dump() for item in search_res.results]
 
         # Filter out chunks that have zero or negligible relevance to prevent hallucinations & loops
-        relevant_chunks = [c for c in evidence_chunks if (c.get("score") or 0.0) > 0.0001]
+        relevant_chunks = [c for c in evidence_chunks if self.rag_service.is_chunk_relevant(c, effective_query)]
+
+        # Zero-Hallucination Guard: Intercept ungrounded or unmatched queries
+        if not relevant_chunks:
+            import asyncio
+            yield format_sse_event("citations", [])
+            yield format_sse_event("status", {
+                "state": "generating",
+                "corrections": query_corrections
+            })
+
+            clarification = (
+                f"I couldn't find any institutional records, syllabus documents, or academic regulations matching "
+                f"**\"{clean_query}\"** in the Kolhapur Institute of Technology repository.\n\n"
+                f"**Suggested Institutional Inquiries:**\n"
+                f"- **Big Data Analytics (UCSPC0701):** *\"Summarize Big Data Analytics course and course outcomes\"*\n"
+                f"- **Financial Analytics (UCSMM0741):** *\"What are the prerequisites and syllabus of Financial Analytics?\"*\n"
+                f"- **Examination Rules:** *\"What is the minimum attendance requirement and ATKT / passing criteria?\"*\n"
+                f"- **DevOps & Cloud:** *\"What experiments are included in DevOps laboratory?\"*\n\n"
+                f"*Tip: If you typed a typo or course code, please check the spelling or specify your department.*"
+            )
+            for word in clarification.split(" "):
+                yield format_sse_event("token", {"chunk": word + " "})
+                await asyncio.sleep(0.01)
+
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            asst_msg = ConversationMessage(
+                id=str(uuid.uuid4()),
+                conversation_id=conv.id,
+                owner_id=current_user.id,
+                role="assistant",
+                content=clarification,
+                citations=[],
+                confidence="low",
+                model_used="concord:relevance_gate",
+                latency_ms=round(latency_ms, 2)
+            )
+            db.add(asst_msg)
+            await db.commit()
+            await db.refresh(conv)
+
+            yield format_sse_event("done", {
+                "conversation_id": conv.id,
+                "message_id": asst_msg.id,
+                "latency_ms": round(latency_ms, 2),
+                "citations_count": 0,
+                "model_used": "concord:relevance_gate",
+                "corrections": query_corrections,
+                "status": "unmatched_records"
+            })
+            return
 
         # Assemble citations metadata strictly from genuinely relevant evidence
         citations_data = []
@@ -364,7 +425,10 @@ class ConversationService:
 
         # Emit citations before generating tokens
         yield format_sse_event("citations", citations_data)
-        yield format_sse_event("status", {"state": "generating"})
+        yield format_sse_event("status", {
+            "state": "generating",
+            "corrections": query_corrections
+        })
 
         # Step 5: Stream Tokens from LLM
         accumulated_text = ""
@@ -405,6 +469,7 @@ class ConversationService:
             "latency_ms": round(latency_ms, 2),
             "citations_count": len(citations_data),
             "model_used": actual_model_used,
+            "corrections": query_corrections,
             "status": "success"
         })
 

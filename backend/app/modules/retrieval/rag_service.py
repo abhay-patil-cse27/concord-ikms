@@ -1,6 +1,6 @@
 """RAG domain service orchestrating grounded generation with citations."""
 import time
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.identity.models import User
@@ -84,6 +84,38 @@ class RAGService:
         ]
         return any(re.search(pat, q_clean) for pat in patterns)
 
+    @staticmethod
+    def is_chunk_relevant(chunk: Dict[str, Any], query: str) -> bool:
+        """
+        Determines whether an evidence chunk is genuinely relevant to the query.
+        Guards against hallucination by discarding chunks with near-zero relevance.
+        """
+        score = chunk.get("score") or 0.0
+        if score <= 0.001:
+            return False
+        if score >= 0.15:
+            return True
+
+        from app.modules.retrieval.normalizer import STOPWORDS
+        generic_fillers = {
+            "course", "courses", "subject", "subjects", "unit", "units",
+            "semester", "semesters", "paper", "papers", "title", "code",
+            "department", "credits", "curriculum", "syllabus", "student", "students",
+            "kit", "college", "institute", "summary", "summarize", "explain", "overview"
+        }
+        content_lower = chunk.get("content", "").lower()
+        query_tokens = [
+            w.lower().strip("?,!.:;()[]\"'")
+            for w in query.split()
+            if len(w) > 2 and w.lower() not in STOPWORDS
+        ]
+        specific_tokens = [w for w in query_tokens if w not in generic_fillers]
+        target_tokens = specific_tokens if specific_tokens else query_tokens
+
+        if target_tokens and any(t in content_lower for t in target_tokens):
+            return True
+        return False
+
     async def ask(
         self,
         db: AsyncSession,
@@ -153,13 +185,18 @@ class RAGService:
                 retrieval_mode="multi_step_comparative"
             )
 
+        # Step 0c: Academic Fuzzy Spell-Check and Query Normalization
+        from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+        norm_query, expanded_query, query_corrections = AcademicQueryNormalizer.normalize_with_metadata(request.query)
+        effective_query = norm_query or request.query
+
         # Step 1: Execute authorized hybrid search to get verified evidence
         # By default (include_superseded=False), search only active current-policy documents.
         lifecycle_filter = "all" if request.include_superseded else "active"
 
         search_res = await self.retrieval_service.search(
             db=db,
-            query=request.query,
+            query=effective_query,
             current_user=current_user,
             top_k=request.top_k,
             target_department_id=request.department_id,
@@ -168,12 +205,28 @@ class RAGService:
         )
 
         evidence_chunks = [item.model_dump() for item in search_res.results]
-        # Retain only chunks with genuine relevance to query (prevents forcing synthesis on unrelated docs)
-        relevant_chunks = [c for c in evidence_chunks if (c.get("score") or 0.0) > 0.0001]
+        relevant_chunks = [c for c in evidence_chunks if self.is_chunk_relevant(c, effective_query)]
+
+        # Zero-Hallucination Guard: If no evidence is relevant, return clean institutional refusal with suggestions
+        if not relevant_chunks:
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            return RAGAskResponse(
+                query=request.query,
+                answer=(
+                    f"I couldn't find any verified institutional documents or syllabus records matching "
+                    f"\"{request.query}\" in the Kolhapur Institute of Technology repository.\n\n"
+                    f"Please check the course code (e.g. UCSPC0701) or topic name, or consult the relevant department coordinator."
+                ),
+                citations=[],
+                confidence="low",
+                model_used="concord:relevance_gate",
+                latency_ms=round(latency_ms, 2),
+                retrieval_mode="ungrounded_query_interception"
+            )
 
         # Step 2: Delegate generation to LLM provider
         llm_output = await self.llm_provider.generate_grounded_answer(
-            query=request.query,
+            query=effective_query,
             evidence_chunks=relevant_chunks
         )
 

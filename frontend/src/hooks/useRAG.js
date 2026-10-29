@@ -189,9 +189,16 @@ export function useRAG() {
           }
         } else if (chunk.event === 'status') {
           const state = chunk.data?.state;
+          const corrections = chunk.data?.corrections;
           setHistory((prev) =>
             prev.map((msg) =>
-              msg.id === asstMsgId ? { ...msg, streamingState: state } : msg
+              msg.id === asstMsgId
+                ? {
+                    ...msg,
+                    streamingState: state,
+                    corrections: corrections && Object.keys(corrections).length > 0 ? corrections : msg.corrections,
+                  }
+                : msg
             )
           );
         } else if (chunk.event === 'citations') {
@@ -212,9 +219,17 @@ export function useRAG() {
           throw new Error(chunk.data?.message || 'Streaming error encountered');
         } else if (chunk.event === 'done') {
           const actualModel = chunk.data?.model_used || 'system';
+          const corrections = chunk.data?.corrections;
           setHistory((prev) =>
             prev.map((msg) =>
-              msg.id === asstMsgId ? { ...msg, isStreaming: false, model_used: actualModel } : msg
+              msg.id === asstMsgId
+                ? {
+                    ...msg,
+                    isStreaming: false,
+                    model_used: actualModel,
+                    corrections: corrections && Object.keys(corrections).length > 0 ? corrections : msg.corrections,
+                  }
+                : msg
             )
           );
         }
