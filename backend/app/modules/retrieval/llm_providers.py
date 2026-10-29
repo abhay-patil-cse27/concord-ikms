@@ -330,6 +330,55 @@ class GroqCloudLLMProvider(BaseLLMProvider):
             fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
             yield fallback.get("answer", "")
 
+    async def stream_conversational_tokens(
+        self,
+        query: str,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        system_prompt: Optional[str] = None
+    ):
+        """Streams conversational tokens chunk by chunk using Groq Cloud API."""
+        if not self.api_key:
+            res = OfflineFallbackLLMProvider().conversational_synthesize(query)
+            yield res.get("answer", "")
+            return
+
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or CONVERSATIONAL_SYSTEM_PROMPT,
+            user_content=query,
+            temperature=0.6,
+            max_tokens=512,
+            stream=True,
+            conversation_history=conversation_history
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                async with client.stream(
+                    "POST",
+                    self.api_url,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json=payload
+                ) as response:
+                    if response.status_code != 200:
+                        fallback = OfflineFallbackLLMProvider().conversational_synthesize(query)
+                        yield fallback.get("answer", "")
+                        return
+
+                    async for line in response.aiter_lines():
+                        token, is_done = _parse_sse_delta(line)
+                        if is_done:
+                            break
+                        if token:
+                            yield token
+        except Exception as exc:
+            logger.error(f"Groq API conversational streaming failed: {exc}. Falling back.")
+            fallback = OfflineFallbackLLMProvider().conversational_synthesize(query)
+            yield fallback.get("answer", "")
+
 
 class LocalLLMProvider(BaseLLMProvider):
     """
@@ -496,6 +545,47 @@ class LocalLLMProvider(BaseLLMProvider):
         except Exception as exc:
             logger.error(f"Local LLM node streaming failed: {exc}. Falling back to non-streaming synthesizer.")
             fallback = OfflineFallbackLLMProvider().synthesize(query, evidence_chunks, citations_metadata)
+            yield fallback.get("answer", "")
+
+    async def stream_conversational_tokens(
+        self,
+        query: str,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        system_prompt: Optional[str] = None
+    ):
+        """Streams conversational tokens chunk by chunk from local inference node."""
+        payload = _build_chat_payload(
+            model=self.model,
+            system_prompt=system_prompt or CONVERSATIONAL_SYSTEM_PROMPT,
+            user_content=query,
+            temperature=0.6,
+            max_tokens=512,
+            stream=True,
+            conversation_history=conversation_history
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                async with client.stream(
+                    "POST",
+                    self.endpoint,
+                    headers=self._get_headers(),
+                    json=payload
+                ) as response:
+                    if response.status_code != 200:
+                        fallback = OfflineFallbackLLMProvider().conversational_synthesize(query)
+                        yield fallback.get("answer", "")
+                        return
+
+                    async for line in response.aiter_lines():
+                        token, is_done = _parse_sse_delta(line)
+                        if is_done:
+                            break
+                        if token:
+                            yield token
+        except Exception as exc:
+            logger.error(f"Local LLM node conversational streaming failed: {exc}. Falling back.")
+            fallback = OfflineFallbackLLMProvider().conversational_synthesize(query)
             yield fallback.get("answer", "")
 
 

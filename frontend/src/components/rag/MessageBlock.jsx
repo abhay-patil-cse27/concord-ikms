@@ -8,6 +8,7 @@ import { cn } from '../../lib/utils';
 import { variants } from '../../motion/presets';
 import AnswerFeedback from './AnswerFeedback';
 import SpeechPlaybackButton from './SpeechPlaybackButton';
+import ThinkingIndicator from './ThinkingIndicator';
 
 /**
  * MessageBlock
@@ -22,6 +23,7 @@ export default function MessageBlock({
   onOpenCitation,
   isStreaming = false,
   model_used = null,
+  streamingState = null,
 }) {
   const isUser = role === 'user';
 
@@ -86,9 +88,14 @@ export default function MessageBlock({
     ),
   };
 
+  const hasContent = Boolean(content && content.trim().length > 0);
+  const isConversational = model_used?.includes('conversational') || streamingState === 'conversational' || (!citations?.length && hasContent);
+
   return (
     <motion.div
-      variants={variants.staggerItem}
+      initial={{ opacity: 0, y: 14, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         'w-full flex flex-col',
         isUser ? 'items-end' : 'items-start'
@@ -128,7 +135,7 @@ export default function MessageBlock({
           </div>
 
           <div className="flex items-center gap-2">
-            {!isUser && !isStreaming && content && (
+            {!isUser && !isStreaming && hasContent && (
               <SpeechPlaybackButton content={content} />
             )}
             {timestamp && (
@@ -145,6 +152,16 @@ export default function MessageBlock({
           </div>
         </div>
 
+        {/* Claude-style Integrated Thinking / Reasoning Block for Assistant */}
+        {!isUser && (isStreaming || streamingState) && (
+          <ThinkingIndicator
+            isStreaming={isStreaming}
+            hasContent={hasContent}
+            streamingState={streamingState}
+            isConversational={isConversational}
+          />
+        )}
+
         {/* Message Content */}
         <div className="font-sans text-xs sm:text-sm select-text">
           {isUser ? (
@@ -153,9 +170,11 @@ export default function MessageBlock({
             </div>
           ) : (
             <div className="markdown-body">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={renderers}>
-                {content}
-              </ReactMarkdown>
+              {hasContent && (
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={renderers}>
+                  {content}
+                </ReactMarkdown>
+              )}
               {isStreaming && (
                 <span className="inline-block w-2 h-4 ml-1 bg-brutal-yellow border border-brutal-black animate-pulse align-middle" />
               )}
@@ -163,8 +182,8 @@ export default function MessageBlock({
           )}
         </div>
 
-        {/* Citations Footer for Assistant responses */}
-        {!isUser && citations && citations.length > 0 && (
+        {/* Citations Footer for Assistant responses (Only displayed when content exists) */}
+        {!isUser && citations && citations.length > 0 && hasContent && (
           <div className="mt-3 pt-2.5 border-t-2 border-brutal-black/10 dark:border-brutal-yellow/10 flex items-center gap-2 flex-wrap">
             <span className="font-mono text-[10px] font-black uppercase text-brutal-muted dark:text-brutal-muted-dark">
               Verified Evidence:
@@ -184,7 +203,7 @@ export default function MessageBlock({
         )}
 
         {/* Operational Feedback Loop (👍 / 👎 / Inaccuracy Flagging) */}
-        {!isUser && !isStreaming && content && <AnswerFeedback content={content} />}
+        {!isUser && !isStreaming && hasContent && <AnswerFeedback content={content} />}
       </div>
     </motion.div>
   );

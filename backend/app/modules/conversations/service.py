@@ -282,6 +282,51 @@ class ConversationService:
         db.add(user_msg)
         await db.flush()
 
+        # Step 3.5: Conversational / Small-talk Interceptor (Zero Hallucination / Zero Citations)
+        if self.rag_service.is_conversational_query(clean_query):
+            yield format_sse_event("status", {"state": "conversational", "effective_query": clean_query})
+            yield format_sse_event("citations", [])
+
+            accumulated_text = ""
+            llm = self.rag_service.llm_provider
+            conv_history = [{"role": m.role, "content": m.content} for m in existing_messages[-4:]]
+
+            async for token in llm.stream_conversational_tokens(clean_query, conversation_history=conv_history):
+                accumulated_text += token
+                yield format_sse_event("token", {"chunk": token})
+
+            safe_answer = PromptGuard.sanitize_output(accumulated_text.strip())
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+
+            is_local = "local" in llm.__class__.__name__.lower()
+            model_name = getattr(llm, 'model', 'default')
+            actual_model_used = f"local:{model_name}" if is_local else f"groq:{model_name}"
+
+            asst_msg = ConversationMessage(
+                id=str(uuid.uuid4()),
+                conversation_id=conv.id,
+                owner_id=current_user.id,
+                role="assistant",
+                content=safe_answer,
+                citations=[],
+                confidence="high",
+                model_used=actual_model_used,
+                latency_ms=round(latency_ms, 2)
+            )
+            db.add(asst_msg)
+            await db.commit()
+            await db.refresh(conv)
+
+            yield format_sse_event("done", {
+                "conversation_id": conv.id,
+                "message_id": asst_msg.id,
+                "latency_ms": round(latency_ms, 2),
+                "citations_count": 0,
+                "model_used": actual_model_used,
+                "status": "success"
+            })
+            return
+
         # Step 4: Hybrid Search Retrieval
         yield format_sse_event("status", {"state": "retrieving", "effective_query": effective_query})
 

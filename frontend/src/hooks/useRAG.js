@@ -112,6 +112,8 @@ export function useRAG() {
     const q = customQuery !== null ? customQuery : query;
     if (!q || !q.trim()) return;
 
+    // Immediately clear query so composer clears on Enter/Send without delay
+    setQuery('');
     setLoading(true);
     setError(null);
 
@@ -136,6 +138,7 @@ export function useRAG() {
         confidence: 'high',
         model_used: 'groq:streaming',
         isStreaming: true,
+        streamingState: 'thinking',
         timestamp: nowStr,
       },
     ]);
@@ -160,6 +163,13 @@ export function useRAG() {
             setActiveConversationId(convId);
             loadConversations();
           }
+        } else if (chunk.event === 'status') {
+          const state = chunk.data?.state;
+          setHistory((prev) =>
+            prev.map((msg) =>
+              msg.id === asstMsgId ? { ...msg, streamingState: state } : msg
+            )
+          );
         } else if (chunk.event === 'citations') {
           receivedCitations = Array.isArray(chunk.data) ? chunk.data : [];
           setHistory((prev) =>

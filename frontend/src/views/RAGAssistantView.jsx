@@ -8,7 +8,6 @@ import SuggestedPrompts from '../components/rag/SuggestedPrompts';
 import MessageBlock from '../components/rag/MessageBlock';
 import Composer from '../components/rag/Composer';
 import CitationDrawer from '../components/rag/CitationDrawer';
-import ThinkingIndicator from '../components/rag/ThinkingIndicator';
 import { BrutalToast } from '../components/brutal';
 import { exportThreadToMarkdown } from '../lib/exportThread';
 import { exportAcademicDossierHTML } from '../utils/htmlDossierExporter';
@@ -165,12 +164,14 @@ export default function RAGAssistantView() {
   };
 
   const handleSend = () => {
-    if (!query.trim() || loading) return;
+    const q = query.trim();
+    if (!q || loading) return;
     if (isListening && recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch (e) {}
       setIsListening(false);
     }
-    ask(query.trim());
+    setQuery('');
+    ask(q);
   };
 
   const handleOpenCitation = (citIndex, citationsList = []) => {
@@ -332,28 +333,26 @@ export default function RAGAssistantView() {
           {history.length === 0 ? (
             <SuggestedPrompts
               onSelectPrompt={(text) => {
-                setQuery(text);
+                setQuery('');
                 ask(text);
               }}
             />
           ) : (
-            history.map((msg, idx) => (
-              <MessageBlock
-                key={idx}
-                role={msg.role}
-                content={msg.content}
-                timestamp={msg.timestamp}
-                citations={msg.citations}
-                isStreaming={msg.isStreaming}
-                model_used={msg.model_used}
-                onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
-              />
-            ))
-          )}
-
-          {/* Dynamic Academic Thinking Indicator (active before tokens stream) */}
-          {loading && !history.some((m) => m.role === 'assistant' && m.isStreaming && m.content) && (
-            <ThinkingIndicator />
+            <AnimatePresence initial={false}>
+              {history.map((msg, idx) => (
+                <MessageBlock
+                  key={msg.id || idx}
+                  role={msg.role}
+                  content={msg.content}
+                  timestamp={msg.timestamp}
+                  citations={msg.citations}
+                  isStreaming={msg.isStreaming}
+                  streamingState={msg.streamingState}
+                  model_used={msg.model_used}
+                  onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
+                />
+              ))}
+            </AnimatePresence>
           )}
 
           {/* Error Message */}

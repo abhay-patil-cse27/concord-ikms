@@ -34,31 +34,50 @@ class RAGService:
     def is_conversational_query(self, query: str) -> bool:
         """
         Classifies whether user query is a greeting, pleasantry, or general AI assistant capability query.
-        If true, the system responds naturally and warmly without querying the vector index.
+        If true, the system responds naturally and warmly without querying the vector index or emitting citations.
         """
         import re
         q = query.strip().lower()
+        q_clean = re.sub(r'^[^\w]+|[^\w]+$', '', q)
 
-        # Direct short match or regex patterns
-        exact_phrases = {
-            "hi", "hello", "hey", "hola", "namaste", "good morning", "good afternoon",
-            "good evening", "how are you", "who are you", "what can you do", "help",
-            "what is your name", "who made you", "thank you", "thanks", "bye", "goodbye"
+        # Guard: If query contains explicit institutional academic keywords, route directly to RAG
+        academic_keywords = {
+            "syllabus", "attendance", "curriculum", "regulation", "circular", "exam", "examination",
+            "grade", "grading", "fee", "admission", "credit", "course", "ordinance", "department",
+            "policy", "rule", "passing", "hall ticket", "revaluation", "criteria", "cgpa", "sgpa"
         }
-        if q in exact_phrases or q.rstrip("?.!") in exact_phrases:
+        words = set(re.findall(r'\b\w+\b', q_clean))
+        if words & academic_keywords:
+            return False
+
+        # Direct exact matches & conversational phrases (with punctuation stripped)
+        exact_phrases = {
+            "hi", "hii", "hiii", "hello", "helloo", "hellooo", "hey", "heyy", "heyyy",
+            "hallo", "hallooo", "hola", "namaste", "howdy", "yo", "sup", "greetings",
+            "good morning", "good afternoon", "good evening", "good night",
+            "how are you", "how are you doing", "how r u", "what's up", "whats up",
+            "who are you", "what are you", "who made you", "what is your name", "who r u",
+            "what can you do", "what do you do", "how can you help", "how do you help",
+            "help", "help me", "can you help me", "tell me about yourself",
+            "what is concord", "what is ikms", "about you",
+            "thank you", "thanks", "thanks a lot", "thx", "bye", "goodbye", "cya",
+            "ok", "okay", "cool", "nice", "awesome", "great"
+        }
+        if q in exact_phrases or q_clean in exact_phrases:
             return True
 
-        # Regex patterns for greetings or self-introduction inquiries
+        # Regex patterns for greetings (supports repeated letters like hiii, heyyy, hallooo) and identity questions
         patterns = [
-            r"^(hi|hello|hey|greetings|howdy)\b",
-            r"^who are you\b",
-            r"^what can you (do|help with)\b",
+            r"^(h+i+|h+e+y+|h+e+l+l+o+|h+a+l+l+o+|howdy|greetings|yo+|sup)\b",
+            r"^(who|what) (are|r) you\b",
+            r"^what (can|do) you (do|help with)\b",
             r"^how (can|do) you help\b",
-            r"^tell me about yourself\b",
-            r"^what is concord\b",
-            r"^(thanks|thank you)\b"
+            r"^(tell me|explain) (about yourself|who you are)\b",
+            r"^what is (concord|ikms)\b",
+            r"^(thanks|thank you|thx)\b",
+            r"^(help me|can you help)\b"
         ]
-        return any(re.search(pat, q) for pat in patterns)
+        return any(re.search(pat, q_clean) for pat in patterns)
 
     async def ask(
         self,
