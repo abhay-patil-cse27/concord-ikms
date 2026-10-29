@@ -343,9 +343,12 @@ class ConversationService:
 
         evidence_chunks = [item.model_dump() for item in search_res.results]
 
-        # Assemble citations metadata
+        # Filter out chunks that have zero or negligible relevance to prevent hallucinations & loops
+        relevant_chunks = [c for c in evidence_chunks if (c.get("score") or 0.0) > 0.0001]
+
+        # Assemble citations metadata strictly from genuinely relevant evidence
         citations_data = []
-        for idx, chunk in enumerate(evidence_chunks, start=1):
+        for idx, chunk in enumerate(relevant_chunks, start=1):
             citations_data.append({
                 "citation_index": idx,
                 "chunk_id": chunk.get("chunk_id"),
@@ -366,7 +369,7 @@ class ConversationService:
         # Step 5: Stream Tokens from LLM
         accumulated_text = ""
         llm = self.rag_service.llm_provider
-        async for token in llm.stream_grounded_tokens(effective_query, evidence_chunks):
+        async for token in llm.stream_grounded_tokens(effective_query, relevant_chunks):
             accumulated_text += token
             yield format_sse_event("token", {"chunk": token})
 

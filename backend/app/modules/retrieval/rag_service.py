@@ -60,6 +60,8 @@ class RAGService:
             "what can you do", "what do you do", "how can you help", "how do you help",
             "help", "help me", "can you help me", "tell me about yourself",
             "what is concord", "what is ikms", "about you",
+            "what", "why", "whyy", "whyyy", "whyyyy", "whaaaaat", "huh", "wait what",
+            "which llm", "what model", "which model", "which llm you are using", "which llm younare using",
             "thank you", "thanks", "thanks a lot", "thx", "bye", "goodbye", "cya",
             "ok", "okay", "cool", "nice", "awesome", "great"
         }
@@ -75,7 +77,10 @@ class RAGService:
             r"^(tell me|explain) (about yourself|who you are)\b",
             r"^what is (concord|ikms)\b",
             r"^(thanks|thank you|thx)\b",
-            r"^(help me|can you help)\b"
+            r"^(help me|can you help)\b",
+            r"^(w+h+a+t+|w+h+y+|h+u+h+)\b",
+            r"\b(which|what)\s+(llm|model)\b",
+            r"\b(are you)\s+(an?\s+)?(ai|llm|robot|bot)\b"
         ]
         return any(re.search(pat, q_clean) for pat in patterns)
 
@@ -163,11 +168,13 @@ class RAGService:
         )
 
         evidence_chunks = [item.model_dump() for item in search_res.results]
+        # Retain only chunks with genuine relevance to query (prevents forcing synthesis on unrelated docs)
+        relevant_chunks = [c for c in evidence_chunks if (c.get("score") or 0.0) > 0.0001]
 
         # Step 2: Delegate generation to LLM provider
         llm_output = await self.llm_provider.generate_grounded_answer(
             query=request.query,
-            evidence_chunks=evidence_chunks
+            evidence_chunks=relevant_chunks
         )
 
         latency_ms = (time.perf_counter() - start_time) * 1000.0

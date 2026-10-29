@@ -202,10 +202,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  askConversationalStream: (payload) =>
+  askConversationalStream: (payload, options = {}) =>
     consumeSSE('/api/v1/conversations/ask-stream', {
       method: 'POST',
       body: JSON.stringify(payload),
+      signal: options.signal,
     }),
 
   // Operational Feedback & Hallucination Reporting

@@ -24,6 +24,7 @@ export default function MessageBlock({
   isStreaming = false,
   model_used = null,
   streamingState = null,
+  onStop,
 }) {
   const isUser = role === 'user';
 
@@ -159,6 +160,7 @@ export default function MessageBlock({
             hasContent={hasContent}
             streamingState={streamingState}
             isConversational={isConversational}
+            onStop={onStop}
           />
         )}
 

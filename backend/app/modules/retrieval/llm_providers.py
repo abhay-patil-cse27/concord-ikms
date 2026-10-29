@@ -85,12 +85,14 @@ def _build_chat_payload(
     model: str,
     system_prompt: str,
     user_content: str,
-    temperature: float = 0.1,
+    temperature: float = 0.2,
     max_tokens: int = 1024,
     stream: bool = False,
-    conversation_history: Optional[List[Dict[str, str]]] = None
+    conversation_history: Optional[List[Dict[str, str]]] = None,
+    presence_penalty: float = 0.3,
+    frequency_penalty: float = 0.4
 ) -> Dict[str, Any]:
-    """Constructs a standard OpenAI-compatible chat completion payload."""
+    """Constructs a standard OpenAI-compatible chat completion payload with anti-repetition penalties."""
     messages = [{"role": "system", "content": system_prompt}]
     if conversation_history:
         for msg in conversation_history[-4:]:
@@ -103,10 +105,23 @@ def _build_chat_payload(
         "temperature": temperature,
         "max_tokens": max_tokens,
         "top_p": 0.9,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty,
     }
     if stream:
         payload["stream"] = True
     return payload
+
+
+def _has_repetition_loop(text: str) -> bool:
+    """Detects if an LLM has entered a degenerate infinite repetition loop."""
+    if len(text) < 140:
+        return False
+    # Check if the last 40-50 characters have repeated 3 or more times
+    tail = text[-50:].strip()
+    if len(tail) >= 30 and text.count(tail) >= 3:
+        return True
+    return False
 
 
 def _clean_llm_response(text: str) -> str:
@@ -319,11 +334,16 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                         yield fallback.get("answer", "")
                         return
 
+                    accumulated_stream = ""
                     async for line in response.aiter_lines():
                         token, is_done = _parse_sse_delta(line)
                         if is_done:
                             break
                         if token:
+                            accumulated_stream += token
+                            if _has_repetition_loop(accumulated_stream):
+                                logger.warning("Repetition loop detected in Groq grounded stream; halting.")
+                                break
                             yield token
         except Exception as exc:
             logger.error(f"Groq API streaming failed: {exc}. Falling back to non-streaming fallback.")
@@ -368,11 +388,16 @@ class GroqCloudLLMProvider(BaseLLMProvider):
                         yield fallback.get("answer", "")
                         return
 
+                    accumulated_conv = ""
                     async for line in response.aiter_lines():
                         token, is_done = _parse_sse_delta(line)
                         if is_done:
                             break
                         if token:
+                            accumulated_conv += token
+                            if _has_repetition_loop(accumulated_conv):
+                                logger.warning("Repetition loop detected in Groq conversational stream; halting.")
+                                break
                             yield token
         except Exception as exc:
             logger.error(f"Groq API conversational streaming failed: {exc}. Falling back.")
@@ -536,11 +561,16 @@ class LocalLLMProvider(BaseLLMProvider):
                         yield fallback.get("answer", "")
                         return
 
+                    accumulated_stream = ""
                     async for line in response.aiter_lines():
                         token, is_done = _parse_sse_delta(line)
                         if is_done:
                             break
                         if token:
+                            accumulated_stream += token
+                            if _has_repetition_loop(accumulated_stream):
+                                logger.warning("Repetition loop detected in Local LLM grounded stream; halting.")
+                                break
                             yield token
         except Exception as exc:
             logger.error(f"Local LLM node streaming failed: {exc}. Falling back to non-streaming synthesizer.")
@@ -577,11 +607,16 @@ class LocalLLMProvider(BaseLLMProvider):
                         yield fallback.get("answer", "")
                         return
 
+                    accumulated_conv = ""
                     async for line in response.aiter_lines():
                         token, is_done = _parse_sse_delta(line)
                         if is_done:
                             break
                         if token:
+                            accumulated_conv += token
+                            if _has_repetition_loop(accumulated_conv):
+                                logger.warning("Repetition loop detected in Local LLM conversational stream; halting.")
+                                break
                             yield token
         except Exception as exc:
             logger.error(f"Local LLM node conversational streaming failed: {exc}. Falling back.")

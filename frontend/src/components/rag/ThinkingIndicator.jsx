@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Check, ChevronDown, ChevronRight, Layers, Cpu } from 'lucide-react';
+import { Sparkles, Check, ChevronDown, ChevronRight, Layers, Cpu, Square } from 'lucide-react';
 import { getShuffledThinkingVerbs } from '../../constants/thinkingVerbs';
 
 /**
@@ -14,6 +14,7 @@ export default function ThinkingIndicator({
   hasContent = false,
   streamingState = 'thinking',
   isConversational = false,
+  onStop,
 }) {
   const [verbs] = useState(() => getShuffledThinkingVerbs());
   const [verbIndex, setVerbIndex] = useState(0);
@@ -96,9 +97,32 @@ export default function ThinkingIndicator({
           </span>
         </div>
 
-        <div className="flex items-center gap-1 text-brutal-muted dark:text-brutal-muted-dark font-mono text-[10px]">
-          <span>{isExpanded ? 'Hide' : 'Inspect'}</span>
-          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <div className="flex items-center gap-2">
+          {isStreaming && onStop && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onStop();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  onStop();
+                }
+              }}
+              className="px-2 py-0.5 border border-brutal-accent bg-brutal-accent text-brutal-black hover:bg-brutal-black hover:text-brutal-accent font-mono text-[10px] font-black uppercase flex items-center gap-1 transition-colors cursor-pointer"
+              title="Stop generation (Esc)"
+            >
+              <Square size={9} className="fill-current" />
+              <span>Stop</span>
+            </span>
+          )}
+          <div className="flex items-center gap-1 text-brutal-muted dark:text-brutal-muted-dark font-mono text-[10px]">
+            <span>{isExpanded ? 'Hide' : 'Inspect'}</span>
+            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </div>
         </div>
       </button>
 

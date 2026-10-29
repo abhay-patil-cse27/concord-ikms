@@ -33,6 +33,7 @@ export default function RAGAssistantView() {
     createNewSession,
     deleteSession,
     ask,
+    stop,
     clear,
   } = useRAG();
 
@@ -80,6 +81,17 @@ export default function RAGAssistantView() {
   useEffect(() => {
     createNewSession();
   }, [user?.id, createNewSession]);
+
+  // Global Escape key listener to stop ongoing stream generation
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === 'Escape' && loading) {
+        stop();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [loading, stop]);
 
   // Toast notifications for unauthorized 404 / 403 or server errors
   useEffect(() => {
@@ -350,6 +362,7 @@ export default function RAGAssistantView() {
                   streamingState={msg.streamingState}
                   model_used={msg.model_used}
                   onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
+                  onStop={stop}
                 />
               ))}
             </AnimatePresence>
@@ -374,6 +387,7 @@ export default function RAGAssistantView() {
           isListening={isListening}
           speechSupported={speechSupported}
           onToggleSpeech={handleToggleSpeech}
+          onStop={stop}
         />
       </div>
 

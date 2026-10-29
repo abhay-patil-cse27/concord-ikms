@@ -1,12 +1,12 @@
 import React from 'react';
-import { Send, Mic, MicOff, RefreshCw } from 'lucide-react';
+import { Send, Mic, MicOff, Square } from 'lucide-react';
 import { BrutalButton } from '../brutal';
 import { cn } from '../../lib/utils';
 
 /**
  * Composer
- * Rectangular pinned chat input bar supporting keyboard shortcuts (Enter to send, Shift+Enter for newline)
- * and speech recognition toggles.
+ * Rectangular pinned chat input bar supporting keyboard shortcuts (Enter to send, Shift+Enter for newline, Esc to stop)
+ * and speech recognition toggles with a dedicated Stop Generation control.
  */
 export default function Composer({
   query,
@@ -16,8 +16,14 @@ export default function Composer({
   isListening = false,
   speechSupported = false,
   onToggleSpeech,
+  onStop,
 }) {
   const handleKeyDown = (e) => {
+    if (e.key === 'Escape' && loading && onStop) {
+      e.preventDefault();
+      onStop();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!loading && query.trim()) {
@@ -40,6 +46,8 @@ export default function Composer({
             placeholder={
               isListening
                 ? 'Listening... speak your institutional inquiry...'
+                : loading
+                ? 'CONCORD is synthesizing institutional reasoning (Press Esc or click Stop)...'
                 : 'Inquire regarding academic regulations, circulars, or syllabi (Press Enter to send)...'
             }
             rows={2}
@@ -47,7 +55,7 @@ export default function Composer({
           />
 
           <div className="flex items-center justify-between pt-1 border-t border-brutal-black/10 dark:border-brutal-yellow/10 font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark">
-            <span>Shift + Enter for new line</span>
+            <span>{loading ? 'Press Esc to stop generation' : 'Shift + Enter for new line'}</span>
             {isListening && (
               <span className="text-brutal-accent font-bold animate-pulse">
                 Recording Active
@@ -56,7 +64,7 @@ export default function Composer({
           </div>
         </div>
 
-        {/* Action Controls: Mic & Send Button */}
+        {/* Action Controls: Mic, Stop & Send Button */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {speechSupported && (
             <BrutalButton
@@ -72,18 +80,32 @@ export default function Composer({
             </BrutalButton>
           )}
 
-          <BrutalButton
-            type="button"
-            variant="primary"
-            size="md"
-            onClick={onSend}
-            disabled={loading || !query.trim()}
-            loading={loading}
-            className="px-5 py-3 shadow-brutal flex items-center gap-2 font-black uppercase text-xs"
-          >
-            <span>Send</span>
-            <Send size={15} strokeWidth={2.5} />
-          </BrutalButton>
+          {loading ? (
+            <BrutalButton
+              type="button"
+              variant="danger"
+              size="md"
+              onClick={onStop}
+              title="Stop generation (Esc)"
+              aria-label="Stop generation"
+              className="px-5 py-3 shadow-brutal flex items-center gap-2 font-black uppercase text-xs animate-pulse hover:animate-none"
+            >
+              <span>Stop</span>
+              <Square size={13} className="fill-current" />
+            </BrutalButton>
+          ) : (
+            <BrutalButton
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={onSend}
+              disabled={loading || !query.trim()}
+              className="px-5 py-3 shadow-brutal flex items-center gap-2 font-black uppercase text-xs"
+            >
+              <span>Send</span>
+              <Send size={15} strokeWidth={2.5} />
+            </BrutalButton>
+          )}
         </div>
 
       </div>

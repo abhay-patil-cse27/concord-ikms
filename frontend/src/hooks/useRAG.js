@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { api } from '../api/client';
 import { uiCache } from '../utils/uiCache';
 
@@ -13,6 +13,7 @@ export function useRAG() {
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(cached.activeConversationId || null);
   const [convLoading, setConvLoading] = useState(false);
+  const abortControllerRef = useRef(null);
 
   // Sync to cache on updates
   useEffect(() => {
@@ -108,9 +109,29 @@ export function useRAG() {
     }
   }, [activeConversationId, createNewSession, loadConversations]);
 
+  const stop = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+    setHistory((prev) =>
+      prev.map((msg) =>
+        msg.isStreaming ? { ...msg, isStreaming: false } : msg
+      )
+    );
+  }, []);
+
   const ask = useCallback(async (customQuery = null, options = {}) => {
     const q = customQuery !== null ? customQuery : query;
     if (!q || !q.trim()) return;
+
+    // Abort any ongoing stream before starting new request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     // Immediately clear query so composer clears on Enter/Send without delay
     setQuery('');
@@ -148,13 +169,16 @@ export function useRAG() {
       let receivedCitations = [];
       let convId = activeConversationId;
 
-      const streamGen = api.askConversationalStream({
-        query: q.trim(),
-        conversation_id: activeConversationId,
-        department_id: options.departmentId || null,
-        top_k: options.topK || 5,
-        include_superseded: options.includeSuperseded || false,
-      });
+      const streamGen = api.askConversationalStream(
+        {
+          query: q.trim(),
+          conversation_id: activeConversationId,
+          department_id: options.departmentId || null,
+          top_k: options.topK || 5,
+          include_superseded: options.includeSuperseded || false,
+        },
+        { signal: controller.signal }
+      );
 
       for await (const chunk of streamGen) {
         if (chunk.event === 'session' && chunk.data?.conversation_id) {
@@ -205,6 +229,14 @@ export function useRAG() {
       });
       return { answer: accumulatedContent, citations: receivedCitations };
     } catch (streamErr) {
+      if (controller.signal.aborted || streamErr.name === 'AbortError') {
+        // Stream aborted by user via stop button: preserve current partial answer
+        setHistory((prev) =>
+          prev.map((m) => (m.id === asstMsgId ? { ...m, isStreaming: false } : m))
+        );
+        return;
+      }
+
       console.warn('Real-time SSE stream failed, falling back to synchronous pipeline:', streamErr);
       // Fallback: Remove placeholder assistant slot and run standard non-streaming ask
       setHistory((prev) => prev.filter((m) => m.id !== asstMsgId));
@@ -267,6 +299,7 @@ export function useRAG() {
     deleteSession,
     loadConversations,
     ask,
+    stop,
     clear,
   };
 }
