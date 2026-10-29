@@ -265,6 +265,52 @@
   - [x] Built Yellow-Brutalist `Dual-Mode LLM Engine Controller` in `DashboardView.jsx` with segmented toggle, node URL input, model tag picker, and live latency health beacon.
 - [x] **Step 11.4: Automated Test Suite & Production Build Verification:**
   - [x] Authored `backend/tests/test_llm_providers.py` covering modular helpers, offline resilience, hot-swapping, and security RBAC guards.
-  - [x] Verified full suite: 93/93 automated tests passing (84 backend + 9 frontend).
+  - [x] Verified full suite: **94 automated test scenarios passing** (85 backend + 9 frontend, 100% green).
   - [x] Verified clean production build (`vite build` passing with zero warnings).
+- [x] **Step 11.5: Conversational Zero-Citation Routing & Small Model Resilience:**
+  - [x] Implemented conversational pattern router for greetings ("hi", "hello", "namaste"), identity queries ("who are you"), and confusion expressions ("whyyyyy", "help me") short-circuiting to conversational synthesizers with zero citations (`citations: []`).
+  - [x] Implemented zero-score candidate chunk filtering (`score > 0.0001`) preventing ungrounded syllabus chunks from leaking into casual queries.
+  - [x] Integrated anti-repetition generation parameters (`presence_penalty: 0.3`, `frequency_penalty: 0.4`) and stream substring loop detection (`_has_repetition_loop`) preventing quantized local models from looping endlessly.
+- [x] **Step 11.6: Claude-Style Progressive Thinking & Interactive Stop Controls:**
+  - [x] Unified thinking and response rendering into a single assistant message card inside `MessageBlock.jsx`.
+  - [x] Interactive Claude-style progressive thinking accordion displaying rotating academic verbs, verification steps, and auto-collapsing into an expandable `[⚡ Thought Process (X steps) ▾]` tray.
+  - [x] Red Brutalist `[STOP ⏹]` button in both message header and chat composer, backed by `AbortController` cancellation in `useRAG` custom hook and keyboard shortcut (`Escape`).
+  - [x] Synchronous composer input clearing on submission.
+  - [x] Replacement of legacy native browser alerts (`window.alert`, `window.confirm`) with reusable Yellow Brutalist `BrutalToast` and `BrutalModal`.
+
+## Milestone 12: User Onboarding & 2-Tier Institutional Approval Queue (Planned Blueprint)
+- [ ] **Step 12.1: Pre-Seeded Institutional Department Architecture:**
+  - [ ] Expand database schema and seeding across 10 official KIT departments:
+    1. Computer Science & Engineering (B.Tech CSE, M.Tech Data Science)
+    2. Computer Science & Engineering - AI & Machine Learning (B.Tech AIML)
+    3. Computer Science & Engineering - Data Science (B.Tech DS)
+    4. Electronics & Telecommunication Engineering (B.Tech ENTC, M.Tech Embedded)
+    5. Electrical Engineering (B.Tech EE)
+    6. Mechanical Engineering (B.Tech ME)
+    7. Civil & Environmental Engineering (B.Tech CE)
+    8. Biotechnology (B.Tech BT)
+    9. Basic Sciences & Humanities (FY B.Tech Physics, Chemistry, Mathematics)
+    10. Academic Examination & Autonomous Cell (Institute Regulations)
+- [ ] **Step 12.2: Public Self-Registration Portal (`/register`):**
+  - [ ] Multi-step Yellow Brutalist registration form with role selection (`Student`, `Faculty`, `Department Admin`).
+  - [ ] Dynamic department and degree program pickers bound to active institutional records.
+  - [ ] Strict input validation: PRN (10-digit), Employee ID, institutional email (`@kitcoek.in` / `@concord.kit.edu`), and password complexity.
+  - [ ] Account created in `pending_approval` state with inactive JWT authentication guard.
+- [ ] **Step 12.3: 2-Tier Hierarchy Approval Workflow:**
+  - [ ] Tier 1 (Department Level): HOD / Department Admin approves Students and Faculty within their department (`POST /api/v1/governance/users/{id}/approve-tier1`).
+  - [ ] Tier 2 (Platform Level): Platform Admin (Registrar / Dean Academics) approves new HODs and grants cross-institutional oversight (`POST /api/v1/governance/users/{id}/approve-tier2`).
+  - [ ] Rejection and feedback reason recording with audit ledger events.
+- [ ] **Step 12.4: Admin & HOD Approval Queue UI:**
+  - [ ] Yellow Brutalist `UserApprovalQueueView.jsx` with tabbed filtering (`All`, `Students`, `Faculty`, `HODs`).
+  - [ ] One-click Approve / Reject with confirmation modal and feedback notes.
+  - [ ] Role-restricted visibility: HOD sees only their department applicants; Platform Admin sees global applicants.
+
+## Milestone 13: Declarative Jenkins CI/CD Pipeline (Planned Blueprint)
+- [ ] **Step 13.1: Declarative Jenkinsfile:**
+  - [ ] Multi-stage pipeline: Checkout → Lint & Security Scan → Backend Pytest (85 tests) → Frontend Unit Tests (9 tests) → Vite Production Build → Docker Build & Container Vulnerability Scan → Staging Deployment.
+- [ ] **Step 13.2: Quality Gates & Test Artifact Archival:**
+  - [ ] JUnit XML test result reporting (`pytest --junitxml=reports/junit.xml`).
+  - [ ] Coverage threshold gating (minimum 85% coverage).
+  - [ ] Security audit gate (pip-audit / safety for Python, npm audit for frontend).
+
 

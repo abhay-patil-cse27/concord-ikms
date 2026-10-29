@@ -12,13 +12,13 @@
 | Specification | Document | Core Focus & Coverage |
 | :--- | :--- | :--- |
 | **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`). |
-| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, and full security hardening (82 tests). |
+| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, and security hardening (94 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
 | **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
 | **Engineering Roadmap** | [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md) | Phased milestones, design goals, and core system differentiation. |
-| **Implementation Backlog** | [docs/architecture/BACKLOG.md](docs/architecture/BACKLOG.md) | Granular implementation status for Milestones 0 to 8. |
-| **Architectural Decisions** | [docs/decisions/](docs/decisions/) | ADR-0001 (Modular Monolith) through ADR-0009 (Full System Security Hardening: SQLi, NoSQLi, Path Traversal, ASVS Headers). |
+| **Implementation Backlog** | [docs/architecture/BACKLOG.md](docs/architecture/BACKLOG.md) | Granular implementation status for Milestones 0 to 11 and blueprints for 12 & 13. |
+| **Architectural Decisions** | [docs/decisions/](docs/decisions/) | ADR-0001 (Modular Monolith) through ADR-0011 (Conversational Zero-Citation Routing, Relevance Gating & Loop Breakers). |
 
 ---
 
@@ -200,7 +200,8 @@ cd frontend && npm test
 
 > For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
 
-- **Test Coverage Includes (80 Backend + 9 Frontend = 89 Test Scenarios — 100% Passing):**
+- **Test Coverage Includes (85 Backend + 9 Frontend = 94 Test Scenarios — 100% Passing):**
+  - **Dual-Mode LLM Engine & Hot-Swapping (`test_llm_providers.py`):** Modular shared helper reuse, `LocalLLMProvider` offline synthesizer resilience, dynamic factory hot-swapping between Cloud (Groq) and Local/Remote Node (Ollama/vLLM), `/system/llm-config` RBAC authorization, and live probe diagnostics.
   - **Per-User Isolation & Anti-BOLA (`test_isolation.py`):** Cross-user thread isolation returning 404, token-bound `owner_id`, audit event metadata privacy (no prompt text in audit logs), cross-department document protection, user profile self-only scoping, and benchmark admin-only protection.
   - **Real-Time Token Streaming & Speech Readout (`test_streaming.py` & `speechUtils.test.js`):** Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting, Web Speech API sanitization (stripping citation tokens `[1]` and markdown formatting for smooth voice playback).
   - **Multi-Source Ingestion & SSRF Defense (`test_web_ingestion.py` & `test_async_ingestion.py`):** Web portal notice crawler, SSRF private IP & cloud metadata protection, HTML semantic purification, background upload queue (`/upload-async`), multi-file batch execution.
@@ -216,15 +217,16 @@ cd frontend && npm test
 IKMS/
 ├── backend/
 │   ├── app/
-│   │   ├── api/v1/          # HTTP endpoints: health, auth, users, organizations, audit
+│   │   ├── api/v1/          # HTTP endpoints: health, auth, users, organizations, audit, system
 │   │   ├── core/            # Config, security, database, errors, logging, seed
 │   │   ├── modules/
 │   │   │   ├── identity/    # Users, Roles, Permissions, UserRoles, RolePermissions
 │   │   │   ├── organizations/# Departments, Memberships
+│   │   │   ├── retrieval/   # Dual-Mode LLM Providers, Hybrid RRF, FlashRank Re-ranker
 │   │   │   └── audit/       # Tamper-evident Audit Events
 │   │   └── main.py          # FastAPI application & lifecycle hooks
 │   ├── alembic/             # Database migration environment & versions
-│   ├── tests/               # Pytest automated test suite (47 test cases)
+│   ├── tests/               # Pytest automated test suite (85 test cases)
 │   ├── scripts/             # Canonical demo data seeder & DB maintenance scripts
 │   ├── requirements.txt     # Pinned Python dependencies
 │   └── alembic.ini          # Migration configuration
@@ -232,15 +234,18 @@ IKMS/
 │   ├── src/
 │   │   ├── api/             # Centralized API client (fetch wrapper)
 │   │   ├── context/         # AuthContext & token management
-│   │   ├── components/      # Navbar, Sidebar, HealthCard, documents/ (UploadModal, DocumentTable, ChunkInspector)
+│   │   ├── components/      # Navbar, Sidebar, HealthCard, documents/, BrutalToast, BrutalModal
 │   │   └── views/           # DashboardView, DocumentsView, SearchView, RAGAssistantView, BenchmarkView, etc.
+│   ├── tests/               # Frontend unit test suites (cache isolation, speech sanitization)
 │   ├── package.json
 │   └── vite.config.js
 ├── docs/
 │   ├── PROJECT_BRIEF.md     # Primary engineering specification
+│   ├── API_DOCUMENTATION.md # Full OpenAPI REST and SSE streaming reference
+│   ├── TESTING_DOCUMENTATION.md # Complete 94-test QA & test pyramid reference
 │   ├── VIVA_PRESENTATION_GUIDE.md # 5-Minute presentation script & examiner defense guide
 │   ├── architecture/        # System architecture, data model, prioritized backlog
-│   └── decisions/           # Architecture Decision Records (ADR-0001 to ADR-0005)
+│   └── decisions/           # Architecture Decision Records (ADR-0001 to ADR-0011)
 ├── infra/docker/            # Backend and Frontend Dockerfiles
 ├── docker-compose.yml       # Reproducible containerized local development stack
 ├── .env.example             # Documented environment template
@@ -273,13 +278,25 @@ IKMS/
   - **Web Notice URL Crawler & SSRF Defense:** Automated HTML bulletin scraper with strict loopback/RFC-1918/cloud metadata SSRF guardrails (`/documents/ingest-url`).
   - **Multi-File Batch Drag-and-Drop Ingestion:** Asynchronous multi-document upload queue in `UploadModal.jsx` supporting 5–10 concurrent documents.
   - **Academic Dossier HTML Exporter:** Self-contained institutional compliance dossier generator for NAAC/NBA accreditation audits (`/audit/dossier/html`).
-- **Milestone 11 (Dual-Mode LLM Engine — Completed & Verified):**
+- **Milestone 11 (Dual-Mode LLM Engine & Interaction Control — Completed & Verified):**
   - **Decoupled Architecture:** Reusable `LocalLLMProvider` targeting standard OpenAI-compatible `/v1/chat/completions` (Ollama, vLLM, LAN lab PC, or internet tunnels).
   - **Ultra-Lightweight Consumer Footprint:** Configured default model `qwen2.5:1.5b` (~1.2 GB RAM, 20–35 tok/s on CPU) eliminating laptop hanging or thermal throttling.
   - **Zero-Redundancy Shared Pipeline:** Centralized context building, citation formatting, SSE parsing, and anti-hallucination temperature clamping (0.05).
   - **In-Memory Dynamic Routing:** Hot-swapping between Cloud (Groq) and Local/Remote Node with zero server restarts via `GET/PUT /api/v1/system/llm-config`.
   - **Live Diagnostics Beacon:** Tactical Yellow Brutalist Admin controller in `DashboardView.jsx` with probe testing (`POST /api/v1/system/llm-test`) and model tag auto-detection.
-  - **Verified Quality Standard:** **93 / 93 automated test scenarios passing** (84 backend + 9 frontend).
+  - **Conversational Zero-Citation Routing:** Pattern-routed greetings, identity, and colloquial confusion queries directly to conversational synthesizers with `citations: []`.
+  - **Relevance Score Gating:** Discards candidate chunks with score $\le 0.0001$ so out-of-domain queries never attach ungrounded citations.
+  - **Anti-Repetition Guards:** Penalties (`presence_penalty: 0.3`, `frequency_penalty: 0.4`) and substring repetition detector `_has_repetition_loop` preventing quantized local model runaway loops.
+  - **Claude-Style Progressive Thinking Block:** Unified assistant message card embedding rotating dynamic verbs and auto-collapsing expandable thought process tray (`[⚡ Thought Process (X steps) ▾]`).
+  - **Interactive Stream Cancellation:** Red Brutalist `[STOP ⏹]` button and `Escape` key shortcut backed by client-side `AbortController` cancellation.
+  - **Verified Quality Standard:** **94 / 94 automated test scenarios passing** (85 backend + 9 frontend, 100% green).
+- **Milestone 12 (Institutional User Onboarding & 2-Tier Approval Queue — Planned Blueprint):**
+  - Multi-department coverage across 10 official KIT departments (CSE, AIML, DS, ENTC, EE, ME, CE, BT, BSH, Exam Cell).
+  - Public registration portal (`/register`) with PRN/Employee ID validation and `pending_approval` gating.
+  - 2-Tier Approval Hierarchy: Tier 1 (HOD approves student & faculty) + Tier 2 (Platform Admin approves HODs).
+- **Milestone 13 (Declarative Jenkins CI/CD Pipeline — Planned Blueprint):**
+  - Multi-stage Jenkins declarative pipeline (Lint → Backend Tests → Frontend Tests → Vite Build → Docker Vulnerability Scan → Staging Deploy).
+  - Automated JUnit XML reporting and security audit gating.
 
 
 

@@ -264,10 +264,13 @@ sequenceDiagram
 ### `POST /conversations/ask-stream`
 - **Description:** Executes a conversational turn with real-time Server-Sent Events (SSE) token streaming. Drops Time-to-First-Token (TTFT) to `<200ms` with live typewriter rendering.
 - **Access Rule:** Requires `documents:read`. Enforces `PromptGuard` security interception before opening LLM stream.
+- **Conversational Zero-Citation Routing:** Casual greetings ("hi", "hello", "namaste"), identity inquiries ("who are you"), and colloquial confusion expressions ("whyyyy", "help me") are recognized automatically and short-circuited to conversational synthesizers with zero retrieval citations (`citations: []`). ChromaDB candidate chunks with near-zero relevance scores ($\le 0.0001$) are actively discarded to ensure out-of-domain prompts never attach irrelevant syllabus citations.
+- **Anti-Repetition & Generation Loop Breakers:** Generates tokens with `presence_penalty: 0.3` and `frequency_penalty: 0.4`, backed by sliding-window substring loop detector `_has_repetition_loop` to prevent quantized local models from looping indefinitely.
+- **Client-Side Stream Cancellation:** Supports instant stream abortion via client-side `AbortController` (triggered via the Yellow Brutalist `[STOP ⏹]` button or `Escape` key shortcut), releasing backend connection resources without corrupting conversation state.
 - **Event Flow:**
   1. `event: session` — Emits `conversation_id` and auto-generated title.
-  2. `event: status` — Emits retrieval progress (`retrieving` with resolved query, then `generating`).
-  3. `event: citations` — Emits verified institutional source citations array before token synthesis.
+  2. `event: status` — Emits progressive thinking steps and retrieval progress (`retrieving` with resolved query, then `generating`).
+  3. `event: citations` — Emits verified institutional source citations array before token synthesis (or `[]` for conversational turns).
   4. `event: token` — Yields delta word/character chunks in real-time (`{"chunk": "..."}`).
   5. `event: done` — Emits message completion, latency metrics, and message UUID.
 
