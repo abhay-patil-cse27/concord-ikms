@@ -13,7 +13,7 @@
 | :--- | :--- | :--- |
 | **Setup & Quickstart Guide** | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | Comprehensive step-by-step developer onboarding, virtualenv setup, Ollama local LLM execution, and troubleshooting. |
 | **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`, `/system`). |
-| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, and security hardening (94 tests). |
+| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, and security hardening (95 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
 | **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
@@ -205,7 +205,10 @@ cd frontend && npm test
 
 > For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
 
-- **Test Coverage Includes (85 Backend + 9 Frontend = 94 Test Scenarios — 100% Passing):**
+- **Test Coverage Includes (86 Backend + 9 Frontend = 95 Test Scenarios — 100% Passing):**
+  - **Fuzzy Academic Spell-Checking & Query Normalizer (`AcademicQueryNormalizer` & `test_retrieval.py`):** Phrase-level typo repair (e.g. `"bid data"` $\rightarrow$ `"big data"`, `"atendance criteria"` $\rightarrow$ `"attendance criteria"`), institutional curriculum lexicon matching (`difflib.get_close_matches(cutoff=0.72)`), and auto-correction metadata emitted to frontend Yellow Brutalist badges.
+  - **Zero-Hallucination Relevance Gating & Ungrounded Query Interception:** FlashRank cross-encoder scoring ($\ge 0.15$) and domain keyword filtering to discard unrelated chunks (e.g. eliminating Financial Analytics from Big Data queries). Intercepts off-topic or ungrounded queries with structured institutional guidance and 0 citations.
+  - **Dual In-Composer & Global Response Stop Buttons:** In-composer `[STOP RESPONSE ESC]` button placed directly inside the query dock and primary action button, allowing instant stream abortion with partial token preservation.
   - **Dual-Mode LLM Engine & Hot-Swapping (`test_llm_providers.py`):** Modular shared helper reuse, `LocalLLMProvider` offline synthesizer resilience, dynamic factory hot-swapping between Cloud (Groq) and Local/Remote Node (Ollama/vLLM), `/system/llm-config` RBAC authorization, and live probe diagnostics.
   - **Per-User Isolation & Anti-BOLA (`test_isolation.py`):** Cross-user thread isolation returning 404, token-bound `owner_id`, audit event metadata privacy (no prompt text in audit logs), cross-department document protection, user profile self-only scoping, and benchmark admin-only protection.
   - **Real-Time Token Streaming & Speech Readout (`test_streaming.py` & `speechUtils.test.js`):** Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting, Web Speech API sanitization (stripping citation tokens `[1]` and markdown formatting for smooth voice playback).
@@ -227,11 +230,11 @@ IKMS/
 │   │   ├── modules/
 │   │   │   ├── identity/    # Users, Roles, Permissions, UserRoles, RolePermissions
 │   │   │   ├── organizations/# Departments, Memberships
-│   │   │   ├── retrieval/   # Dual-Mode LLM Providers, Hybrid RRF, FlashRank Re-ranker
+│   │   │   ├── retrieval/   # Dual-Mode LLM Providers, Hybrid RRF, FlashRank Re-ranker, Query Normalizer
 │   │   │   └── audit/       # Tamper-evident Audit Events
 │   │   └── main.py          # FastAPI application & lifecycle hooks
 │   ├── alembic/             # Database migration environment & versions
-│   ├── tests/               # Pytest automated test suite (85 test cases)
+│   ├── tests/               # Pytest automated test suite (86 test cases)
 │   ├── scripts/             # Canonical demo data seeder & DB maintenance scripts
 │   ├── requirements.txt     # Pinned Python dependencies
 │   └── alembic.ini          # Migration configuration
@@ -239,7 +242,7 @@ IKMS/
 │   ├── src/
 │   │   ├── api/             # Centralized API client (fetch wrapper)
 │   │   ├── context/         # AuthContext & token management
-│   │   ├── components/      # Navbar, Sidebar, HealthCard, documents/, BrutalToast, BrutalModal
+│   │   ├── components/      # Navbar, Sidebar, HealthCard, documents/, BrutalToast, BrutalModal, Composer, MessageBlock
 │   │   └── views/           # DashboardView, DocumentsView, SearchView, RAGAssistantView, BenchmarkView, etc.
 │   ├── tests/               # Frontend unit test suites (cache isolation, speech sanitization)
 │   ├── package.json
@@ -247,7 +250,7 @@ IKMS/
 ├── docs/
 │   ├── PROJECT_BRIEF.md     # Primary engineering specification
 │   ├── API_DOCUMENTATION.md # Full OpenAPI REST and SSE streaming reference
-│   ├── TESTING_DOCUMENTATION.md # Complete 94-test QA & test pyramid reference
+│   ├── TESTING_DOCUMENTATION.md # Complete 95-test QA & test pyramid reference
 │   ├── VIVA_PRESENTATION_GUIDE.md # 5-Minute presentation script & examiner defense guide
 │   ├── architecture/        # System architecture, data model, prioritized backlog
 │   └── decisions/           # Architecture Decision Records (ADR-0001 to ADR-0011)
