@@ -225,3 +225,92 @@
 - [x] **Step 9.5: Automated Verification & Documentation:**
   - [x] Unit test `test_scanned_image_preprocessor_and_parser` in `backend/tests/test_parsers.py`.
   - [x] 83 total automated tests (78 backend + 5 frontend) 100% passing.
+
+## Milestone 10: Multimodal Accessibility, Batch Processing & Institutional Crawlers (Completed & Verified)
+- [x] **Track 1: Natural Voice Readout & Speech Sanitization (TTS):**
+  - [x] Web Speech API integration in `SpeechPlaybackButton.jsx` with real-time utterance queueing.
+  - [x] Created `speechUtils.js` with regex-based normalization: strips bracket citations `[1], [2]`, markdown headers, bold/italic markers, and code blocks for smooth academic speech cadence.
+  - [x] Frontend test suite `frontend/tests/speechUtils.test.js` passing 4/4 tests.
+- [x] **Track 2: Web Notice URL Ingestion Crawler & SSRF Guard:**
+  - [x] Implemented `crawl_web_notice_url` in `backend/app/modules/documents/web_crawler.py` with BeautifulSoup4 body extraction.
+  - [x] Enterprise SSRF defense in `backend/app/core/network_guard.py`: DNS resolution, RFC-1918 private IP rejection, loopback blocking, cloud metadata (`169.254.169.254`) prevention, and HTTP/HTTPS scheme validation.
+  - [x] Endpoints: `POST /api/v1/documents/ingest-url` and `POST /api/v1/documents/ingest-url-async`.
+  - [x] Pytest suite `tests/test_web_ingestion.py` passing 2/2 tests.
+- [x] **Track 3: Multi-File Batch Drag-and-Drop Ingestion:**
+  - [x] Redesigned `UploadModal.jsx` to accept 5–10 files concurrently with multi-row itemized progress table.
+  - [x] Asynchronous multi-item job queue execution against `/api/v1/documents/upload-async`.
+  - [x] Verified batch queue stability with zero UI blocking.
+- [x] **Track 4: Academic Dossier HTML Exporter:**
+  - [x] Created `backend/app/modules/audit/dossier_exporter.py` generating self-contained institutional audit dossiers.
+  - [x] Complete NAAC/NBA compliance accreditation exports with cryptographic timestamps, confidence scoring breakdown, and institutional masthead.
+  - [x] Endpoint `GET /api/v1/audit/dossier/html` guarded by `audit:read`.
+- [x] **Track 5: Yellow-Brutalist UI Polish & Layout Stability:**
+  - [x] Resolved conflicting dual spinners in `BenchmarkHeader.jsx` by decoupling manual button loading state from child Lucide icon.
+  - [x] Fixed `BenchmarkView.jsx` skeleton count props and implemented stale-while-revalidate data retention to eliminate layout shifts (FOUC).
+  - [x] Verified full suite: 89/89 automated tests passing (80 backend + 9 frontend).
+
+## Milestone 11: Dual-Mode LLM Engine (Cloud API vs On-Premises Local/Remote Node) (Completed & Verified)
+- [x] **Step 11.1: Modular Zero-Redundancy Provider Layer:**
+  - [x] Extracted shared helpers `_build_evidence_context`, `_build_chat_payload`, `_clean_llm_response`, `_parse_sse_delta` in `backend/app/modules/retrieval/llm_providers.py`.
+  - [x] Implemented `LocalLLMProvider` targeting standard OpenAI-compatible `/v1/chat/completions` (Ollama, vLLM, LAN lab PC, or internet tunnels).
+  - [x] Temperature clamped to 0.05 for strict anti-hallucination grounded extractive QA on smaller consumer models (`qwen2.5:1.5b`).
+  - [x] Resilient offline error handling with automatic handoff to `OfflineFallbackLLMProvider`.
+- [x] **Step 11.2: System Settings, CORS Regex & Dynamic Hot-Swapping Factory:**
+  - [x] Added `LLM_PROVIDER_MODE`, `LOCAL_LLM_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_TIMEOUT_SECONDS`, and `CORS_ORIGIN_REGEX` to `config.py` and `main.py`.
+  - [x] Dynamic runtime factory `get_llm_provider()` hot-swapping provider strategy in-memory without server restarts.
+  - [x] Implemented `GET /api/v1/system/llm-config`, `PUT /api/v1/system/llm-config` (guarded by `platform_admin`), and `POST /api/v1/system/llm-test` (health probe).
+  - [x] Registered `system_router` into `api_v1_router`.
+- [x] **Step 11.3: Frontend Admin Control & Live Diagnostics Beacon:**
+  - [x] Added `getLLMConfig()`, `updateLLMConfig()`, and `testLLMNode()` to `frontend/src/api/client.js`.
+  - [x] Built Yellow-Brutalist `Dual-Mode LLM Engine Controller` in `DashboardView.jsx` with segmented toggle, node URL input, model tag picker, and live latency health beacon.
+- [x] **Step 11.4: Automated Test Suite & Production Build Verification:**
+  - [x] Authored `backend/tests/test_llm_providers.py` covering modular helpers, offline resilience, hot-swapping, and security RBAC guards.
+  - [x] Verified full suite: **94 automated test scenarios passing** (85 backend + 9 frontend, 100% green).
+  - [x] Verified clean production build (`vite build` passing with zero warnings).
+- [x] **Step 11.5: Conversational Zero-Citation Routing & Small Model Resilience:**
+  - [x] Implemented conversational pattern router for greetings ("hi", "hello", "namaste"), identity queries ("who are you"), and confusion expressions ("whyyyyy", "help me") short-circuiting to conversational synthesizers with zero citations (`citations: []`).
+  - [x] Implemented zero-score candidate chunk filtering (`score > 0.0001`) preventing ungrounded syllabus chunks from leaking into casual queries.
+  - [x] Integrated anti-repetition generation parameters (`presence_penalty: 0.3`, `frequency_penalty: 0.4`) and stream substring loop detection (`_has_repetition_loop`) preventing quantized local models from looping endlessly.
+- [x] **Step 11.6: Claude-Style Progressive Thinking & Interactive Stop Controls:**
+  - [x] Unified thinking and response rendering into a single assistant message card inside `MessageBlock.jsx`.
+  - [x] Interactive Claude-style progressive thinking accordion displaying rotating academic verbs, verification steps, and auto-collapsing into an expandable `[⚡ Thought Process (X steps) ▾]` tray.
+  - [x] Red Brutalist `[STOP ⏹]` button in both message header and chat composer, backed by `AbortController` cancellation in `useRAG` custom hook and keyboard shortcut (`Escape`).
+  - [x] Synchronous composer input clearing on submission.
+  - [x] Replacement of legacy native browser alerts (`window.alert`, `window.confirm`) with reusable Yellow Brutalist `BrutalToast` and `BrutalModal`.
+
+## Milestone 12: User Onboarding & 2-Tier Institutional Approval Queue (Planned Blueprint)
+- [ ] **Step 12.1: Pre-Seeded Institutional Department Architecture:**
+  - [ ] Expand database schema and seeding across 10 official KIT departments:
+    1. Computer Science & Engineering (B.Tech CSE, M.Tech Data Science)
+    2. Computer Science & Engineering - AI & Machine Learning (B.Tech AIML)
+    3. Computer Science & Engineering - Data Science (B.Tech DS)
+    4. Electronics & Telecommunication Engineering (B.Tech ENTC, M.Tech Embedded)
+    5. Electrical Engineering (B.Tech EE)
+    6. Mechanical Engineering (B.Tech ME)
+    7. Civil & Environmental Engineering (B.Tech CE)
+    8. Biotechnology (B.Tech BT)
+    9. Basic Sciences & Humanities (FY B.Tech Physics, Chemistry, Mathematics)
+    10. Academic Examination & Autonomous Cell (Institute Regulations)
+- [ ] **Step 12.2: Public Self-Registration Portal (`/register`):**
+  - [ ] Multi-step Yellow Brutalist registration form with role selection (`Student`, `Faculty`, `Department Admin`).
+  - [ ] Dynamic department and degree program pickers bound to active institutional records.
+  - [ ] Strict input validation: PRN (10-digit), Employee ID, institutional email (`@kitcoek.in` / `@concord.kit.edu`), and password complexity.
+  - [ ] Account created in `pending_approval` state with inactive JWT authentication guard.
+- [ ] **Step 12.3: 2-Tier Hierarchy Approval Workflow:**
+  - [ ] Tier 1 (Department Level): HOD / Department Admin approves Students and Faculty within their department (`POST /api/v1/governance/users/{id}/approve-tier1`).
+  - [ ] Tier 2 (Platform Level): Platform Admin (Registrar / Dean Academics) approves new HODs and grants cross-institutional oversight (`POST /api/v1/governance/users/{id}/approve-tier2`).
+  - [ ] Rejection and feedback reason recording with audit ledger events.
+- [ ] **Step 12.4: Admin & HOD Approval Queue UI:**
+  - [ ] Yellow Brutalist `UserApprovalQueueView.jsx` with tabbed filtering (`All`, `Students`, `Faculty`, `HODs`).
+  - [ ] One-click Approve / Reject with confirmation modal and feedback notes.
+  - [ ] Role-restricted visibility: HOD sees only their department applicants; Platform Admin sees global applicants.
+
+## Milestone 13: Declarative Jenkins CI/CD Pipeline (Planned Blueprint)
+- [ ] **Step 13.1: Declarative Jenkinsfile:**
+  - [ ] Multi-stage pipeline: Checkout → Lint & Security Scan → Backend Pytest (85 tests) → Frontend Unit Tests (9 tests) → Vite Production Build → Docker Build & Container Vulnerability Scan → Staging Deployment.
+- [ ] **Step 13.2: Quality Gates & Test Artifact Archival:**
+  - [ ] JUnit XML test result reporting (`pytest --junitxml=reports/junit.xml`).
+  - [ ] Coverage threshold gating (minimum 85% coverage).
+  - [ ] Security audit gate (pip-audit / safety for Python, npm audit for frontend).
+
+

@@ -122,6 +122,19 @@ sequenceDiagram
 - **Description:** Lists documents filtered by department and user RBAC permissions.
 - **Query Params:** `?department_id=<id>`
 
+### `POST /documents/ingest-url` & `POST /documents/ingest-url-async`
+- **Description:** Ingests live web notices and HTML bulletins directly from verified institutional URLs (e.g. `https://kitcoek.in/notices/exam-schedule`).
+- **SSRF Defense:** Enforces strict protocol (`http`/`https`), DNS domain resolution, and blocks all loopback (`127.0.0.1`), RFC-1918 private IPs (`10.0.0.0/8`, `192.168.0.0/16`), and AWS/cloud metadata services (`169.254.169.254`).
+- **Request Body:**
+  ```json
+  {
+    "url": "https://kitcoek.in/notices/exam-schedule-2024",
+    "department_id": "dept-cse-uuid",
+    "title": "Semester Exam Schedule Notice"
+  }
+  ```
+- **Response (200 OK / 202 Accepted):** Returns created document metadata or async job tracking ID.
+
 ### `GET /documents/{document_id}`
 - **Description:** Returns full document metadata and extracted chunk segments.
 
@@ -251,12 +264,17 @@ sequenceDiagram
 ### `POST /conversations/ask-stream`
 - **Description:** Executes a conversational turn with real-time Server-Sent Events (SSE) token streaming. Drops Time-to-First-Token (TTFT) to `<200ms` with live typewriter rendering.
 - **Access Rule:** Requires `documents:read`. Enforces `PromptGuard` security interception before opening LLM stream.
+- **Fuzzy Academic Spell-Checking & Typing Correction (`AcademicQueryNormalizer`):** Corrects multi-word phrase typos (e.g. `"bid data"` $\rightarrow$ `"big data"`, `"atendance criteria"` $\rightarrow$ `"attendance criteria"`) and applies Levenshtein edit-distance resolution (`difflib.get_close_matches(cutoff=0.72)`) against the institutional curriculum lexicon. Detected typos are emitted as `corrections` metadata so the frontend can render an interactive Yellow Brutalist auto-correction badge.
+- **Zero-Hallucination Relevance Gating & Ungrounded Query Interception:** Candidate chunks are evaluated via FlashRank cross-encoder scores and keyword specificity. Chunks with near-zero relevance ($\le 0.001$) or cross-encoder score $< 0.15$ without specific topic overlap are actively discarded. If no evidence passes (e.g. ungrounded or off-topic questions), CONCORD intercepts the query with a zero-hallucination institutional clarification and course suggestions with 0 citations (`citations: []`).
+- **Conversational Zero-Citation Routing:** Casual greetings ("hi", "hello", "namaste"), identity inquiries ("who are you"), and colloquial confusion expressions ("whyyyy", "help me") are recognized automatically and short-circuited to conversational synthesizers with zero retrieval citations (`citations: []`).
+- **Anti-Repetition & Generation Loop Breakers:** Generates tokens with `presence_penalty: 0.3` and `frequency_penalty: 0.4`, backed by sliding-window substring loop detector `_has_repetition_loop` to prevent quantized local models from looping indefinitely.
+- **Client-Side Stream Cancellation & Dual Stop Buttons:** Supports instant stream abortion via client-side `AbortController`. The user can halt synthesis either via the **in-composer Stop button** (`[STOP RESPONSE ESC]`) positioned directly within the query input dock, the primary action button, or the global `Escape` key shortcut, cleanly preserving partial tokens and freeing server resources.
 - **Event Flow:**
   1. `event: session` — Emits `conversation_id` and auto-generated title.
-  2. `event: status` — Emits retrieval progress (`retrieving` with resolved query, then `generating`).
-  3. `event: citations` — Emits verified institutional source citations array before token synthesis.
+  2. `event: status` — Emits progressive thinking steps, effective resolved query, and any `corrections` applied (`{"state": "retrieving", "effective_query": "...", "corrections": {"bid data": "big data"}}`).
+  3. `event: citations` — Emits verified institutional source citations array before token synthesis (or `[]` for conversational turns).
   4. `event: token` — Yields delta word/character chunks in real-time (`{"chunk": "..."}`).
-  5. `event: done` — Emits message completion, latency metrics, and message UUID.
+  5. `event: done` — Emits message completion, latency metrics, message UUID, active model tag, and `corrections` metadata.
 
 ---
 
@@ -272,6 +290,7 @@ sequenceDiagram
 | `/documents/{id}` | `GET` | Document Detail | Department membership or public | **`404 Not Found`** |
 | `/documents/{id}/download` | `GET` | Raw Binary | Department membership or public | **`404 Not Found`** |
 | `/audit/events` | `GET` | Security Logs | `platform_admin` only | **`403 Forbidden`** |
+| `/audit/dossier/html` | `GET` | Self-Contained Academic Dossier HTML | `audit:read` | **`403 Forbidden`** |
 | `/audit/feedback` | `POST` | Answer Ratings & Hallucination Flagging | Authenticated users | **`401 Unauthorized`** |
 | `/users` | `GET` | Users List | `platform_admin` (all) / Others (self profile only) | Scoped to self |
 | `/evaluation/run` | `POST` | Live Benchmark | `platform_admin` (`system:admin`) | **`403 Forbidden`** |
@@ -298,3 +317,66 @@ sequenceDiagram
 
 ### `POST /admin/reseed-demo`
 - **Description:** Reseeds canonical multi-department demo records into SQLite and ChromaDB. Guarded by `platform_admin`.
+
+---
+
+## 9. System & Dual-Mode LLM Engine (`/system`)
+
+### `GET /system/llm-config`
+- **Description:** Returns active LLM provider routing (`cloud` or `local`), node URL, model tag, and Groq configuration status.
+- **Authorization:** `platform_admin` only (`403 Forbidden` for non-admins).
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "config": {
+      "provider_mode": "cloud",
+      "local_url": "http://127.0.0.1:11434",
+      "local_model": "qwen2.5:1.5b",
+      "groq_model": "openai/gpt-oss-120b",
+      "has_groq_key": true
+    }
+  }
+  ```
+
+### `PUT /system/llm-config`
+- **Description:** Hot-swaps inference routing strategy, target OpenAI-compatible node URL, or model tag in-memory without server downtime.
+- **Authorization:** `platform_admin` only.
+- **Request Body:**
+  ```json
+  {
+    "provider_mode": "local",
+    "local_url": "http://127.0.0.1:11434",
+    "local_model": "qwen2.5:1.5b"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "LLM Engine configuration updated successfully.",
+    "config": { ... }
+  }
+  ```
+
+### `POST /system/llm-test`
+- **Description:** Probes an inference node URL (Ollama, vLLM, LAN lab PC, or tunnel) for reachability, latency, and available models.
+- **Authorization:** `platform_admin` only.
+- **Request Body:**
+  ```json
+  {
+    "node_url": "http://127.0.0.1:11434",
+    "timeout_seconds": 5.0
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "reachable": true,
+    "latency_ms": 14.2,
+    "status_message": "Node reachable (OpenAI-compatible /v1/models)",
+    "target_url": "http://127.0.0.1:11434",
+    "models": ["qwen2.5:1.5b", "llama3.2:3b"]
+  }
+  ```
+

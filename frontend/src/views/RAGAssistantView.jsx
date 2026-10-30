@@ -8,15 +8,15 @@ import SuggestedPrompts from '../components/rag/SuggestedPrompts';
 import MessageBlock from '../components/rag/MessageBlock';
 import Composer from '../components/rag/Composer';
 import CitationDrawer from '../components/rag/CitationDrawer';
-import ThinkingIndicator from '../components/rag/ThinkingIndicator';
 import { BrutalToast } from '../components/brutal';
 import { exportThreadToMarkdown } from '../lib/exportThread';
 import { exportAcademicDossierHTML } from '../utils/htmlDossierExporter';
+import { api } from '../api/client';
 
 /**
  * RAGAssistantView
  * Yellow Brutalist grounded conversational assistant.
- * Powered by Groq LLM inference, RRF vector evidence, and multi-turn inquiry sessions.
+ * Powered by dynamic Dual-Mode LLM inference, RRF vector evidence, and multi-turn inquiry sessions.
  */
 export default function RAGAssistantView() {
   const { user } = useAuth();
@@ -33,6 +33,7 @@ export default function RAGAssistantView() {
     createNewSession,
     deleteSession,
     ask,
+    stop,
     clear,
   } = useRAG();
 
@@ -43,11 +44,31 @@ export default function RAGAssistantView() {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeLLMBadge, setActiveLLMBadge] = useState(null);
 
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const silenceTimerRef = useRef(null);
   const transcriptAccumulatorRef = useRef('');
+
+  // Fetch active LLM mode to display dynamic model badge in header
+  useEffect(() => {
+    const fetchActiveEngine = async () => {
+      try {
+        const res = await api.getLLMConfig();
+        if (res?.config) {
+          const isLocal = res.config.provider_mode === 'local';
+          const modelTag = isLocal ? res.config.local_model : res.config.groq_model;
+          const engineLabel = isLocal ? `LOCAL: ${modelTag}` : `GROQ: ${modelTag}`;
+          setActiveLLMBadge(engineLabel);
+        }
+      } catch (e) {
+        // Fallback for non-admin tokens
+        setActiveLLMBadge('DUAL-MODE LLM');
+      }
+    };
+    fetchActiveEngine();
+  }, []);
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -60,6 +81,17 @@ export default function RAGAssistantView() {
   useEffect(() => {
     createNewSession();
   }, [user?.id, createNewSession]);
+
+  // Global Escape key listener to stop ongoing stream generation
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === 'Escape' && loading) {
+        stop();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [loading, stop]);
 
   // Toast notifications for unauthorized 404 / 403 or server errors
   useEffect(() => {
@@ -144,12 +176,14 @@ export default function RAGAssistantView() {
   };
 
   const handleSend = () => {
-    if (!query.trim() || loading) return;
+    const q = query.trim();
+    if (!q || loading) return;
     if (isListening && recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch (e) {}
       setIsListening(false);
     }
-    ask(query.trim());
+    setQuery('');
+    ask(q);
   };
 
   const handleOpenCitation = (citIndex, citationsList = []) => {
@@ -300,6 +334,7 @@ export default function RAGAssistantView() {
           onExportDossier={handleExportDossier}
           isCopyDisabled={!history || history.length === 0}
           conversationTitle={activeTitle}
+          activeBadge={activeLLMBadge}
         />
 
         {/* Message Stream (Scrollable Container) */}
@@ -310,27 +345,28 @@ export default function RAGAssistantView() {
           {history.length === 0 ? (
             <SuggestedPrompts
               onSelectPrompt={(text) => {
-                setQuery(text);
+                setQuery('');
                 ask(text);
               }}
             />
           ) : (
-            history.map((msg, idx) => (
-              <MessageBlock
-                key={idx}
-                role={msg.role}
-                content={msg.content}
-                timestamp={msg.timestamp}
-                citations={msg.citations}
-                isStreaming={msg.isStreaming}
-                onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
-              />
-            ))
-          )}
-
-          {/* Dynamic Academic Thinking Indicator (active before tokens stream) */}
-          {loading && !history.some((m) => m.role === 'assistant' && m.isStreaming && m.content) && (
-            <ThinkingIndicator />
+            <AnimatePresence initial={false}>
+              {history.map((msg, idx) => (
+                <MessageBlock
+                  key={msg.id || idx}
+                  role={msg.role}
+                  content={msg.content}
+                  timestamp={msg.timestamp}
+                  citations={msg.citations}
+                  isStreaming={msg.isStreaming}
+                  streamingState={msg.streamingState}
+                  model_used={msg.model_used}
+                  corrections={msg.corrections}
+                  onOpenCitation={(citIdx) => handleOpenCitation(citIdx, msg.citations)}
+                  onStop={stop}
+                />
+              ))}
+            </AnimatePresence>
           )}
 
           {/* Error Message */}
@@ -352,6 +388,7 @@ export default function RAGAssistantView() {
           isListening={isListening}
           speechSupported={speechSupported}
           onToggleSpeech={handleToggleSpeech}
+          onStop={stop}
         />
       </div>
 

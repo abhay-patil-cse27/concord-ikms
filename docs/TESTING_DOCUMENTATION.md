@@ -49,7 +49,7 @@ graph TD
 | **Vector Store & Chroma** | `backend/tests/test_chroma.py` | Embedded ChromaDB collection initialization, vector querying, metadata filtering. | `pytest` | 3 |
 | **Parsers & Chunkers** | `backend/tests/test_parsers.py` | PDF, DOCX, TXT, Excel semantic parsing, token counting, atomic table preservation, scanned circular image preprocessing (1.5x upscaling, adaptive binarization) & OCR parser. | `pytest` | 12 |
 | **Grounded RAG Pipeline** | `backend/tests/test_rag.py` | Prompt augmentation, hallucination guardrails, citation metadata extraction. | `pytest` | 5 |
-| **Retrieval & Reranking** | `backend/tests/test_retrieval.py` | Hybrid BM25 + Vector reciprocal rank fusion (RRF), cross-encoder scoring. | `pytest` | 8 |
+| **Retrieval & Reranking** | `backend/tests/test_retrieval.py` | Hybrid BM25 + Vector reciprocal rank fusion (RRF), cross-encoder scoring, fuzzy typo normalizer (phrase & difflib edit distance), and zero-hallucination relevance gating. | `pytest` | 9 |
 | **Health & Readiness** | `backend/tests/test_health.py` | `/healthz`, `/readyz` DB latency checks, root status. | `pytest` | 3 |
 | **Evaluation Benchmark** | `backend/tests/test_evaluation.py` | Hit Rate@5, MRR@5, latency metrics. | `pytest` | 2 |
 | **Demo Scenarios** | `backend/tests/test_demo_scenarios.py` | End-to-end academic regulations question workflows. | `pytest` | 2 |
@@ -59,10 +59,12 @@ graph TD
 | **Real-Time Token Streaming** | `backend/tests/test_streaming.py` | Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting. | `pytest` | 2 |
 | **Asynchronous Ingestion** | `backend/tests/test_async_ingestion.py` | Non-blocking background document upload (`/upload-async`), 4-stage job progress polling (`/jobs/{id}`), and completion assertions. | `pytest` | 1 |
 | **Web Notice Crawler & SSRF** | `backend/tests/test_web_ingestion.py` | Protocol enforcement, loopback & RFC-1918 private IP defense, AWS metadata IP blocking, HTML boilerplate purification. | `pytest` | 2 |
+| **Dual-Mode LLM Engine** | `backend/tests/test_llm_providers.py` | Shared helper extraction, `LocalLLMProvider` offline resilience, dynamic factory hot-swapping between Cloud & Local, `/system/llm-config` RBAC authorization, and live probe diagnostics. | `pytest` | 5 |
+| **Database & Persistence** | `backend/tests/test_database_persistence.py` | Programmatic Alembic migration revision inspection (DB1) and Async SQLAlchemy session rollback on constraint violation (DB2). | `pytest` | 2 |
 | **Frontend Cache Isolation** | `frontend/tests/cacheIsolation.test.js` | User switching, cache namespacing (`_user_{id}`), startup legacy purge, `clearAll()`. | `node (Node.js Test)` | 5 |
 | **Frontend Speech Sanitization** | `frontend/tests/speechUtils.test.js` | Citation token removal (`[1]`), markdown formatting stripping, code block normalization, null safety. | `node (Node.js Test)` | 4 |
 
-**Total Automated Tests:** **89 automated test scenarios** (80 backend + 9 frontend, 100% passing).
+**Total Automated Tests:** **97 automated test scenarios** (88 backend + 9 frontend, 100% passing).
 
 ---
 

@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "openai/gpt-oss-120b"
 
+    # Dual-Mode LLM Engine (Milestone 11) - Cloud vs Local / OpenAI-compatible node
+    LLM_PROVIDER_MODE: str = "cloud"                # 'cloud' | 'local'
+    LOCAL_LLM_URL: str = "http://127.0.0.1:11434"   # Local node, Lab PC IP, or tunnel URL
+    LOCAL_LLM_MODEL: str = "qwen2.5:1.5b"           # Ultra-lightweight 1.5B (low RAM, fast CPU)
+    LOCAL_LLM_TIMEOUT_SECONDS: float = 60.0          # Resilient timeout for CPU / remote network
+    CORS_ORIGIN_REGEX: str = ""                     # Regex for Cloudflare/Ngrok tunnels, e.g. r"https://.*trycloudflare\.com"
+
     # Vector Store (Phase 4b - Embedded ChromaDB)
     CHROMA_PERSIST_DIR: str = "./data/chroma"
 

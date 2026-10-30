@@ -59,3 +59,29 @@ async def test_ask_stream_blocks_prompt_injection(client: AsyncClient):
     assert "event: error" in body_text
     assert "blocked_guardrail" in body_text
 
+
+@pytest.mark.asyncio
+async def test_ask_stream_casual_query_emits_zero_citations(client: AsyncClient):
+    """Verify casual greetings and identity chats produce 0 citations in SSE streaming."""
+    login_res = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    payload = {
+        "query": "hiii who are you?",
+        "top_k": 3
+    }
+
+    response = await client.post(
+        "/api/v1/conversations/ask-stream",
+        headers=headers,
+        json=payload
+    )
+
+    assert response.status_code == 200
+    body_text = response.text
+    assert "event: citations\ndata: []" in body_text
+    assert '"citations_count": 0' in body_text
+    assert "conversational" in body_text
+

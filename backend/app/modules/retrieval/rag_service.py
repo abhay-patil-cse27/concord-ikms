@@ -1,6 +1,6 @@
 """RAG domain service orchestrating grounded generation with citations."""
 import time
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.identity.models import User
@@ -25,36 +25,96 @@ class RAGService:
         llm_provider: Optional[BaseLLMProvider] = None,
     ):
         self.retrieval_service = retrieval_service or RetrievalService()
-        self.llm_provider = llm_provider or get_llm_provider()
+        self._llm_provider = llm_provider
+
+    @property
+    def llm_provider(self) -> BaseLLMProvider:
+        return self._llm_provider or get_llm_provider()
 
     def is_conversational_query(self, query: str) -> bool:
         """
         Classifies whether user query is a greeting, pleasantry, or general AI assistant capability query.
-        If true, the system responds naturally and warmly without querying the vector index.
+        If true, the system responds naturally and warmly without querying the vector index or emitting citations.
         """
         import re
         q = query.strip().lower()
+        q_clean = re.sub(r'^[^\w]+|[^\w]+$', '', q)
 
-        # Direct short match or regex patterns
-        exact_phrases = {
-            "hi", "hello", "hey", "hola", "namaste", "good morning", "good afternoon",
-            "good evening", "how are you", "who are you", "what can you do", "help",
-            "what is your name", "who made you", "thank you", "thanks", "bye", "goodbye"
+        # Guard: If query contains explicit institutional academic keywords, route directly to RAG
+        academic_keywords = {
+            "syllabus", "attendance", "curriculum", "regulation", "circular", "exam", "examination",
+            "grade", "grading", "fee", "admission", "credit", "course", "ordinance", "department",
+            "policy", "rule", "passing", "hall ticket", "revaluation", "criteria", "cgpa", "sgpa"
         }
-        if q in exact_phrases or q.rstrip("?.!") in exact_phrases:
+        words = set(re.findall(r'\b\w+\b', q_clean))
+        if words & academic_keywords:
+            return False
+
+        # Direct exact matches & conversational phrases (with punctuation stripped)
+        exact_phrases = {
+            "hi", "hii", "hiii", "hello", "helloo", "hellooo", "hey", "heyy", "heyyy",
+            "hallo", "hallooo", "hola", "namaste", "howdy", "yo", "sup", "greetings",
+            "good morning", "good afternoon", "good evening", "good night",
+            "how are you", "how are you doing", "how r u", "what's up", "whats up",
+            "who are you", "what are you", "who made you", "what is your name", "who r u",
+            "what can you do", "what do you do", "how can you help", "how do you help",
+            "help", "help me", "can you help me", "tell me about yourself",
+            "what is concord", "what is ikms", "about you",
+            "what", "why", "whyy", "whyyy", "whyyyy", "whaaaaat", "huh", "wait what",
+            "which llm", "what model", "which model", "which llm you are using", "which llm younare using",
+            "thank you", "thanks", "thanks a lot", "thx", "bye", "goodbye", "cya",
+            "ok", "okay", "cool", "nice", "awesome", "great"
+        }
+        if q in exact_phrases or q_clean in exact_phrases:
             return True
 
-        # Regex patterns for greetings or self-introduction inquiries
+        # Regex patterns for greetings (supports repeated letters like hiii, heyyy, hallooo) and identity questions
         patterns = [
-            r"^(hi|hello|hey|greetings|howdy)\b",
-            r"^who are you\b",
-            r"^what can you (do|help with)\b",
+            r"^(h+i+|h+e+y+|h+e+l+l+o+|h+a+l+l+o+|howdy|greetings|yo+|sup)\b",
+            r"^(who|what) (are|r) you\b",
+            r"^what (can|do) you (do|help with)\b",
             r"^how (can|do) you help\b",
-            r"^tell me about yourself\b",
-            r"^what is concord\b",
-            r"^(thanks|thank you)\b"
+            r"^(tell me|explain) (about yourself|who you are)\b",
+            r"^what is (concord|ikms)\b",
+            r"^(thanks|thank you|thx)\b",
+            r"^(help me|can you help)\b",
+            r"^(w+h+a+t+|w+h+y+|h+u+h+)\b",
+            r"\b(which|what)\s+(llm|model)\b",
+            r"\b(are you)\s+(an?\s+)?(ai|llm|robot|bot)\b"
         ]
-        return any(re.search(pat, q) for pat in patterns)
+        return any(re.search(pat, q_clean) for pat in patterns)
+
+    @staticmethod
+    def is_chunk_relevant(chunk: Dict[str, Any], query: str) -> bool:
+        """
+        Determines whether an evidence chunk is genuinely relevant to the query.
+        Guards against hallucination by discarding chunks with near-zero relevance.
+        """
+        score = chunk.get("score") or 0.0
+        if score <= 0.001:
+            return False
+        if score >= 0.15:
+            return True
+
+        from app.modules.retrieval.normalizer import STOPWORDS
+        generic_fillers = {
+            "course", "courses", "subject", "subjects", "unit", "units",
+            "semester", "semesters", "paper", "papers", "title", "code",
+            "department", "credits", "curriculum", "syllabus", "student", "students",
+            "kit", "college", "institute", "summary", "summarize", "explain", "overview"
+        }
+        content_lower = chunk.get("content", "").lower()
+        query_tokens = [
+            w.lower().strip("?,!.:;()[]\"'")
+            for w in query.split()
+            if len(w) > 2 and w.lower() not in STOPWORDS
+        ]
+        specific_tokens = [w for w in query_tokens if w not in generic_fillers]
+        target_tokens = specific_tokens if specific_tokens else query_tokens
+
+        if target_tokens and any(t in content_lower for t in target_tokens):
+            return True
+        return False
 
     async def ask(
         self,
@@ -125,13 +185,18 @@ class RAGService:
                 retrieval_mode="multi_step_comparative"
             )
 
+        # Step 0c: Academic Fuzzy Spell-Check and Query Normalization
+        from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+        norm_query, expanded_query, query_corrections = AcademicQueryNormalizer.normalize_with_metadata(request.query)
+        effective_query = norm_query or request.query
+
         # Step 1: Execute authorized hybrid search to get verified evidence
         # By default (include_superseded=False), search only active current-policy documents.
         lifecycle_filter = "all" if request.include_superseded else "active"
 
         search_res = await self.retrieval_service.search(
             db=db,
-            query=request.query,
+            query=effective_query,
             current_user=current_user,
             top_k=request.top_k,
             target_department_id=request.department_id,
@@ -140,11 +205,29 @@ class RAGService:
         )
 
         evidence_chunks = [item.model_dump() for item in search_res.results]
+        relevant_chunks = [c for c in evidence_chunks if self.is_chunk_relevant(c, effective_query)]
+
+        # Zero-Hallucination Guard: If no evidence is relevant, return clean institutional refusal with suggestions
+        if not relevant_chunks:
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            return RAGAskResponse(
+                query=request.query,
+                answer=(
+                    f"I couldn't find any verified institutional documents or syllabus records matching "
+                    f"\"{request.query}\" in the Kolhapur Institute of Technology repository.\n\n"
+                    f"Please check the course code (e.g. UCSPC0701) or topic name, or consult the relevant department coordinator."
+                ),
+                citations=[],
+                confidence="low",
+                model_used="concord:relevance_gate",
+                latency_ms=round(latency_ms, 2),
+                retrieval_mode="ungrounded_query_interception"
+            )
 
         # Step 2: Delegate generation to LLM provider
         llm_output = await self.llm_provider.generate_grounded_answer(
-            query=request.query,
-            evidence_chunks=evidence_chunks
+            query=effective_query,
+            evidence_chunks=relevant_chunks
         )
 
         latency_ms = (time.perf_counter() - start_time) * 1000.0

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Bot, User, Quote, Layers, CheckCircle2 } from 'lucide-react';
+import { Bot, User, Quote, Layers, CheckCircle2, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { BrutalBadge, BrutalButton } from '../brutal';
@@ -8,6 +8,7 @@ import { cn } from '../../lib/utils';
 import { variants } from '../../motion/presets';
 import AnswerFeedback from './AnswerFeedback';
 import SpeechPlaybackButton from './SpeechPlaybackButton';
+import ThinkingIndicator from './ThinkingIndicator';
 
 /**
  * MessageBlock
@@ -21,6 +22,10 @@ export default function MessageBlock({
   citations = [],
   onOpenCitation,
   isStreaming = false,
+  model_used = null,
+  streamingState = null,
+  corrections = null,
+  onStop,
 }) {
   const isUser = role === 'user';
 
@@ -85,9 +90,14 @@ export default function MessageBlock({
     ),
   };
 
+  const hasContent = Boolean(content && content.trim().length > 0);
+  const isConversational = model_used?.includes('conversational') || streamingState === 'conversational' || (!citations?.length && hasContent);
+
   return (
     <motion.div
-      variants={variants.staggerItem}
+      initial={{ opacity: 0, y: 14, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         'w-full flex flex-col',
         isUser ? 'items-end' : 'items-start'
@@ -115,10 +125,19 @@ export default function MessageBlock({
             <span className="font-mono text-[11px] font-black uppercase tracking-wider">
               {isUser ? 'You (Verified Persona)' : 'CONCORD Grounded Memory'}
             </span>
+            {!isUser && model_used && (
+              <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 border border-brutal-black uppercase ${
+                model_used.startsWith('local:')
+                  ? 'bg-brutal-black text-brutal-yellow'
+                  : 'bg-brutal-yellow text-brutal-black'
+              }`}>
+                {model_used}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
-            {!isUser && !isStreaming && content && (
+            {!isUser && !isStreaming && hasContent && (
               <SpeechPlaybackButton content={content} />
             )}
             {timestamp && (
@@ -135,6 +154,36 @@ export default function MessageBlock({
           </div>
         </div>
 
+        {/* Claude-style Integrated Thinking / Reasoning Block for Assistant */}
+        {!isUser && (isStreaming || streamingState) && (
+          <ThinkingIndicator
+            isStreaming={isStreaming}
+            hasContent={hasContent}
+            streamingState={streamingState}
+            isConversational={isConversational}
+            onStop={onStop}
+          />
+        )}
+
+        {/* Academic Auto-Correction Badge */}
+        {!isUser && corrections && Object.keys(corrections).length > 0 && (
+          <div className="mb-3 px-2.5 py-1.5 bg-brutal-yellow/20 dark:bg-brutal-yellow/10 border-2 border-brutal-black dark:border-brutal-yellow flex items-center gap-2 flex-wrap font-mono text-[11px]">
+            <Sparkles size={13} className="text-brutal-black dark:text-brutal-yellow shrink-0" />
+            <span className="font-bold text-brutal-black dark:text-brutal-white uppercase tracking-wider text-[10px]">
+              Academic Spell-Check:
+            </span>
+            {Object.entries(corrections).map(([orig, corr], i) => (
+              <span key={i} className="inline-flex items-center gap-1">
+                <span className="line-through opacity-60">"{orig}"</span>
+                <span className="text-brutal-black dark:text-brutal-yellow font-black">→</span>
+                <span className="font-black bg-brutal-yellow text-brutal-black px-1.5 py-0.2 border border-brutal-black shadow-[1px_1px_0px_#000]">
+                  "{corr}"
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Message Content */}
         <div className="font-sans text-xs sm:text-sm select-text">
           {isUser ? (
@@ -143,9 +192,11 @@ export default function MessageBlock({
             </div>
           ) : (
             <div className="markdown-body">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={renderers}>
-                {content}
-              </ReactMarkdown>
+              {hasContent && (
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={renderers}>
+                  {content}
+                </ReactMarkdown>
+              )}
               {isStreaming && (
                 <span className="inline-block w-2 h-4 ml-1 bg-brutal-yellow border border-brutal-black animate-pulse align-middle" />
               )}
@@ -153,8 +204,8 @@ export default function MessageBlock({
           )}
         </div>
 
-        {/* Citations Footer for Assistant responses */}
-        {!isUser && citations && citations.length > 0 && (
+        {/* Citations Footer for Assistant responses (Only displayed when content exists) */}
+        {!isUser && citations && citations.length > 0 && hasContent && (
           <div className="mt-3 pt-2.5 border-t-2 border-brutal-black/10 dark:border-brutal-yellow/10 flex items-center gap-2 flex-wrap">
             <span className="font-mono text-[10px] font-black uppercase text-brutal-muted dark:text-brutal-muted-dark">
               Verified Evidence:
@@ -174,7 +225,7 @@ export default function MessageBlock({
         )}
 
         {/* Operational Feedback Loop (👍 / 👎 / Inaccuracy Flagging) */}
-        {!isUser && !isStreaming && content && <AnswerFeedback content={content} />}
+        {!isUser && !isStreaming && hasContent && <AnswerFeedback content={content} />}
       </div>
     </motion.div>
   );

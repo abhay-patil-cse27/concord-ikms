@@ -202,10 +202,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  askConversationalStream: (payload) =>
+  askConversationalStream: (payload, options = {}) =>
     consumeSSE('/api/v1/conversations/ask-stream', {
       method: 'POST',
       body: JSON.stringify(payload),
+      signal: options.signal,
     }),
 
   // Operational Feedback & Hallucination Reporting
@@ -214,5 +215,19 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  // Dual-Mode LLM Engine (Milestone 11)
+  getLLMConfig: () => apiRequest('/system/llm-config'),
+  updateLLMConfig: (payload) =>
+    apiRequest('/system/llm-config', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  testLLMNode: (payload) =>
+    apiRequest('/system/llm-test', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
+
 

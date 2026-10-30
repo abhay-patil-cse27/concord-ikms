@@ -154,8 +154,11 @@ class ConversationService:
         msg_res = await db.execute(msg_stmt)
         existing_messages = list(msg_res.scalars().all())
 
-        # 3. Contextual query rewriting
+        # 3. Contextual query rewriting & Academic typo normalizer
         effective_query = self.contextualize_query(clean_query, existing_messages)
+        from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+        norm_query, _, _ = AcademicQueryNormalizer.normalize_with_metadata(effective_query)
+        effective_query = norm_query or effective_query
 
         # 4. Save User turn
         user_msg = ConversationMessage(
@@ -270,6 +273,10 @@ class ConversationService:
         existing_messages = list(msg_res.scalars().all())
 
         effective_query = self.contextualize_query(clean_query, existing_messages)
+        # Academic Fuzzy Spell-Check and Query Normalization
+        from app.modules.retrieval.normalizer import AcademicQueryNormalizer
+        norm_query, expanded_query, query_corrections = AcademicQueryNormalizer.normalize_with_metadata(effective_query)
+        effective_query = norm_query or effective_query
 
         # 3. Save User turn
         user_msg = ConversationMessage(
@@ -282,8 +289,57 @@ class ConversationService:
         db.add(user_msg)
         await db.flush()
 
+        # Step 3.5: Conversational / Small-talk Interceptor (Zero Hallucination / Zero Citations)
+        if self.rag_service.is_conversational_query(clean_query):
+            yield format_sse_event("status", {"state": "conversational", "effective_query": clean_query})
+            yield format_sse_event("citations", [])
+
+            accumulated_text = ""
+            llm = self.rag_service.llm_provider
+            conv_history = [{"role": m.role, "content": m.content} for m in existing_messages[-4:]]
+
+            async for token in llm.stream_conversational_tokens(clean_query, conversation_history=conv_history):
+                accumulated_text += token
+                yield format_sse_event("token", {"chunk": token})
+
+            safe_answer = PromptGuard.sanitize_output(accumulated_text.strip())
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+
+            is_local = "local" in llm.__class__.__name__.lower()
+            model_name = getattr(llm, 'model', 'default')
+            actual_model_used = f"local:{model_name}" if is_local else f"groq:{model_name}"
+
+            asst_msg = ConversationMessage(
+                id=str(uuid.uuid4()),
+                conversation_id=conv.id,
+                owner_id=current_user.id,
+                role="assistant",
+                content=safe_answer,
+                citations=[],
+                confidence="high",
+                model_used=actual_model_used,
+                latency_ms=round(latency_ms, 2)
+            )
+            db.add(asst_msg)
+            await db.commit()
+            await db.refresh(conv)
+
+            yield format_sse_event("done", {
+                "conversation_id": conv.id,
+                "message_id": asst_msg.id,
+                "latency_ms": round(latency_ms, 2),
+                "citations_count": 0,
+                "model_used": actual_model_used,
+                "status": "success"
+            })
+            return
+
         # Step 4: Hybrid Search Retrieval
-        yield format_sse_event("status", {"state": "retrieving", "effective_query": effective_query})
+        yield format_sse_event("status", {
+            "state": "retrieving",
+            "effective_query": effective_query,
+            "corrections": query_corrections
+        })
 
         lifecycle_filter = "all" if include_superseded else "active"
         search_res = await self.rag_service.retrieval_service.search(
@@ -298,9 +354,62 @@ class ConversationService:
 
         evidence_chunks = [item.model_dump() for item in search_res.results]
 
-        # Assemble citations metadata
+        # Filter out chunks that have zero or negligible relevance to prevent hallucinations & loops
+        relevant_chunks = [c for c in evidence_chunks if self.rag_service.is_chunk_relevant(c, effective_query)]
+
+        # Zero-Hallucination Guard: Intercept ungrounded or unmatched queries
+        if not relevant_chunks:
+            import asyncio
+            yield format_sse_event("citations", [])
+            yield format_sse_event("status", {
+                "state": "generating",
+                "corrections": query_corrections
+            })
+
+            clarification = (
+                f"I couldn't find any institutional records, syllabus documents, or academic regulations matching "
+                f"**\"{clean_query}\"** in the Kolhapur Institute of Technology repository.\n\n"
+                f"**Suggested Institutional Inquiries:**\n"
+                f"- **Big Data Analytics (UCSPC0701):** *\"Summarize Big Data Analytics course and course outcomes\"*\n"
+                f"- **Financial Analytics (UCSMM0741):** *\"What are the prerequisites and syllabus of Financial Analytics?\"*\n"
+                f"- **Examination Rules:** *\"What is the minimum attendance requirement and ATKT / passing criteria?\"*\n"
+                f"- **DevOps & Cloud:** *\"What experiments are included in DevOps laboratory?\"*\n\n"
+                f"*Tip: If you typed a typo or course code, please check the spelling or specify your department.*"
+            )
+            for word in clarification.split(" "):
+                yield format_sse_event("token", {"chunk": word + " "})
+                await asyncio.sleep(0.01)
+
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            asst_msg = ConversationMessage(
+                id=str(uuid.uuid4()),
+                conversation_id=conv.id,
+                owner_id=current_user.id,
+                role="assistant",
+                content=clarification,
+                citations=[],
+                confidence="low",
+                model_used="concord:relevance_gate",
+                latency_ms=round(latency_ms, 2)
+            )
+            db.add(asst_msg)
+            await db.commit()
+            await db.refresh(conv)
+
+            yield format_sse_event("done", {
+                "conversation_id": conv.id,
+                "message_id": asst_msg.id,
+                "latency_ms": round(latency_ms, 2),
+                "citations_count": 0,
+                "model_used": "concord:relevance_gate",
+                "corrections": query_corrections,
+                "status": "unmatched_records"
+            })
+            return
+
+        # Assemble citations metadata strictly from genuinely relevant evidence
         citations_data = []
-        for idx, chunk in enumerate(evidence_chunks, start=1):
+        for idx, chunk in enumerate(relevant_chunks, start=1):
             citations_data.append({
                 "citation_index": idx,
                 "chunk_id": chunk.get("chunk_id"),
@@ -316,18 +425,26 @@ class ConversationService:
 
         # Emit citations before generating tokens
         yield format_sse_event("citations", citations_data)
-        yield format_sse_event("status", {"state": "generating"})
+        yield format_sse_event("status", {
+            "state": "generating",
+            "corrections": query_corrections
+        })
 
         # Step 5: Stream Tokens from LLM
         accumulated_text = ""
         llm = self.rag_service.llm_provider
-        async for token in llm.stream_grounded_tokens(effective_query, evidence_chunks):
+        async for token in llm.stream_grounded_tokens(effective_query, relevant_chunks):
             accumulated_text += token
             yield format_sse_event("token", {"chunk": token})
 
         # Sanitize final response
         safe_answer = PromptGuard.sanitize_output(accumulated_text.strip())
         latency_ms = (time.perf_counter() - start_time) * 1000.0
+
+        # Determine model tag dynamically based on active provider
+        is_local = "local" in llm.__class__.__name__.lower()
+        model_name = getattr(llm, 'model', 'default')
+        actual_model_used = f"local:{model_name}" if is_local else f"groq:{model_name}"
 
         # Step 6: Persist Assistant turn to DB
         asst_msg = ConversationMessage(
@@ -338,7 +455,7 @@ class ConversationService:
             content=safe_answer,
             citations=citations_data,
             confidence="high" if citations_data else "medium",
-            model_used=f"groq:{getattr(llm, 'model', 'stream')}",
+            model_used=actual_model_used,
             latency_ms=round(latency_ms, 2)
         )
         db.add(asst_msg)
@@ -351,6 +468,8 @@ class ConversationService:
             "message_id": asst_msg.id,
             "latency_ms": round(latency_ms, 2),
             "citations_count": len(citations_data),
+            "model_used": actual_model_used,
+            "corrections": query_corrections,
             "status": "success"
         })
 

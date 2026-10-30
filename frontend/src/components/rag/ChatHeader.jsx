@@ -14,6 +14,7 @@ export default function ChatHeader({
   onExportDossier,
   isCopyDisabled = false,
   conversationTitle = 'Autonomous Grounded Q&A',
+  activeBadge = null,
 }) {
   return (
     <div className="h-14 px-4 bg-brutal-white dark:bg-brutal-dark border-b-3 border-brutal-black dark:border-brutal-yellow flex items-center justify-between gap-3 select-none flex-shrink-0">
@@ -42,8 +43,8 @@ export default function ChatHeader({
 
       {/* Right: Security Badges & Copy/Export Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <BrutalBadge tone="yellow" size="sm" className="hidden sm:inline-flex">
-          GROQ LLM
+        <BrutalBadge tone={activeBadge?.startsWith('LOCAL:') ? 'black' : 'yellow'} size="sm" className="hidden sm:inline-flex">
+          {activeBadge || 'DUAL-MODE LLM'}
         </BrutalBadge>
 
         <BrutalBadge tone="black" size="sm" className="hidden md:inline-flex">

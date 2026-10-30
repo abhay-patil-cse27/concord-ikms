@@ -6,7 +6,7 @@ import { BrutalTable, BrutalBadge } from '../brutal';
  * BenchmarkTable
  * Architectural comparison table evaluating BM25, Vector, and Hybrid RRF.
  */
-export default function BenchmarkTable({ baseline = {}, testCasesCount = 5 }) {
+export default function BenchmarkTable({ baseline = {}, testCasesCount = 5, loading = false }) {
   const bm25 = baseline['BM25 Lexical Keyword Baseline'] || {};
   const vector = baseline['ChromaDB Dense Vector Embedding'] || {};
   const hybrid = baseline['CONCORD Hybrid (RRF + FlashRank)'] || {};
@@ -69,6 +69,12 @@ export default function BenchmarkTable({ baseline = {}, testCasesCount = 5 }) {
           TEST CASES: {testCasesCount}
         </BrutalBadge>
       </div>
+
+      {loading && (
+        <div className="w-full h-1 bg-brutal-paper dark:bg-brutal-black border border-brutal-black overflow-hidden relative">
+          <div className="w-1/3 h-full bg-brutal-yellow animate-marquee-fast" />
+        </div>
+      )}
 
       <BrutalTable headers={headers} stickyHeader>
         {paradigms.map((p) => {

@@ -56,3 +56,16 @@ class BaseLLMProvider(ABC):
         result = await self.generate_grounded_answer(query, evidence_chunks, system_prompt)
         yield result.get("answer", "")
 
+    async def stream_conversational_tokens(
+        self,
+        query: str,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        system_prompt: Optional[str] = None
+    ):
+        """
+        Yields tokens in real-time for direct conversational generation.
+        Default implementation yields the full answer as a single chunk if streaming not supported.
+        """
+        result = await self.generate_conversational_answer(query, conversation_history, system_prompt)
+        yield result.get("answer", "")
+

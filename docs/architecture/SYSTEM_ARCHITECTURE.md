@@ -10,12 +10,13 @@ CONCORD is designed as a **Modular Monolith** with dependency inversion. This pr
 |       React (Vite) + Vanilla CSS Design System (Inter, Light/Dark UI)   |
 |     Auth Context | Dashboard | Search (RRF) | Documents | Q&A (Groq)    |
 +------------------------------------+------------------------------------+
-                                     | HTTPS / JSON API contracts
+                                     | HTTPS / JSON API contracts & SSE Streams
 +------------------------------------v------------------------------------+
 |                         BACKEND API & APPLICATION                       |
 |                             FastAPI (Python 3.11/3.12)                  |
-|  - API Gateway / Router v1 (/auth, /documents, /search, /rag, /audit)   |
+|  - API Gateway / Router v1 (/auth, /documents, /conversations, /system) |
 |  - Core Security: Token Verification, RBAC Policy Guard (OWASP ASVS 4.1)|
+|  - Threat Modeling: PromptGuard, SSRF Defense, Anti-BOLA, Rate Limiter  |
 |  - Structured Error Handlers, Correlation IDs, Structured Logger        |
 +--------------------+---------------------+--------------------+---------+
                      |                     |                    |
@@ -25,8 +26,9 @@ CONCORD is designed as a **Modular Monolith** with dependency inversion. This pr
         +------------------------+  +--------------+  +----------------+
                      |                     |                    |
         +------------v-----------+  +------v-------+  +---------v------+
-        | Ingestion & Chunkers   |  | Hybrid RRF   |  | Grounded RAG   |
-        | Tabular, Semantic, Win |  | BM25 + Vec   |  | Groq Cloud LLM |
+        | Ingestion & Chunkers   |  | Hybrid RRF   |  | Dual-Mode LLM  |
+        | Tabular, Semantic, Win |  | BM25 + Vec   |  | Cloud (Groq)   |
+        | Scanned Circular OCR   |  | FlashRank    |  | Local (Ollama) |
         +------------------------+  +--------------+  +----------------+
                      |                     |                    |
 +--------------------v---------------------v--------------------v---------+
@@ -55,5 +57,11 @@ CONCORD is designed as a **Modular Monolith** with dependency inversion. This pr
    ```
 3. **Structured Observability:**
    Every request generates a unique `X-Request-ID` correlation tag, propagated across logs and audit events.
-4. **Provider Abstraction Layer:**
-   External capabilities (Storage, LLMs, Embeddings, OCR) are abstracted behind abstract base classes (Dependency Inversion).
+4. **Provider Abstraction Layer & Dual-Mode LLM:**
+   External capabilities (Storage, LLMs, Embeddings, OCR) are abstracted behind abstract base contracts (`BaseLLMProvider`, `BaseEmbeddingProvider`, `BaseOCRProvider`). The dual-mode engine enables seamless hot-swapping between ultra-fast Cloud inference (`GroqCloudLLMProvider`) and private on-premises / air-gapped campus inference nodes (`LocalLLMProvider` targeting Ollama / vLLM with `qwen2.5:1.5b`) without server restarts.
+5. **Zero-Citation Conversational Routing & Relevance Gating:**
+   Conversational greetings, identity inquiries, and colloquial remarks are short-circuited directly to conversational synthesizers with zero retrieval citations, preventing ungrounded hallucinated citations. Retrieved candidate chunks with relevance score $\le 0.0001$ are actively filtered out.
+6. **Anti-Repetition Stream Guards & Client Cancellation:**
+   Local quantized model generation is protected with `presence_penalty: 0.3`, `frequency_penalty: 0.4`, and dynamic n-gram repetition breakers (`_has_repetition_loop`). SSE streams support instant client-side termination via `AbortController` bound to the UI Stop button and `Escape` key shortcut.
+7. **Claude-Style Progressive Thinking Block:**
+   Streaming queries display a unified assistant message block featuring dynamic rotating verbs, verification steps, and automatic collapse into an expandable `[⚡ Thought Process (X steps) ▾]` tray upon completion.

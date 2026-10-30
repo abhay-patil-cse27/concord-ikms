@@ -57,7 +57,15 @@ export async function* consumeSSE(url, options = {}) {
         }
       }
     }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      // Stream cleanly aborted by user; end generator without bubbling error
+      return;
+    }
+    throw err;
   } finally {
-    reader.releaseLock();
+    try {
+      reader.releaseLock();
+    } catch {}
   }
 }
