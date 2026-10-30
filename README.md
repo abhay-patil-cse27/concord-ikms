@@ -13,7 +13,7 @@
 | :--- | :--- | :--- |
 | **Setup & Quickstart Guide** | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | Comprehensive step-by-step developer onboarding, virtualenv setup, Ollama local LLM execution, and troubleshooting. |
 | **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`, `/system`). |
-| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, and security hardening (95 tests). |
+| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, and security hardening (97 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
 | **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
@@ -205,7 +205,8 @@ cd frontend && npm test
 
 > For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
 
-- **Test Coverage Includes (86 Backend + 9 Frontend = 95 Test Scenarios — 100% Passing):**
+- **Test Coverage Includes (88 Backend + 9 Frontend = 97 Test Scenarios — 100% Passing):**
+  - **Database & Persistence Lifecycle (`test_database_persistence.py`):** Programmatic Alembic migration revision inspection (DB1) and Async SQLAlchemy session rollback on constraint violation (DB2).
   - **Fuzzy Academic Spell-Checking & Query Normalizer (`AcademicQueryNormalizer` & `test_retrieval.py`):** Phrase-level typo repair (e.g. `"bid data"` $\rightarrow$ `"big data"`, `"atendance criteria"` $\rightarrow$ `"attendance criteria"`), institutional curriculum lexicon matching (`difflib.get_close_matches(cutoff=0.72)`), and auto-correction metadata emitted to frontend Yellow Brutalist badges.
   - **Zero-Hallucination Relevance Gating & Ungrounded Query Interception:** FlashRank cross-encoder scoring ($\ge 0.15$) and domain keyword filtering to discard unrelated chunks (e.g. eliminating Financial Analytics from Big Data queries). Intercepts off-topic or ungrounded queries with structured institutional guidance and 0 citations.
   - **Dual In-Composer & Global Response Stop Buttons:** In-composer `[STOP RESPONSE ESC]` button placed directly inside the query dock and primary action button, allowing instant stream abortion with partial token preservation.
@@ -234,7 +235,7 @@ IKMS/
 │   │   │   └── audit/       # Tamper-evident Audit Events
 │   │   └── main.py          # FastAPI application & lifecycle hooks
 │   ├── alembic/             # Database migration environment & versions
-│   ├── tests/               # Pytest automated test suite (86 test cases)
+│   ├── tests/               # Pytest automated test suite (88 test cases)
 │   ├── scripts/             # Canonical demo data seeder & DB maintenance scripts
 │   ├── requirements.txt     # Pinned Python dependencies
 │   └── alembic.ini          # Migration configuration
