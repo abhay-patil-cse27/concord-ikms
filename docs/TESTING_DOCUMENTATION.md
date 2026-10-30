@@ -56,16 +56,16 @@ graph TD
 | **LLM Safety & Guardrails** | `backend/tests/test_guardrails.py` | Prompt injection blocking, instruction overrides, delimiter smuggling, zero-width spaces, output sanitization. | `pytest` | 6 |
 | **System Security Hardening** | `backend/tests/test_security_hardening.py` | SQL injection detection, ChromaDB NoSQL injection neutralization, OWASP ASVS HTTP headers, path traversal stripping. | `pytest` | 5 |
 | **AI Rate Limiting** | `backend/tests/test_rate_limiter.py` | Sliding-window token bucket quotas, per-IP isolation, HTTP 429 Retry-After responses. | `pytest` | 3 |
-| **Real-Time Token Streaming** | `backend/tests/test_streaming.py` | Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting. | `pytest` | 2 |
+| **Real-Time Token Streaming** | `backend/tests/test_streaming.py` | Server-Sent Events (SSE) `/ask-stream` response validation, chunk framing, prompt injection short-circuiting, and casual query zero-citation routing. | `pytest` | 3 |
 | **Asynchronous Ingestion** | `backend/tests/test_async_ingestion.py` | Non-blocking background document upload (`/upload-async`), 4-stage job progress polling (`/jobs/{id}`), and completion assertions. | `pytest` | 1 |
 | **Web Notice Crawler & SSRF** | `backend/tests/test_web_ingestion.py` | Protocol enforcement, loopback & RFC-1918 private IP defense, AWS metadata IP blocking, HTML boilerplate purification. | `pytest` | 2 |
 | **Dual-Mode LLM Engine** | `backend/tests/test_llm_providers.py` | Shared helper extraction, `LocalLLMProvider` offline resilience, dynamic factory hot-swapping between Cloud & Local, `/system/llm-config` RBAC authorization, and live probe diagnostics. | `pytest` | 5 |
-| **User Onboarding & 2-Tier Approvals** | `backend/tests/test_user_onboarding.py` | Self-registration, PRN/EmpID validation, unapproved login blocking, Tier 1 HOD departmental tenant isolation (BOLA 403), Tier 2 Platform Admin review, and rejection reason tracking. | `pytest` | 4 |
+| **User Onboarding & 2-Tier Approvals** | `backend/tests/test_user_onboarding.py` | Self-registration, PRN/EmpID validation, unapproved login blocking, Tier 1 HOD departmental tenant isolation (BOLA 403), Tier 2 Platform Admin review, rejection reason tracking, break-glass administrative bypass with audit justification, direct administrative user provisioning, and student dual-approval rules (Admin or HOD). | `pytest` | 7 |
 | **Database & Persistence** | `backend/tests/test_database_persistence.py` | Programmatic Alembic migration revision inspection (DB1) and Async SQLAlchemy session rollback on constraint violation (DB2). | `pytest` | 2 |
 | **Frontend Cache Isolation** | `frontend/tests/cacheIsolation.test.js` | User switching, cache namespacing (`_user_{id}`), startup legacy purge, `clearAll()`. | `node (Node.js Test)` | 5 |
 | **Frontend Speech Sanitization** | `frontend/tests/speechUtils.test.js` | Citation token removal (`[1]`), markdown formatting stripping, code block normalization, null safety. | `node (Node.js Test)` | 4 |
 
-**Total Automated Tests:** **101 automated test scenarios** (92 backend + 9 frontend, 100% passing).
+**Total Automated Tests:** **104 automated test scenarios** (95 backend + 9 frontend, 100% passing).
 
 ---
 

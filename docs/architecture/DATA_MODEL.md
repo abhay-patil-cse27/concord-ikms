@@ -37,6 +37,8 @@ erDiagram
         uuid tier1_approved_by FK
         uuid tier2_approved_by FK
         string rejection_reason
+        boolean is_bypassed
+        string bypass_reason
         boolean is_active
         boolean is_verified
         datetime created_at

@@ -306,8 +306,16 @@
   - [x] One-click Approve / Reject with confirmation modal and feedback reason notes.
   - [x] Dashboard quick alert card in `DashboardView.jsx` directing HODs/Admins directly to pending items.
   - [x] Role-restricted visibility: HOD sees only their department applicants; Platform Admin sees global applicants.
-- [x] **Step 12.5: Automated Test Suite:**
-  - [x] 4 comprehensive end-to-end integration tests in `backend/tests/test_user_onboarding.py` verifying registration, login blocking, HOD approval, BOLA protection, Tier 2 escalation, and rejection reasons. (Total: 101 tests).
+- [x] **Step 12.5: Break-Glass Fast-Track, Applicant Dossier & Global Notification Center:**
+  - [x] Alembic migration `0004_user_approval_bypass.py` adding `is_bypassed` and `bypass_reason` to `users` table.
+  - [x] Superadmin break-glass emergency bypass (`action: "bypass"`) with mandatory justification logged to cryptographic SHA-256 ledger.
+  - [x] Direct user provisioning (`POST /api/v1/governance/users/provision-direct` & `DirectProvisionModal.jsx`).
+  - [x] Universal KIT Institutional Digital ID Card (`UserProfileModal.jsx`) displaying PRN/EmpID, ASVS permissions, and session fingerprint.
+  - [x] Applicant Verification Dossier (`ApplicantDossierModal.jsx`) with automated regex format checks and clearance triggers.
+  - [x] Global Notification Center (`NotificationDrawer.jsx`) with Header Bell icon and live pending applicant counters.
+- [x] **Step 12.6: Automated Test Suite Expansion (104 Tests Total):**
+  - [x] Expanded `backend/tests/test_user_onboarding.py` to 7 integration tests covering emergency bypass, direct provisioning, and dual student clearance rules.
+  - [x] Total: **104 automated test scenarios passing** (95 backend + 9 frontend, 100% green).
 
 ## Milestone 13: Declarative Jenkins CI/CD Pipeline (Planned Blueprint)
 - [ ] **Step 13.1: Declarative Jenkinsfile:**

@@ -13,13 +13,13 @@
 | :--- | :--- | :--- |
 | **Setup & Quickstart Guide** | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | Comprehensive step-by-step developer onboarding, virtualenv setup, Ollama local LLM execution, and troubleshooting. |
 | **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`, `/system`). |
-| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, user onboarding approvals, and security hardening (101 tests). |
+| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, user onboarding approvals, and security hardening (104 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
 | **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
 | **Engineering Roadmap** | [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md) | Phased milestones, design goals, and core system differentiation. |
-| **Implementation Backlog** | [docs/architecture/BACKLOG.md](docs/architecture/BACKLOG.md) | Granular implementation status for Milestones 0 to 11 and blueprints for 12 & 13. |
-| **Architectural Decisions** | [docs/decisions/](docs/decisions/) | ADR-0001 (Modular Monolith) through ADR-0011 (Conversational Zero-Citation Routing, Relevance Gating & Loop Breakers). |
+| **Implementation Backlog** | [docs/architecture/BACKLOG.md](docs/architecture/BACKLOG.md) | Granular implementation status for Milestones 0 to 12 and blueprints for 13. |
+| **Architectural Decisions** | [docs/decisions/](docs/decisions/) | ADR-0001 (Modular Monolith) through ADR-0013 (Break-Glass Bypass, Identity Dossier & Global Notification Center). |
 
 ---
 
@@ -205,8 +205,8 @@ cd frontend && npm test
 
 > For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
 
-- **Test Coverage Includes (92 Backend + 9 Frontend = 101 Test Scenarios — 100% Passing):**
-  - **User Onboarding & 2-Tier Institutional Approvals (`test_user_onboarding.py`):** Pre-seeded 10 academic departments (+ ADMIN & TPO), student/faculty self-registration with PRN/EmpID verification, unapproved login blocking, Tier 1 HOD departmental tenant isolation (BOLA 403 prevention), Tier 2 Platform Admin review, and rejection reason logging.
+- **Test Coverage Includes (95 Backend + 9 Frontend = 104 Test Scenarios — 100% Passing):**
+  - **User Onboarding, 2-Tier Approvals & Break-Glass Bypass (`test_user_onboarding.py`):** Pre-seeded 10 academic departments (+ ADMIN & TPO), student/faculty self-registration with PRN/EmpID verification, unapproved login blocking, Tier 1 HOD departmental tenant isolation (BOLA 403 prevention), Tier 2 Platform Admin review, rejection reason logging, break-glass Superadmin bypass with justification, direct administrative user provisioning, and dual-clearance student approval rules.
   - **Database & Persistence Lifecycle (`test_database_persistence.py`):** Programmatic Alembic migration revision inspection (DB1) and Async SQLAlchemy session rollback on constraint violation (DB2).
   - **Fuzzy Academic Spell-Checking & Query Normalizer (`AcademicQueryNormalizer` & `test_retrieval.py`):** Phrase-level typo repair (e.g. `"bid data"` $\rightarrow$ `"big data"`, `"atendance criteria"` $\rightarrow$ `"attendance criteria"`), institutional curriculum lexicon matching (`difflib.get_close_matches(cutoff=0.72)`), and auto-correction metadata emitted to frontend Yellow Brutalist badges.
   - **Zero-Hallucination Relevance Gating & Ungrounded Query Interception:** FlashRank cross-encoder scoring ($\ge 0.15$) and domain keyword filtering to discard unrelated chunks (e.g. eliminating Financial Analytics from Big Data queries). Intercepts off-topic or ungrounded queries with structured institutional guidance and 0 citations.
@@ -300,10 +300,13 @@ IKMS/
   - **Claude-Style Progressive Thinking Block:** Unified assistant message card embedding rotating dynamic verbs and auto-collapsing expandable thought process tray (`[⚡ Thought Process (X steps) ▾]`).
   - **Interactive Stream Cancellation:** Red Brutalist `[STOP ⏹]` button and `Escape` key shortcut backed by client-side `AbortController` cancellation.
   - **Verified Quality Standard:** **94 / 94 automated test scenarios passing** (85 backend + 9 frontend, 100% green).
-- **Milestone 12 (Institutional User Onboarding & 2-Tier Approval Queue — Planned Blueprint):**
-  - Multi-department coverage across 10 official KIT departments (CSE, AIML, DS, ENTC, EE, ME, CE, BT, BSH, Exam Cell).
-  - Public registration portal (`/register`) with PRN/Employee ID validation and `pending_approval` gating.
+- **Milestone 12 (Institutional User Onboarding, 2-Tier Approval Queue, Break-Glass Bypass & Universal Identity — Completed & Verified):**
+  - Multi-department coverage across 10 official KIT academic departments (+ ADMIN & TPO).
+  - Public registration portal (`/register`) with PRN/Employee ID validation and `pending_tier1` / `pending_tier2` gating.
   - 2-Tier Approval Hierarchy: Tier 1 (HOD approves student & faculty) + Tier 2 (Platform Admin approves HODs).
+  - Break-Glass Emergency Fast-Track (`action: "bypass"`) & Direct Administrative User Provisioning (`POST /governance/users/provision-direct`).
+  - Universal Institutional Digital ID Card (`UserProfileModal`), Applicant Verification Dossier (`ApplicantDossierModal`), and Global Notification Center (`NotificationDrawer`).
+  - **104 / 104 automated test scenarios passing** (95 backend + 9 frontend, 100% green).
 - **Milestone 13 (Declarative Jenkins CI/CD Pipeline — Planned Blueprint):**
   - Multi-stage Jenkins declarative pipeline (Lint → Backend Tests → Frontend Tests → Vite Build → Docker Vulnerability Scan → Staging Deploy).
   - Automated JUnit XML reporting and security audit gating.

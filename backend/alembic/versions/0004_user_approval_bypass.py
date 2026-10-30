@@ -40,3 +40,4 @@ def downgrade() -> None:
             op.drop_column('users', 'bypass_reason')
         if 'is_bypassed' in columns:
             op.drop_column('users', 'is_bypassed')
+
