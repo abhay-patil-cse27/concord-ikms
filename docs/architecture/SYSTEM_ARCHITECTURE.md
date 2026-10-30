@@ -65,3 +65,5 @@ CONCORD is designed as a **Modular Monolith** with dependency inversion. This pr
    Local quantized model generation is protected with `presence_penalty: 0.3`, `frequency_penalty: 0.4`, and dynamic n-gram repetition breakers (`_has_repetition_loop`). SSE streams support instant client-side termination via `AbortController` bound to the UI Stop button and `Escape` key shortcut.
 7. **Claude-Style Progressive Thinking Block:**
    Streaming queries display a unified assistant message block featuring dynamic rotating verbs, verification steps, and automatic collapse into an expandable `[⚡ Thought Process (X steps) ▾]` tray upon completion.
+8. **2-Tier Institutional Onboarding & Approval Queue:**
+   Self-registration (`/auth/register`) enforces academic credential validation (PRN/Employee ID) and assigns applicants to an unapproved state (`pending_tier1` for student/faculty, `pending_tier2` for HODs). Department Heads review Tier 1 applicants strictly within their department tenant (BOLA prevention), while Platform Admins review Tier 2 HOD nominations and system-wide delegations.

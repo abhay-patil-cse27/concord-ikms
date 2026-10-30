@@ -47,3 +47,4 @@ Furthermore, an authorization hierarchy is required:
   - Zero regression across all 101 automated test cases.
 - **Negative:**
   - Self-registered users cannot immediately access RAG search until their department HOD reviews their submission.
+

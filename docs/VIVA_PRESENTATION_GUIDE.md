@@ -122,7 +122,7 @@ flowchart LR
 | **Mean Reciprocal Rank (MRR@5)** | 0.650 – 0.750 | **1.000** | Ground-truth institutional document consistently ranked at #1. |
 | **Cross-Tenant Security Leakage** | Common (unfiltered RAG) | **0.0% (Zero)** | Complete departmental multi-tenancy and isolation. |
 | **Query Latency (P95)** | 2500ms – 4000ms | **< 1200ms (Groq) / 62ms (Local)** | Instantaneous streaming responses suitable for campus load. |
-| **Test Suite Coverage** | Minimal / Ad-hoc | **47 Passing Pytest Tests** | Rigorous verification across auth, ingestion, search, and RAG. |
+| **Test Suite Coverage** | Minimal / Ad-hoc | **101 Passing Tests (92 Pytest + 9 Node)** | Rigorous verification across auth, ingestion, search, database, onboarding, and RAG. |
 
 ---
 

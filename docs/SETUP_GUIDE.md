@@ -168,12 +168,12 @@ If neither Groq nor Ollama is running, CONCORD automatically falls back to its d
 
 To verify that everything is working properly on your machine:
 
-### 1. Run Backend Pytest Suite (85 Scenarios)
+### 1. Run Backend Pytest Suite (92 Scenarios)
 From the `backend/` directory with virtual environment activated:
 ```bash
 pytest tests/ -v
 ```
-*(All 85 tests run offline and pass with 100% green).*
+*(All 92 tests run offline and pass with 100% green across database persistence, user onboarding approvals, dual-mode LLM engine, and security hardening).*
 
 ### 2. Run Frontend Isolation & Sanitization Tests (9 Scenarios)
 From the `frontend/` directory:
@@ -186,7 +186,9 @@ npm test
 ```bash
 npm run build
 ```
-*(Verifies tree-shaking, CSS optimization, and zero bundling errors).*
+*(Verifies tree-shaking, CSS optimization, chunk code-splitting, and zero bundling errors).*
+
+> **Total Test Suite:** 101 automated test cases (92 backend + 9 frontend).
 
 ---
 

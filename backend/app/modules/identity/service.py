@@ -241,9 +241,10 @@ class IdentityService:
                 raise ForbiddenError(message="Cannot review registrations outside of your department")
 
         if action.lower() == "approve":
+            prior_status = target_user.approval_status
             target_user.approval_status = "approved"
             target_user.is_active = True
-            if target_user.approval_status == "pending_tier1":
+            if prior_status == "pending_tier1":
                 target_user.tier1_approved_by = current_user.id
             else:
                 target_user.tier2_approved_by = current_user.id

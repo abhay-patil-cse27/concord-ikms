@@ -18,7 +18,7 @@ graph TD
     subgraph AI_Intelligence ["AI Engine & Orchestration"]
         Embed["Embedding: ONNX MiniLM-L6-v2 (384-d)"]
         Rerank["Cross-Encoder Reranker: FlashRank ms-marco-TinyBERT"]
-        LLM["Generative LLM: Groq Cloud API (Llama 3.3)"]
+        LLM["Generative LLM: Dual-Mode Engine<br/>- Groq Cloud API (Llama 3.3)<br/>- Local Ollama Node (qwen2.5:1.5b)"]
     end
 
     Client -->|REST API / JWT| API

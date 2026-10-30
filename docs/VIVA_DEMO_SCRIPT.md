@@ -243,8 +243,8 @@ flowchart LR
 
 ## 5. Summary of System Capabilities (True & Verified)
 
-- **Backend:** FastAPI, Python 3.11, SQLAlchemy 2.0 Async, aiosqlite, ChromaDB 0.6, FlashRank, Groq Cloud API.
+- **Backend:** FastAPI, Python 3.11, SQLAlchemy 2.0 Async, aiosqlite, ChromaDB 0.6, FlashRank, Dual-Mode LLM (Groq Cloud API & Local Ollama Node).
 - **Frontend:** React 18, Vite 5, Tailwind CSS 3, Framer Motion, Lucide Icons, Yellow Brutalist Component Library.
-- **Test Suite:** 49/49 automated Pytest unit tests passing (100% pass rate).
-- **Bundle Health:** 2257 modules built in 12.8s; zero chunks over 160 kB.
-- **Architectural Standards:** OWASP ASVS 4.1 RBAC, SHA-256 Tamper-Evident Ledger, RRF k=60, FlashRank Cross-Encoder reranking.
+- **Test Suite:** 101/101 automated test cases passing (92 backend Pytest + 9 frontend Node unit tests, 100% pass rate).
+- **Bundle Health:** 2273 modules built with code-splitting; all views lazy-loaded.
+- **Architectural Standards:** OWASP ASVS 4.1 RBAC, 2-Tier Institutional Onboarding & Approval Queue, SHA-256 Tamper-Evident Ledger, RRF k=60, FlashRank Cross-Encoder reranking, Fuzzy Spell Normalizer.

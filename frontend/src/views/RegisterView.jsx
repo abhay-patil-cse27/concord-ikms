@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Building2, User, Lock, Hash } from 'lucide-react';
+import { ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import { BrutalButton, BrutalCard, BrutalBadge, BrutalInput } from '../components/brutal';
 import ThemeToggle from '../components/layout/ThemeToggle';
+import RoleSelector from '../components/auth/RoleSelector';
+import RegistrationConfirmationReceipt from '../components/auth/RegistrationConfirmationReceipt';
 import { api } from '../api/client';
-import { cn } from '../lib/utils';
 
+/**
+ * RegisterView
+ * Modular Yellow Brutalist self-registration gateway for institutional members.
+ */
 export default function RegisterView({ onBack, onGoToLogin }) {
   const [departments, setDepartments] = useState([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
@@ -27,7 +32,6 @@ export default function RegisterView({ onBack, onGoToLogin }) {
     async function loadDepts() {
       try {
         const data = await api.getPublicDepartments();
-        // Filter out ADMIN and EXAM cells for general student/faculty self-registration
         const academicDepts = data.filter((d) => d.code !== 'ADMIN');
         setDepartments(academicDepts);
         if (academicDepts.length > 0) {
@@ -74,15 +78,20 @@ export default function RegisterView({ onBack, onGoToLogin }) {
       });
       setSuccessData(res);
     } catch (err) {
-      setError(err.message || 'Registration failed. Please check your inputs.');
+      setError(err?.message || 'Registration failed. Please check your inputs.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const roleLabel = roleCode === 'student' ? 'Student' : roleCode === 'faculty' ? 'Faculty Member' : 'Department Admin (HOD)';
-  const idLabel = roleCode === 'student' ? 'Permanent Registration Number (PRN)' : 'Faculty / Staff Employee ID';
+  const roleLabel =
+    roleCode === 'student' ? 'Student' : roleCode === 'faculty' ? 'Faculty Member' : 'Department Admin (HOD)';
+  const idLabel =
+    roleCode === 'student' ? 'Permanent Registration Number (PRN)' : 'Faculty / Staff Employee ID';
   const idPlaceholder = roleCode === 'student' ? 'e.g., 2024BTECS089' : 'e.g., EMP-CSE-042';
+
+  const selectedDeptName =
+    departments.find((d) => d.id === departmentId)?.name || successData?.department || 'Department';
 
   return (
     <div className="min-h-screen bg-brutal-paper dark:bg-brutal-black text-brutal-black dark:text-brutal-white flex flex-col justify-between selection:bg-brutal-yellow selection:text-brutal-black">
@@ -120,58 +129,14 @@ export default function RegisterView({ onBack, onGoToLogin }) {
       {/* Main Registration Stage */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-8 sm:py-12">
         {successData ? (
-          <BrutalCard className="p-6 sm:p-8 border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal bg-brutal-white dark:bg-brutal-dark">
-            <div className="flex items-center gap-3 text-brutal-black dark:text-brutal-yellow mb-4">
-              <CheckCircle2 size={32} className="text-brutal-accent stroke-[2.5]" />
-              <div>
-                <h2 className="font-display font-black text-xl uppercase tracking-tight">
-                  Registration Submitted!
-                </h2>
-                <div className="font-mono text-xs text-brutal-muted dark:text-brutal-muted-dark">
-                  Application routed to Institutional 2-Tier Approval Queue
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-brutal-yellow/15 border-2 border-brutal-black dark:border-brutal-yellow space-y-2 mb-6 font-mono text-xs">
-              <div className="flex justify-between">
-                <span className="text-brutal-muted dark:text-brutal-muted-dark">Applicant:</span>
-                <span className="font-bold">{fullName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-brutal-muted dark:text-brutal-muted-dark">Institutional Email:</span>
-                <span className="font-bold">{email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-brutal-muted dark:text-brutal-muted-dark">Requested Role:</span>
-                <span className="font-bold uppercase">{roleLabel}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-brutal-muted dark:text-brutal-muted-dark">Department:</span>
-                <span className="font-bold">{successData.department}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-brutal-muted dark:text-brutal-muted-dark">Queue Status:</span>
-                <span className="font-bold text-brutal-accent uppercase">{successData.approval_status}</span>
-              </div>
-            </div>
-
-            <p className="font-mono text-xs text-brutal-black/80 dark:text-brutal-white/80 leading-relaxed mb-6">
-              {successData.approval_status === 'pending_tier1'
-                ? 'Your registration has been forwarded to your Department Administrator (HOD) for verification. Once approved, you can sign in directly with your email and password.'
-                : 'Your registration as Department Administrator has been routed to the Platform Administrator (Dean / Registrar) for Tier-2 approval.'}
-            </p>
-
-            <BrutalButton
-              variant="primary"
-              size="lg"
-              onClick={onGoToLogin}
-              className="w-full justify-center text-xs font-black uppercase tracking-wider shadow-brutal"
-            >
-              <span>Return to Sign In</span>
-              <ArrowRight size={16} />
-            </BrutalButton>
-          </BrutalCard>
+          <RegistrationConfirmationReceipt
+            applicantName={fullName}
+            email={email}
+            roleLabel={roleLabel}
+            departmentName={selectedDeptName}
+            approvalStatus={successData.approval_status}
+            onReturnToLogin={onGoToLogin}
+          />
         ) : (
           <BrutalCard className="p-6 sm:p-8 border-3 border-brutal-black dark:border-brutal-yellow shadow-brutal bg-brutal-white dark:bg-brutal-dark">
             <div className="mb-6 pb-4 border-b-2 border-brutal-black/10 dark:border-brutal-yellow/10">
@@ -191,35 +156,12 @@ export default function RegisterView({ onBack, onGoToLogin }) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Role Picker */}
-              <div>
-                <label className="block font-mono text-[11px] font-black uppercase tracking-wider mb-2 text-brutal-black dark:text-brutal-white">
-                  Institutional Persona / Role:
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'student', label: 'Student' },
-                    { id: 'faculty', label: 'Faculty' },
-                    { id: 'dept_admin', label: 'HOD' },
-                  ].map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setRoleCode(r.id)}
-                      className={cn(
-                        'py-2 px-3 border-2 font-mono text-xs font-bold uppercase transition-all',
-                        roleCode === r.id
-                          ? 'bg-brutal-yellow text-brutal-black border-brutal-black shadow-[2px_2px_0px_#0A0A0A]'
-                          : 'bg-transparent text-brutal-muted hover:text-brutal-black dark:hover:text-brutal-white border-brutal-black/20 dark:border-brutal-yellow/20'
-                      )}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <RoleSelector
+                selectedRole={roleCode}
+                onSelectRole={setRoleCode}
+                disabled={submitting}
+              />
 
-              {/* Full Name */}
               <BrutalInput
                 label="Full Name"
                 type="text"
@@ -230,7 +172,6 @@ export default function RegisterView({ onBack, onGoToLogin }) {
                 disabled={submitting}
               />
 
-              {/* Institutional Email */}
               <BrutalInput
                 label="Institutional Email"
                 type="email"
@@ -241,7 +182,6 @@ export default function RegisterView({ onBack, onGoToLogin }) {
                 disabled={submitting}
               />
 
-              {/* Registration Number (PRN / Emp ID) */}
               <BrutalInput
                 label={idLabel}
                 type="text"
@@ -252,7 +192,6 @@ export default function RegisterView({ onBack, onGoToLogin }) {
                 disabled={submitting}
               />
 
-              {/* Department Selector */}
               <div>
                 <label className="block font-mono text-[11px] font-black uppercase tracking-wider mb-1 text-brutal-black dark:text-brutal-white">
                   Academic Department:
@@ -271,7 +210,6 @@ export default function RegisterView({ onBack, onGoToLogin }) {
                 </select>
               </div>
 
-              {/* Password */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <BrutalInput
                   label="Password"
@@ -327,4 +265,3 @@ export default function RegisterView({ onBack, onGoToLogin }) {
     </div>
   );
 }
-

@@ -32,6 +32,11 @@ erDiagram
         string full_name
         string hashed_password
         uuid primary_department_id FK
+        string approval_status
+        string registration_number
+        uuid tier1_approved_by FK
+        uuid tier2_approved_by FK
+        string rejection_reason
         boolean is_active
         boolean is_verified
         datetime created_at
