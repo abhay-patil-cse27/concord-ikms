@@ -63,6 +63,16 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ action, reason }),
     }),
+  bypassUser: (userId, reason) =>
+    apiRequest(`/governance/users/${userId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'bypass', reason }),
+    }),
+  provisionDirectUser: (payload) =>
+    apiRequest('/governance/users/provision-direct', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   // Organizations
   getDepartments: () => apiRequest('/organizations/departments'),

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserCheck } from 'lucide-react';
+import { Users, UserCheck, UserPlus } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { uiCache } from '../utils/uiCache';
 import UsersHeader from '../components/users/UsersHeader';
 import UsersTable from '../components/users/UsersTable';
 import UserApprovalQueue from '../components/users/UserApprovalQueue';
+import DirectProvisionModal from '../components/users/DirectProvisionModal';
 import { BrutalSkeleton, BrutalEmptyState, BrutalToast } from '../components/brutal';
 import { cn } from '../lib/utils';
 
@@ -16,7 +17,7 @@ import { cn } from '../lib/utils';
  */
 export default function UsersView() {
   const cached = uiCache.get(uiCache.KEYS.USERS, {});
-  const { hasPermission } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const [users, setUsers] = useState(() => cached.users || []);
   const [loading, setLoading] = useState(() => !cached.users?.length);
   const [error, setError] = useState(null);
@@ -26,9 +27,20 @@ export default function UsersView() {
   const [viewMode, setViewMode] = useState('directory');
   const [pendingCount, setPendingCount] = useState(0);
 
+  // Direct Provisioning
+  const [showProvisionModal, setShowProvisionModal] = useState(false);
+  const [departments, setDepartments] = useState([]);
+
   // Filters for Directory
   const [activeFilterRole, setActiveFilterRole] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const canProvision =
+    hasRole('superadmin') ||
+    hasRole('platform_admin') ||
+    hasRole('hod') ||
+    hasRole('dean') ||
+    hasPermission('users:write');
 
   useEffect(() => {
     if (users.length > 0) {
@@ -60,11 +72,30 @@ export default function UsersView() {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const depts = await api.getDepartments();
+      if (Array.isArray(depts)) {
+        setDepartments(depts);
+      }
+    } catch {
+      try {
+        const publicDepts = await api.getPublicDepartments();
+        if (Array.isArray(publicDepts)) {
+          setDepartments(publicDepts);
+        }
+      } catch {
+        // Fallback
+      }
+    }
+  };
+
   useEffect(() => {
     if (!cached.users?.length) {
       fetchUsers();
     }
     fetchPendingCount();
+    fetchDepartments();
   }, []);
 
   const handleToggleStatus = (targetUser) => {
@@ -113,41 +144,65 @@ export default function UsersView() {
         />
       )}
 
-      {/* Top View Selector: Directory vs Approval Queue */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setViewMode('directory')}
-          className={cn(
-            "px-4 py-2 font-display font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-brutal-black dark:border-brutal-yellow transition-all flex items-center gap-2",
-            viewMode === 'directory'
-              ? "bg-brutal-yellow text-brutal-black shadow-brutal-sm"
-              : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-yellow hover:text-brutal-black dark:hover:bg-brutal-yellow dark:hover:text-brutal-black"
-          )}
-        >
-          <Users size={16} strokeWidth={2.5} />
-          <span>Active Directory ({users.length})</span>
-        </button>
+      {/* Top View Selector: Directory vs Approval Queue + Direct Provision */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setViewMode('directory')}
+            className={cn(
+              "px-4 py-2 font-display font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-brutal-black dark:border-brutal-yellow transition-all flex items-center gap-2",
+              viewMode === 'directory'
+                ? "bg-brutal-yellow text-brutal-black shadow-brutal-sm"
+                : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-yellow hover:text-brutal-black dark:hover:bg-brutal-yellow dark:hover:text-brutal-black"
+            )}
+          >
+            <Users size={16} strokeWidth={2.5} />
+            <span>Active Directory ({users.length})</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setViewMode('queue')}
-          className={cn(
-            "px-4 py-2 font-display font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-brutal-black dark:border-brutal-yellow transition-all flex items-center gap-2",
-            viewMode === 'queue'
-              ? "bg-brutal-yellow text-brutal-black shadow-brutal-sm"
-              : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-yellow hover:text-brutal-black dark:hover:bg-brutal-yellow dark:hover:text-brutal-black"
-          )}
-        >
-          <UserCheck size={16} strokeWidth={2.5} />
-          <span>Approval Queue</span>
-          {pendingCount > 0 && (
-            <span className="px-1.5 py-0.5 bg-brutal-accent text-brutal-white text-[10px] font-mono font-black border border-brutal-black animate-pulse">
-              {pendingCount}
-            </span>
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('queue')}
+            className={cn(
+              "px-4 py-2 font-display font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-brutal-black dark:border-brutal-yellow transition-all flex items-center gap-2",
+              viewMode === 'queue'
+                ? "bg-brutal-yellow text-brutal-black shadow-brutal-sm"
+                : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-yellow hover:text-brutal-black dark:hover:bg-brutal-yellow dark:hover:text-brutal-black"
+            )}
+          >
+            <UserCheck size={16} strokeWidth={2.5} />
+            <span>Approval Queue</span>
+            {pendingCount > 0 && (
+              <span className="px-1.5 py-0.5 bg-brutal-accent text-brutal-white text-[10px] font-mono font-black border border-brutal-black animate-pulse">
+                {pendingCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {canProvision && (
+          <button
+            type="button"
+            onClick={() => setShowProvisionModal(true)}
+            className="px-4 py-2 bg-brutal-black text-brutal-yellow dark:bg-brutal-yellow dark:text-brutal-black font-display font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm hover:translate-x-0.5 hover:-translate-y-0.5 transition-all flex items-center gap-2"
+          >
+            <UserPlus size={16} strokeWidth={2.5} />
+            <span>Direct Provision</span>
+          </button>
+        )}
       </div>
+
+      {/* Direct Provision Modal */}
+      <DirectProvisionModal
+        isOpen={showProvisionModal}
+        onClose={() => setShowProvisionModal(false)}
+        departments={departments}
+        onSuccess={({ message }) => {
+          fetchUsers();
+          setToast({ message, type: 'success' });
+        }}
+      />
 
       {viewMode === 'queue' ? (
         <UserApprovalQueue onActionSuccess={handleApprovalSuccess} />

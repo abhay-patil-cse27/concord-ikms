@@ -449,3 +449,94 @@ sequenceDiagram
   }
   ```
 
+---
+
+## 10. Institutional Onboarding & Governance (`/governance`, `/auth`)
+
+### `GET /auth/departments`
+- **Description:** Public endpoint returning active institutional departments for student/faculty registration dropdowns.
+- **Authorization:** Public (No Bearer token required).
+- **Response (200 OK):**
+  ```json
+  [
+    {
+      "id": "e4a7a8d8-7440-4f92-bd60-4960d70be134",
+      "code": "CSE",
+      "name": "Computer Science & Engineering",
+      "is_active": true
+    }
+  ]
+  ```
+
+### `POST /auth/register`
+- **Description:** Self-registration endpoint creating accounts in `pending_tier1` (students, faculty) or `pending_tier2` (HODs) status. Unapproved accounts cannot authenticate.
+- **Request Body:**
+  ```json
+  {
+    "full_name": "Rohan Deshmukh",
+    "email": "rohan.deshmukh@kitcoek.in",
+    "password": "Password@123",
+    "department_id": "e4a7a8d8-7440-4f92-bd60-4960d70be134",
+    "role_code": "student",
+    "registration_number": "2024BTECS089"
+  }
+  ```
+- **Response (201 Created):**
+  ```json
+  {
+    "user_id": "f51950e3-6c07-4228-87da-a07671b402ea",
+    "full_name": "Rohan Deshmukh",
+    "email": "rohan.deshmukh@kitcoek.in",
+    "role_code": "student",
+    "approval_status": "pending_tier1",
+    "message": "Account registration submitted successfully. Institutional clearance required."
+  }
+  ```
+
+### `GET /governance/pending-users`
+- **Description:** Returns pending applicant clearance queue scoped to reviewer's institutional boundary (HODs see their department; Platform Admin sees all).
+- **Authorization:** `dept_admin` (HOD) or `platform_admin`.
+
+### `POST /governance/users/{id}/review`
+- **Description:** Action clearance review on an applicant. Supports `approve`, `reject`, and break-glass `bypass`.
+- **Authorization:**
+  - `approve` / `reject`: HOD (scoped to their department) or Superadmin.
+  - `bypass`: Platform Superadmin only (requires administrative justification).
+- **Request Body:**
+  ```json
+  {
+    "action": "bypass",
+    "reason": "NAAC Emergency Peer Review Fast-Track Access"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "id": "f51950e3-6c07-4228-87da-a07671b402ea",
+    "full_name": "Rohan Deshmukh",
+    "email": "rohan.deshmukh@kitcoek.in",
+    "approval_status": "approved",
+    "is_active": true,
+    "is_bypassed": true,
+    "bypass_reason": "NAAC Emergency Peer Review Fast-Track Access"
+  }
+  ```
+
+### `POST /governance/users/provision-direct`
+- **Description:** Administrative direct provisioning creating pre-cleared, activated accounts skipping public registration queues.
+- **Authorization:** `platform_admin`, `superadmin`, or `dept_admin` (scoped to their department).
+- **Request Body:**
+  ```json
+  {
+    "full_name": "Dr. Direct Provisioned",
+    "email": "direct.provision@kitcoek.in",
+    "password": "Password@123",
+    "department_id": "e4a7a8d8-7440-4f92-bd60-4960d70be134",
+    "role_code": "faculty",
+    "registration_number": "EMP-DIRECT-999",
+    "provision_reason": "Executive direct appointment"
+  }
+  ```
+- **Response (201 Created):** Returns the provisioned user profile with `approval_status: "approved"` and `is_active: true`.
+
+

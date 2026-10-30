@@ -11,6 +11,7 @@ from app.modules.identity.schemas import (
     TokenResponse,
     UserResponse,
     UserRegisterRequest,
+    UserDirectProvisionRequest,
 )
 
 
@@ -250,13 +251,23 @@ class IdentityService:
                 target_user.tier2_approved_by = current_user.id
             target_user.rejection_reason = None
             msg = f"User '{target_user.full_name}' was successfully approved."
+        elif action.lower() == "bypass":
+            if not is_global_admin:
+                raise ForbiddenError(message="Only Platform Administrators can execute administrative break-glass bypass")
+            target_user.approval_status = "approved"
+            target_user.is_active = True
+            target_user.is_bypassed = True
+            target_user.bypass_reason = reason or "Administrative Emergency Override"
+            target_user.tier1_approved_by = current_user.id
+            target_user.rejection_reason = None
+            msg = f"User '{target_user.full_name}' was cleared via Administrative Break-Glass Bypass."
         elif action.lower() == "reject":
             target_user.approval_status = "rejected"
             target_user.is_active = False
             target_user.rejection_reason = reason or "Institutional requirements not met"
             msg = f"User '{target_user.full_name}' registration was rejected."
         else:
-            raise BadRequestError(message=f"Invalid approval action '{action}'. Must be 'approve' or 'reject'.")
+            raise BadRequestError(message=f"Invalid approval action '{action}'. Must be 'approve', 'reject', or 'bypass'.")
 
         await db.commit()
         await db.refresh(target_user)
@@ -267,7 +278,66 @@ class IdentityService:
             "full_name": target_user.full_name,
             "approval_status": target_user.approval_status,
             "is_active": target_user.is_active,
+            "is_bypassed": target_user.is_bypassed,
+            "bypass_reason": target_user.bypass_reason,
         }
+
+    @staticmethod
+    async def direct_provision_user(
+        db: AsyncSession,
+        req: UserDirectProvisionRequest,
+        current_user: User
+    ) -> UserResponse:
+        """
+        Directly provisions a pre-cleared institutional user (skipping registration queue).
+        - Platform Admin: can provision any role across any department
+        - HOD: can provision Student or Faculty for their own department only
+        """
+        user_roles = [r.code for r in current_user.roles] if hasattr(current_user, "roles") else []
+        is_global_admin = "platform_admin" in user_roles
+        is_dept_admin = "dept_admin" in user_roles
+
+        if not is_global_admin and not is_dept_admin:
+            raise ForbiddenError(message="You do not have permission to provision users directly")
+
+        target_dept_id = req.department_id
+        if not is_global_admin:
+            target_dept_id = current_user.primary_department_id
+            if req.role_code not in ["student", "faculty"]:
+                raise ForbiddenError(message="Department administrators can only provision students and faculty")
+
+        # Validate duplicate email
+        existing = await IdentityService.get_user_by_email(db, req.email)
+        if existing:
+            raise ConflictError(message=f"An account with email '{req.email}' already exists")
+
+        # Resolve role
+        role_res = await db.execute(select(Role).where(Role.code == req.role_code))
+        target_role = role_res.scalar_one_or_none()
+        if not target_role:
+            raise NotFoundError(message=f"Role '{req.role_code}' does not exist")
+
+        new_user = User(
+            email=req.email.lower().strip(),
+            full_name=req.full_name.strip(),
+            hashed_password=get_password_hash(req.password),
+            primary_department_id=target_dept_id,
+            is_active=True,
+            is_verified=True,
+            approval_status="approved",
+            registration_number=req.registration_number.strip() if req.registration_number else None,
+            tier1_approved_by=current_user.id,
+            is_bypassed=True,
+            bypass_reason=req.provision_reason or "Direct Administrative Provisioning"
+        )
+        db.add(new_user)
+        await db.flush()
+
+        user_role = UserRole(user_id=new_user.id, role_id=target_role.id)
+        db.add(user_role)
+        await db.commit()
+
+        return await IdentityService.get_user_by_id(db, new_user.id)
 
     @staticmethod
     async def demo_login_by_role(db: AsyncSession, role_code: str) -> TokenResponse:

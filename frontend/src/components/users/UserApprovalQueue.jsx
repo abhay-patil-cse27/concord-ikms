@@ -3,6 +3,7 @@ import { UserCheck, AlertCircle } from 'lucide-react';
 import { BrutalButton, BrutalBadge, BrutalSkeleton, BrutalEmptyState } from '../brutal';
 import UserApprovalTable from './UserApprovalTable';
 import RejectionModal from './RejectionModal';
+import ApplicantDossierModal from './ApplicantDossierModal';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
@@ -18,8 +19,9 @@ export default function UserApprovalQueue({ onActionSuccess }) {
   const [error, setError] = useState(null);
   const [actionInProgress, setActionInProgress] = useState(null); // userId being processed
 
-  // Rejection Modal State
+  // Rejection & Dossier Inspection Modal States
   const [rejectingUser, setRejectingUser] = useState(null);
+  const [inspectingApplicant, setInspectingApplicant] = useState(null);
 
   const fetchPending = async () => {
     setLoading(true);
@@ -46,6 +48,7 @@ export default function UserApprovalQueue({ onActionSuccess }) {
     try {
       await api.reviewUser(applicant.id, 'approve');
       setPendingUsers((prev) => prev.filter((u) => u.id !== applicant.id));
+      setInspectingApplicant(null);
       if (onActionSuccess) {
         onActionSuccess({
           message: `Applicant "${applicant.full_name}" successfully approved.`,
@@ -60,7 +63,37 @@ export default function UserApprovalQueue({ onActionSuccess }) {
     }
   };
 
+  const handleBypass = async (applicant) => {
+    const reason = window.prompt(
+      `Execute Institutional Break-Glass Override for "${applicant.full_name}"?\n\nEnter mandatory administrative justification:`
+    );
+    if (!reason || reason.trim().length < 5) {
+      setError('A valid administrative reason (minimum 5 characters) is required for emergency bypass.');
+      return;
+    }
+
+    setActionInProgress(applicant.id);
+    setError(null);
+    try {
+      await api.bypassUser(applicant.id, reason.trim());
+      setPendingUsers((prev) => prev.filter((u) => u.id !== applicant.id));
+      setInspectingApplicant(null);
+      if (onActionSuccess) {
+        onActionSuccess({
+          message: `Emergency Administrative Bypass executed for "${applicant.full_name}". Reason logged to audit ledger.`,
+          type: 'success',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to bypass applicant:', err);
+      setError(err?.message || `Failed to execute bypass on ${applicant.full_name}.`);
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
   const handleOpenRejectModal = (applicant) => {
+    setInspectingApplicant(null);
     setRejectingUser(applicant);
   };
 
@@ -152,8 +185,21 @@ export default function UserApprovalQueue({ onActionSuccess }) {
           actionInProgress={actionInProgress}
           onApprove={handleApprove}
           onOpenRejectModal={handleOpenRejectModal}
+          onInspectDossier={setInspectingApplicant}
         />
       )}
+
+      {/* Applicant Verification Dossier Modal */}
+      <ApplicantDossierModal
+        applicant={inspectingApplicant}
+        isOpen={Boolean(inspectingApplicant)}
+        onClose={() => setInspectingApplicant(null)}
+        onApprove={handleApprove}
+        onOpenReject={handleOpenRejectModal}
+        onBypass={handleBypass}
+        isSuperadmin={isPlatformAdmin}
+        isProcessing={Boolean(actionInProgress)}
+      />
 
       {/* Reusable Reject Modal */}
       <RejectionModal

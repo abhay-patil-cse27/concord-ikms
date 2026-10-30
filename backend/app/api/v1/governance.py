@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_permission, get_current_user
 from app.modules.identity.models import User
-from app.modules.identity.schemas import UserResponse, UserApprovalAction
+from app.modules.identity.schemas import UserResponse, UserApprovalAction, UserDirectProvisionRequest
 from app.modules.identity.service import IdentityService
 from app.modules.documents.schemas import DocumentRead, DocumentApprovalDecision
 from app.modules.documents.service import DocumentService
@@ -115,3 +115,43 @@ async def review_user_registration(
         )
     )
     return result
+
+
+@router.post("/users/provision-direct", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Directly Provision User")
+async def provision_user_directly(
+    payload: UserDirectProvisionRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Directly provisions an active, pre-approved institutional user (skipping registration queue).
+    - Platform Admin can provision any role college-wide.
+    - Department Admin (HOD) can provision Students or Faculty in their assigned department.
+    """
+    client_ip = request.client.host if request.client else None
+    new_user = await IdentityService.direct_provision_user(
+        db=db,
+        req=payload,
+        current_user=current_user
+    )
+
+    await AuditService.log_event(
+        db,
+        AuditEventCreate(
+            user_id=current_user.id,
+            action="USER_DIRECT_PROVISION",
+            resource_type="user",
+            resource_id=new_user.id,
+            details={
+                "provisioned_by": current_user.email,
+                "provisioned_email": new_user.email,
+                "role": payload.role_code,
+                "department_id": new_user.primary_department_id,
+                "reason": payload.provision_reason,
+            },
+            ip_address=client_ip,
+            request_id=request.headers.get("x-request-id"),
+        )
+    )
+    return UserResponse.model_validate(new_user)

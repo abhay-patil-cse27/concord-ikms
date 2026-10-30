@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Shield, LogOut, Menu, User, ChevronDown, Check } from 'lucide-react';
+import { Shield, LogOut, Menu, User, ChevronDown, Check, ShieldCheck, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api/client';
 import ThemeToggle from './layout/ThemeToggle';
 import { BrutalButton, BrutalBadge } from './brutal';
+import UserProfileModal from './auth/UserProfileModal';
+import NotificationDrawer from './notifications/NotificationDrawer';
 import { cn } from '../lib/utils';
 
 const DEMO_ROLES = [
@@ -20,8 +23,28 @@ const DEMO_ROLES = [
 export default function Navbar({ onToggleMobileMenu }) {
   const { user, logout, switchDemoRole } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
   const [switchingRole, setSwitchingRole] = useState(null);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const canApprove =
+      user.roles?.some((r) => ['platform_admin', 'superadmin', 'hod', 'dean'].includes(r.code)) ||
+      ['platform_admin', 'superadmin', 'dept_admin_cse', 'hod', 'dean'].includes(user.role_code);
+
+    if (canApprove) {
+      api.getPendingUsers()
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setPendingApprovalsCount(data.length);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -112,6 +135,24 @@ export default function Navbar({ onToggleMobileMenu }) {
         {/* Theme Mode Toggle */}
         <ThemeToggle />
 
+        {/* Institutional Notification Bell */}
+        {user && (
+          <button
+            type="button"
+            onClick={() => setShowNotifications(true)}
+            className="relative p-2 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white shadow-brutal-sm hover:bg-brutal-yellow hover:text-brutal-black dark:hover:bg-brutal-yellow dark:hover:text-brutal-black transition-all flex items-center justify-center"
+            title="Institutional Notifications & Approvals"
+            aria-label="Institutional Notifications"
+          >
+            <Bell size={18} strokeWidth={2.5} />
+            {pendingApprovalsCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-brutal-accent text-brutal-white text-[10px] font-mono font-black border border-brutal-black flex items-center justify-center animate-pulse">
+                {pendingApprovalsCount}
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Authenticated State: User Menu Dropdown & Logout */}
         {user ? (
           <div className="flex items-center gap-2 pl-2 border-l-2 border-brutal-black/20 dark:border-brutal-yellow/20 relative" ref={menuRef}>
@@ -160,6 +201,20 @@ export default function Navbar({ onToggleMobileMenu }) {
                     <BrutalBadge tone="yellow" size="sm">
                       {user.role_code || 'VERIFIED USER'}
                     </BrutalBadge>
+                  </div>
+
+                  <div className="mt-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setShowProfileModal(true);
+                      }}
+                      className="w-full py-1.5 px-2 bg-brutal-yellow text-brutal-black border-2 border-brutal-black font-mono text-[11px] font-black uppercase tracking-wider shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <ShieldCheck size={14} strokeWidth={2.5} />
+                      <span>View Institutional ID Card</span>
+                    </button>
                   </div>
                 </div>
 
@@ -228,6 +283,20 @@ export default function Navbar({ onToggleMobileMenu }) {
           </div>
         ) : null}
       </div>
+
+      {/* Universal User Profile Card Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
+
+      {/* Global Notification Center Drawer */}
+      <NotificationDrawer
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        user={user}
+        pendingApprovalsCount={pendingApprovalsCount}
+      />
     </header>
   );
 }

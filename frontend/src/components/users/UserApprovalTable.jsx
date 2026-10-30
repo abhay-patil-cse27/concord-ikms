@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Building2, Hash, Mail } from 'lucide-react';
+import { Check, X, Building2, Hash, Mail, FileText } from 'lucide-react';
 import { BrutalButton, BrutalBadge, BrutalTable } from '../brutal';
 import { variants } from '../../motion/presets';
 
@@ -10,7 +10,7 @@ const TABLE_HEADERS = [
   'Applied Role',
   'Department',
   'Workflow Status',
-  { label: 'Actions', className: 'text-right' },
+  { label: 'Clearance Controls', className: 'text-right' },
 ];
 
 /**
@@ -22,6 +22,7 @@ export default function UserApprovalTable({
   actionInProgress,
   onApprove,
   onOpenRejectModal,
+  onInspectDossier,
 }) {
   return (
     <div className="w-full">
@@ -39,12 +40,17 @@ export default function UserApprovalTable({
             >
               {/* Identity & Reg Number */}
               <td className="p-3.5 whitespace-nowrap">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 bg-brutal-black text-brutal-yellow border border-brutal-black flex items-center justify-center font-bold text-xs flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onInspectDossier && onInspectDossier(applicant)}
+                  className="flex items-center gap-2.5 text-left group cursor-pointer"
+                  title="Click to inspect applicant verification dossier"
+                >
+                  <div className="w-8 h-8 bg-brutal-black text-brutal-yellow border border-brutal-black flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
                     {applicant.full_name ? applicant.full_name.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div>
-                    <div className="font-sans font-black text-sm text-brutal-black dark:text-brutal-white">
+                    <div className="font-sans font-black text-sm text-brutal-black dark:text-brutal-white group-hover:text-brutal-accent dark:group-hover:text-brutal-yellow transition-colors underline decoration-dotted">
                       {applicant.full_name}
                     </div>
                     {applicant.registration_number ? (
@@ -56,7 +62,7 @@ export default function UserApprovalTable({
                       <span className="text-[10px] text-brutal-muted font-mono italic">No ID logged</span>
                     )}
                   </div>
-                </div>
+                </button>
               </td>
 
               {/* Email */}
@@ -99,6 +105,18 @@ export default function UserApprovalTable({
               {/* Action Triggers */}
               <td className="p-3.5 text-right whitespace-nowrap">
                 <div className="flex items-center justify-end gap-2">
+                  <BrutalButton
+                    variant="outline"
+                    size="sm"
+                    disabled={isProcessing}
+                    onClick={() => onInspectDossier && onInspectDossier(applicant)}
+                    className="py-1 px-2.5 text-xs font-bold uppercase flex items-center gap-1 border-brutal-black dark:border-brutal-yellow"
+                    title="Inspect candidate credentials dossier"
+                  >
+                    <FileText size={12} />
+                    <span>Dossier</span>
+                  </BrutalButton>
+
                   <BrutalButton
                     variant="primary"
                     size="sm"

@@ -23,6 +23,8 @@ class User(Base):
     tier1_approved_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     tier2_approved_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     rejection_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    is_bypassed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    bypass_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

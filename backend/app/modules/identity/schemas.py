@@ -52,6 +52,8 @@ class UserResponse(BaseModel):
     approval_status: str = "approved"
     registration_number: Optional[str] = None
     rejection_reason: Optional[str] = None
+    is_bypassed: bool = False
+    bypass_reason: Optional[str] = None
     roles: List[RoleResponse] = []
     created_at: datetime
     updated_at: datetime
@@ -84,6 +86,16 @@ class UserRegisterRequest(BaseModel):
 
 
 class UserApprovalAction(BaseModel):
-    action: str  # 'approve' or 'reject'
+    action: str  # 'approve', 'reject', or 'bypass'
     reason: Optional[str] = None
+
+
+class UserDirectProvisionRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    password: str
+    department_id: Optional[str] = None
+    role_code: str = "student"
+    registration_number: Optional[str] = None
+    provision_reason: Optional[str] = None
 

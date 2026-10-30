@@ -205,3 +205,139 @@ async def test_user_rejection_workflow(client: AsyncClient):
     err_msg = login_attempt.json().get("error", {}).get("message", "")
     assert "rejected" in err_msg.lower()
     assert "invalid prn format" in err_msg.lower()
+
+
+@pytest.mark.asyncio
+async def test_admin_emergency_bypass_workflow(client: AsyncClient):
+    """
+    Verifies break-glass administrative bypass:
+    Superadmin fast-tracks clearance, bypassing approval queues with an audit justification.
+    """
+    dept_res = await client.get("/api/v1/auth/departments")
+    depts = dept_res.json()
+    cse_dept = next(d for d in depts if d["code"] == "CSE")
+
+    # 1. Register candidate
+    payload = {
+        "full_name": "Emergency Auditor",
+        "email": "auditor.naac@kitcoek.in",
+        "password": "Password@123",
+        "department_id": cse_dept["id"],
+        "role_code": "faculty",
+        "registration_number": "EMP-AUDIT-007"
+    }
+    reg_res = await client.post("/api/v1/auth/register", json=payload)
+    assert reg_res.status_code == 201
+    user_id = reg_res.json()["user_id"]
+
+    # 2. HOD attempts to bypass -> 403 Forbidden (Bypass is Superadmin break-glass privilege only)
+    hod_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "dept_admin"})
+    hod_token = hod_login.json()["access_token"]
+
+    hod_bypass = await client.post(
+        f"/api/v1/governance/users/{user_id}/review",
+        json={"action": "bypass", "reason": "Attempting unauthorized bypass"},
+        headers={"Authorization": f"Bearer {hod_token}"}
+    )
+    assert hod_bypass.status_code == 403
+
+    # 3. Superadmin executes break-glass bypass
+    admin_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = admin_login.json()["access_token"]
+
+    bypass_res = await client.post(
+        f"/api/v1/governance/users/{user_id}/review",
+        json={"action": "bypass", "reason": "NAAC Emergency Peer Review Fast-Track Access"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert bypass_res.status_code == 200
+    res_data = bypass_res.json()
+    assert res_data["approval_status"] == "approved"
+    assert res_data["is_active"] is True
+    assert res_data["is_bypassed"] is True
+    assert res_data["bypass_reason"] == "NAAC Emergency Peer Review Fast-Track Access"
+
+    # 4. User can log in immediately
+    login_res = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "auditor.naac@kitcoek.in", "password": "Password@123"}
+    )
+    assert login_res.status_code == 200
+    assert login_res.json()["user"]["is_bypassed"] is True
+
+
+@pytest.mark.asyncio
+async def test_direct_user_provisioning(client: AsyncClient):
+    """
+    Verifies direct provisioning of pre-cleared accounts by administrators,
+    skipping public registration queues.
+    """
+    admin_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = admin_login.json()["access_token"]
+
+    dept_res = await client.get("/api/v1/auth/departments")
+    cse_dept = next(d for d in dept_res.json() if d["code"] == "CSE")
+
+    provision_payload = {
+        "full_name": "Dr. Direct Provisioned",
+        "email": "direct.provision@kitcoek.in",
+        "password": "Password@123",
+        "department_id": cse_dept["id"],
+        "role_code": "faculty",
+        "registration_number": "EMP-DIRECT-999",
+        "provision_reason": "Executive direct appointment"
+    }
+
+    provision_res = await client.post(
+        "/api/v1/governance/users/provision-direct",
+        json=provision_payload,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert provision_res.status_code == 201
+    data = provision_res.json()
+    assert data["approval_status"] == "approved"
+    assert data["is_active"] is True
+    assert data["email"] == "direct.provision@kitcoek.in"
+
+    # Verify user can log in immediately
+    login_res = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "direct.provision@kitcoek.in", "password": "Password@123"}
+    )
+    assert login_res.status_code == 200
+    assert login_res.json()["user"]["approval_status"] == "approved"
+
+
+@pytest.mark.asyncio
+async def test_student_can_be_approved_by_admin_or_hod(client: AsyncClient):
+    """
+    Verifies dual-clearance capability for students:
+    Either department HOD OR Platform Superadmin can verify student applicants.
+    """
+    dept_res = await client.get("/api/v1/auth/departments")
+    cse_dept = next(d for d in dept_res.json() if d["code"] == "CSE")
+
+    # 1. Register student
+    payload = {
+        "full_name": "Kavita Shinde",
+        "email": "kavita.shinde@kitcoek.in",
+        "password": "Password@123",
+        "department_id": cse_dept["id"],
+        "role_code": "student",
+        "registration_number": "2024BTECS999"
+    }
+    reg_res = await client.post("/api/v1/auth/register", json=payload)
+    assert reg_res.status_code == 201
+    student_id = reg_res.json()["user_id"]
+
+    # 2. Platform Admin approves student directly (Platform Admin has global authority)
+    admin_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = admin_login.json()["access_token"]
+
+    admin_approve = await client.post(
+        f"/api/v1/governance/users/{student_id}/review",
+        json={"action": "approve"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert admin_approve.status_code == 200
+    assert admin_approve.json()["approval_status"] == "approved"
