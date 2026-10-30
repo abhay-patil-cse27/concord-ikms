@@ -1,13 +1,17 @@
-"""Governance and Human-in-the-Loop Document Approval Router."""
-from typing import List, Optional
+"""Governance and Human-in-the-Loop Document & User Approval Router."""
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_permission, get_current_user
 from app.modules.identity.models import User
+from app.modules.identity.schemas import UserResponse, UserApprovalAction
+from app.modules.identity.service import IdentityService
 from app.modules.documents.schemas import DocumentRead, DocumentApprovalDecision
 from app.modules.documents.service import DocumentService
+from app.modules.audit.service import AuditService
+from app.modules.audit.schemas import AuditEventCreate
 
 router = APIRouter(prefix="/governance", tags=["Governance & Approvals"])
 
@@ -52,3 +56,62 @@ async def review_document(
         ip_address=client_ip
     )
     return DocumentRead.model_validate(doc)
+
+
+# ---------------------------------------------------------
+# Milestone 12: 2-Tier Institutional User Approval Workflow
+# ---------------------------------------------------------
+
+@router.get("/pending-users", response_model=List[UserResponse], summary="List Pending User Registrations")
+async def list_pending_users(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Lists users in the institutional approval queue:
+    - Department Admin (HOD): views Tier 1 registrations within their assigned department.
+    - Platform Admin (Super Admin): views all pending Tier 1 & Tier 2 registrations.
+    """
+    return await IdentityService.get_pending_approvals(db, current_user)
+
+
+@router.post("/users/{user_id}/review", summary="Review User Registration")
+async def review_user_registration(
+    user_id: str,
+    payload: UserApprovalAction,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Executes a Tier 1 or Tier 2 approval/rejection decision on a registered applicant.
+    On approval: status -> 'approved', is_active -> True.
+    On rejection: status -> 'rejected', is_active -> False with recorded reason.
+    """
+    client_ip = request.client.host if request.client else None
+    result = await IdentityService.review_user_approval(
+        db=db,
+        target_user_id=user_id,
+        action=payload.action,
+        reason=payload.reason,
+        current_user=current_user
+    )
+
+    await AuditService.log_event(
+        db,
+        AuditEventCreate(
+            user_id=current_user.id,
+            action=f"USER_REGISTRATION_{payload.action.upper()}",
+            resource_type="user",
+            resource_id=user_id,
+            details={
+                "reviewer": current_user.email,
+                "action": payload.action,
+                "reason": payload.reason,
+                "status": result.get("approval_status")
+            },
+            ip_address=client_ip,
+            request_id=request.headers.get("x-request-id"),
+        )
+    )
+    return result

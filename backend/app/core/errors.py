@@ -61,6 +61,16 @@ class ConflictError(AppException):
         )
 
 
+class BadRequestError(AppException):
+    def __init__(self, message: str = "Bad request", details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            message=message,
+            code="BAD_REQUEST",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=details,
+        )
+
+
 class ValidationError(AppException):
     def __init__(self, message: str = "Input validation failed", details: Optional[Dict[str, Any]] = None):
         super().__init__(

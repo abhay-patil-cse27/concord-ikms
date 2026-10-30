@@ -75,6 +75,41 @@ sequenceDiagram
 - **Description:** Returns the authenticated user's profile, roles, and granted permissions.
 - **Headers:** `Authorization: Bearer <token>`
 
+### `POST /auth/register`
+- **Description:** Institutional self-registration for students, faculty, and HODs. Enforces PRN/Employee ID format validation, validates department assignment, and assigns initial approval state (`pending_tier1` for student/faculty, `pending_tier2` for HODs). Unapproved accounts are blocked from login until authorized.
+- **Request Body:**
+  ```json
+  {
+    "email": "student2024@kitcoek.in",
+    "password": "StrongPassword123!",
+    "full_name": "Rohan Deshmukh",
+    "department_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "role_code": "student",
+    "registration_number": "2024CS089"
+  }
+  ```
+- **Response (201 Created):**
+  ```json
+  {
+    "id": "7ca64731-0164-4e46-95ff-51786524337b",
+    "email": "student2024@kitcoek.in",
+    "full_name": "Rohan Deshmukh",
+    "approval_status": "pending_tier1",
+    "registration_number": "2024CS089",
+    "is_active": true
+  }
+  ```
+
+### `GET /auth/departments`
+- **Description:** Public directory of academic departments available for self-registration dropdowns without requiring pre-existing authentication.
+- **Response (200 OK):**
+  ```json
+  [
+    { "id": "uuid", "code": "CSE", "name": "Computer Science & Engineering" },
+    { "id": "uuid", "code": "AIML", "name": "Artificial Intelligence & Machine Learning" }
+  ]
+  ```
+
 ---
 
 ## 2. Document Ingestion & Chunk Inspection (`/documents`)
@@ -158,6 +193,40 @@ sequenceDiagram
   {
     "decision": "approved",
     "notes": "Verified against 2024 Academic Council circular."
+  }
+  ```
+
+### `GET /governance/pending-users`
+- **Description:** Retrieves pending self-registered users awaiting institutional verification.
+  - **HOD Scope (`dept_admin`):** Returns only Tier 1 applicants (`pending_tier1`) for their specific academic department (tenant isolation).
+  - **Platform Admin Scope (`platform_admin`):** Returns Tier 2 applicants (`pending_tier2` HODs) as well as department-level applicants across all colleges.
+- **Headers:** `Authorization: Bearer <token>` (Requires `users:read`)
+- **Response (200 OK):**
+  ```json
+  [
+    {
+      "id": "7ca64731-0164-4e46-95ff-51786524337b",
+      "email": "student2024@kitcoek.in",
+      "full_name": "Rohan Deshmukh",
+      "registration_number": "2024CS089",
+      "approval_status": "pending_tier1",
+      "department": { "id": "uuid", "code": "CSE", "name": "Computer Science & Engineering" },
+      "roles": [{ "code": "student", "name": "Student" }]
+    }
+  ]
+  ```
+
+### `POST /governance/users/{user_id}/review`
+- **Description:** Executes 2-Tier approval or rejection with reason tracking.
+  - HODs approve Tier 1 applicants in their department $\rightarrow$ state updates to `approved` and user can authenticate.
+  - Cross-department approvals return `403 Forbidden` (BOLA prevention).
+  - Rejection transitions state to `rejected` with `rejection_reason` logged for audit.
+- **Headers:** `Authorization: Bearer <token>` (Requires `users:read`)
+- **Request Body:**
+  ```json
+  {
+    "action": "reject",
+    "reason": "PRN not found in official university enrollment records."
   }
   ```
 

@@ -14,7 +14,7 @@ import { BrutalButton, BrutalBadge } from '../components/brutal';
  * Asymmetric, high-voltage Yellow Brutalist institutional portal landing.
  * Editorial typography, technical specifications, and zero generic gradients/emojis.
  */
-export default function LandingView({ onGoToLogin, onSelectDemoRole }) {
+export default function LandingView({ onGoToLogin, onGoToRegister, onSelectDemoRole }) {
   const handleSelectRole = (roleCode) => {
     if (onSelectDemoRole) {
       onSelectDemoRole(roleCode);
@@ -49,10 +49,21 @@ export default function LandingView({ onGoToLogin, onSelectDemoRole }) {
           </div>
         </div>
 
-        {/* Right Action Stack: Theme Toggle & Login Button */}
-        <div className="flex items-center gap-3">
+        {/* Right Action Stack: Theme Toggle & Login/Register Buttons */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
           
+          {onGoToRegister && (
+            <BrutalButton
+              variant="outline"
+              size="md"
+              onClick={onGoToRegister}
+              className="hidden sm:flex items-center gap-2 px-3 py-2 font-bold text-xs uppercase tracking-wider"
+            >
+              <span>Register</span>
+            </BrutalButton>
+          )}
+
           <BrutalButton
             variant="primary"
             size="md"

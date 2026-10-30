@@ -49,6 +49,9 @@ class UserResponse(BaseModel):
     primary_department_id: Optional[str] = None
     is_active: bool
     is_verified: bool
+    approval_status: str = "approved"
+    registration_number: Optional[str] = None
+    rejection_reason: Optional[str] = None
     roles: List[RoleResponse] = []
     created_at: datetime
     updated_at: datetime
@@ -69,3 +72,18 @@ class LoginRequest(BaseModel):
 
 class DemoLoginRequest(BaseModel):
     role_code: str
+
+
+class UserRegisterRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    password: str
+    department_id: str
+    role_code: str  # student, faculty, or dept_admin
+    registration_number: str  # PRN for students, Employee ID for faculty/HOD
+
+
+class UserApprovalAction(BaseModel):
+    action: str  # 'approve' or 'reject'
+    reason: Optional[str] = None
+

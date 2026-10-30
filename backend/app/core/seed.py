@@ -8,9 +8,17 @@ from app.modules.identity.models import User, Role, Permission, UserRole, RolePe
 
 DEFAULT_DEPARTMENTS = [
     {"code": "ADMIN", "name": "Central Administration", "description": "Institutional governance and college administration"},
-    {"code": "CSE", "name": "Computer Science & Engineering", "description": "Academic Department of CSE"},
+    {"code": "CSE", "name": "Computer Science & Engineering", "description": "Academic Department of Computer Science & Engineering (B.Tech CSE)"},
+    {"code": "AIML", "name": "CSE (AI & Machine Learning)", "description": "Academic Department of AI & Machine Learning (B.Tech AIML)"},
+    {"code": "DS", "name": "CSE (Data Science)", "description": "Academic Department of Data Science (B.Tech DS)"},
+    {"code": "ENTC", "name": "Electronics & Telecommunication", "description": "Academic Department of Electronics & Telecommunication Engineering"},
+    {"code": "EE", "name": "Electrical Engineering", "description": "Academic Department of Electrical Engineering"},
+    {"code": "ME", "name": "Mechanical Engineering", "description": "Academic Department of Mechanical Engineering"},
+    {"code": "CE", "name": "Civil & Environmental Engineering", "description": "Academic Department of Civil & Environmental Engineering"},
+    {"code": "BT", "name": "Biotechnology", "description": "Academic Department of Biotechnology"},
+    {"code": "BSH", "name": "Basic Sciences & Humanities", "description": "First Year Engineering (Physics, Chemistry, Mathematics & Humanities)"},
+    {"code": "EXAM", "name": "Examinations & Autonomous Cell", "description": "Academic evaluations, autonomous grading policies, and ordinances"},
     {"code": "TPO", "name": "Training & Placement Office", "description": "Career guidance, recruitment, and internship governance"},
-    {"code": "EXAM", "name": "Examinations & Evaluation Cell", "description": "Academic evaluations and grading policies"},
 ]
 
 DEFAULT_PERMISSIONS = [

@@ -32,9 +32,16 @@ export default function UsersTable({ users, onToggleStatus }) {
                 <div className="w-7 h-7 bg-brutal-black text-brutal-yellow border border-brutal-black flex items-center justify-center font-bold text-xs flex-shrink-0">
                   {u.full_name ? u.full_name.charAt(0).toUpperCase() : 'U'}
                 </div>
-                <span className="font-sans font-bold text-sm text-brutal-black dark:text-brutal-white truncate max-w-xs">
-                  {u.full_name || 'Institutional Member'}
-                </span>
+                <div>
+                  <div className="font-sans font-bold text-sm text-brutal-black dark:text-brutal-white truncate max-w-xs">
+                    {u.full_name || 'Institutional Member'}
+                  </div>
+                  {u.registration_number && (
+                    <div className="text-[10px] text-brutal-muted dark:text-brutal-muted-dark font-mono">
+                      ID: {u.registration_number}
+                    </div>
+                  )}
+                </div>
               </div>
             </td>
 

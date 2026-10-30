@@ -16,7 +16,9 @@ import {
   RefreshCw,
   Radio,
   HelpCircle,
-  Info
+  Info,
+  UserCheck,
+  ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
@@ -50,6 +52,19 @@ export default function DashboardView() {
   const role = user?.roles?.[0];
   const permissions = role?.permissions || [];
   const isAdmin = role?.code === 'platform_admin';
+  const canReviewApprovals = permissions.includes('users:read') || isAdmin;
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
+
+  // Load pending approvals count on mount if authorized
+  useEffect(() => {
+    if (canReviewApprovals) {
+      api.getPendingUsers()
+        .then((res) => {
+          if (Array.isArray(res)) setPendingApprovalsCount(res.length);
+        })
+        .catch(() => {});
+    }
+  }, [canReviewApprovals]);
 
   // Load LLM configuration on mount if admin
   useEffect(() => {
@@ -219,6 +234,33 @@ export default function DashboardView() {
           </div>
         </div>
       </BrutalCard>
+
+      {/* Pending Institutional Approvals Alert Banner */}
+      {pendingApprovalsCount > 0 && (
+        <div className="bg-brutal-yellow border-3 border-brutal-black p-4 shadow-brutal flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-brutal-black text-brutal-yellow border-2 border-brutal-black flex items-center justify-center font-display font-black text-xl flex-shrink-0">
+              {pendingApprovalsCount}
+            </div>
+            <div>
+              <div className="font-display font-black text-base uppercase text-brutal-black">
+                Institutional Approval Queue Action Required
+              </div>
+              <div className="font-mono text-xs text-brutal-black/85">
+                {pendingApprovalsCount} {pendingApprovalsCount === 1 ? 'applicant is' : 'applicants are'} awaiting your credential verification and department clearance.
+              </div>
+            </div>
+          </div>
+          <a
+            href="#/users"
+            className="px-4 py-2 bg-brutal-black text-brutal-yellow font-mono text-xs font-black uppercase tracking-wider border-2 border-brutal-black shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-2 whitespace-nowrap self-start sm:self-auto"
+          >
+            <UserCheck size={14} strokeWidth={2.5} />
+            <span>Open Queue ({pendingApprovalsCount})</span>
+            <ArrowRight size={14} strokeWidth={2.5} />
+          </a>
+        </div>
+      )}
 
       {/* Milestone 11: Dual-Mode LLM Engine Controller (Platform Admin Only) */}
       {isAdmin && (

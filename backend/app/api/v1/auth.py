@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
@@ -5,8 +6,16 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.errors import ForbiddenError
 from app.modules.identity.models import User
-from app.modules.identity.schemas import LoginRequest, DemoLoginRequest, TokenResponse, UserResponse
+from app.modules.identity.schemas import (
+    LoginRequest,
+    DemoLoginRequest,
+    TokenResponse,
+    UserResponse,
+    UserRegisterRequest,
+)
 from app.modules.identity.service import IdentityService
+from app.modules.organizations.schemas import DepartmentResponse
+from app.modules.organizations.service import OrganizationService
 from app.modules.audit.service import AuditService
 from app.modules.audit.schemas import AuditEventCreate
 
@@ -62,3 +71,34 @@ async def demo_login(payload: DemoLoginRequest, request: Request, db: AsyncSessi
 async def get_me(current_user: User = Depends(get_current_user)):
     """Returns the authenticated user identity profile, roles, and granted permissions."""
     return current_user
+
+
+@router.post("/register", summary="Public User Self-Registration", status_code=201)
+async def register(payload: UserRegisterRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Public self-registration for students, faculty, and department administrators.
+    Places applicant into the institutional 2-tier approval queue.
+    """
+    res = await IdentityService.register_user(db, payload)
+    await AuditService.log_event(
+        db,
+        AuditEventCreate(
+            user_id=res["user_id"],
+            action="USER_REGISTRATION_SUBMITTED",
+            resource_type="user",
+            resource_id=res["user_id"],
+            details={"email": payload.email, "role": payload.role_code, "dept_id": payload.department_id},
+            ip_address=request.client.host if request.client else None,
+            request_id=request.headers.get("x-request-id"),
+        )
+    )
+    return res
+
+
+@router.get("/departments", response_model=List[DepartmentResponse], summary="Public Department Options for Registration")
+async def get_public_departments(db: AsyncSession = Depends(get_db)):
+    """
+    Returns active institutional departments to populate dropdown selections
+    on the public self-registration portal.
+    """
+    return await OrganizationService.get_departments(db, active_only=True)

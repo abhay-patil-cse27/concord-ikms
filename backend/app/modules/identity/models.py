@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -15,6 +16,14 @@ class User(Base):
     primary_department_id: Mapped[str] = mapped_column(String(36), ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    
+    # Milestone 12: 2-Tier Institutional Onboarding & Approval Queue
+    approval_status: Mapped[str] = mapped_column(String(50), default="approved", index=True, nullable=False)
+    registration_number: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
+    tier1_approved_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    tier2_approved_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

@@ -13,7 +13,7 @@
 | :--- | :--- | :--- |
 | **Setup & Quickstart Guide** | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | Comprehensive step-by-step developer onboarding, virtualenv setup, Ollama local LLM execution, and troubleshooting. |
 | **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`, `/system`). |
-| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, and security hardening (97 tests). |
+| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, user onboarding approvals, and security hardening (101 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
 | **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
@@ -205,7 +205,8 @@ cd frontend && npm test
 
 > For full architectural details on test coverage, BOLA prevention, audit privacy assertions, and CI verification, see the **[Testing Architecture & QA Reference](docs/TESTING_DOCUMENTATION.md)**.
 
-- **Test Coverage Includes (88 Backend + 9 Frontend = 97 Test Scenarios — 100% Passing):**
+- **Test Coverage Includes (92 Backend + 9 Frontend = 101 Test Scenarios — 100% Passing):**
+  - **User Onboarding & 2-Tier Institutional Approvals (`test_user_onboarding.py`):** Pre-seeded 10 academic departments (+ ADMIN & TPO), student/faculty self-registration with PRN/EmpID verification, unapproved login blocking, Tier 1 HOD departmental tenant isolation (BOLA 403 prevention), Tier 2 Platform Admin review, and rejection reason logging.
   - **Database & Persistence Lifecycle (`test_database_persistence.py`):** Programmatic Alembic migration revision inspection (DB1) and Async SQLAlchemy session rollback on constraint violation (DB2).
   - **Fuzzy Academic Spell-Checking & Query Normalizer (`AcademicQueryNormalizer` & `test_retrieval.py`):** Phrase-level typo repair (e.g. `"bid data"` $\rightarrow$ `"big data"`, `"atendance criteria"` $\rightarrow$ `"attendance criteria"`), institutional curriculum lexicon matching (`difflib.get_close_matches(cutoff=0.72)`), and auto-correction metadata emitted to frontend Yellow Brutalist badges.
   - **Zero-Hallucination Relevance Gating & Ungrounded Query Interception:** FlashRank cross-encoder scoring ($\ge 0.15$) and domain keyword filtering to discard unrelated chunks (e.g. eliminating Financial Analytics from Big Data queries). Intercepts off-topic or ungrounded queries with structured institutional guidance and 0 citations.

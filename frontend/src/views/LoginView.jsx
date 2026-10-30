@@ -50,7 +50,7 @@ const DEMO_ACCOUNTS = [
  * credentials form built with BrutalInput, error/loading/disabled states,
  * and zero generic styling.
  */
-export default function LoginView({ onBack, preselectedRole }) {
+export default function LoginView({ onBack, preselectedRole, onGoToRegister }) {
   const { login, demoLogin, error } = useAuth();
   
   const isDemoMode = Boolean(
@@ -287,6 +287,19 @@ export default function LoginView({ onBack, preselectedRole }) {
                     <ArrowRight size={16} strokeWidth={3} />
                   </BrutalButton>
                 </div>
+
+                {onGoToRegister && (
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={onGoToRegister}
+                      className="font-mono text-xs text-brutal-black dark:text-brutal-yellow font-bold uppercase tracking-wider hover:underline inline-flex items-center gap-1.5 transition-colors"
+                    >
+                      <span>New user? Register institutional account</span>
+                      <ArrowRight size={12} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                )}
               </form>
 
               {/* Security Specs Note */}

@@ -6,6 +6,7 @@ import BrutalSkeleton from './components/brutal/BrutalSkeleton';
 // Lazy-loaded Views for High-Performance Code Splitting
 const LandingView = lazy(() => import('./views/LandingView'));
 const LoginView = lazy(() => import('./views/LoginView'));
+const RegisterView = lazy(() => import('./views/RegisterView'));
 const DashboardView = lazy(() => import('./views/DashboardView'));
 const DepartmentsView = lazy(() => import('./views/DepartmentsView'));
 const UsersView = lazy(() => import('./views/UsersView'));
@@ -40,6 +41,7 @@ export default function App() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTabState] = useState(getRouteFromHash);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
 
   // Sync state when URL hash changes (Back/Forward buttons or direct paste)
@@ -82,6 +84,19 @@ export default function App() {
   }
 
   if (!user) {
+    if (showRegisterModal) {
+      return (
+        <Suspense fallback={<ViewSuspenseFallback />}>
+          <RegisterView
+            onBack={() => setShowRegisterModal(false)}
+            onGoToLogin={() => {
+              setShowRegisterModal(false);
+              setShowLoginModal(true);
+            }}
+          />
+        </Suspense>
+      );
+    }
     if (showLoginModal) {
       return (
         <Suspense fallback={<ViewSuspenseFallback />}>
@@ -91,6 +106,10 @@ export default function App() {
               setSelectedRole(null);
             }}
             preselectedRole={selectedRole}
+            onGoToRegister={() => {
+              setShowLoginModal(false);
+              setShowRegisterModal(true);
+            }}
           />
         </Suspense>
       );
@@ -101,6 +120,9 @@ export default function App() {
           onGoToLogin={(role) => {
             setSelectedRole(role || null);
             setShowLoginModal(true);
+          }}
+          onGoToRegister={() => {
+            setShowRegisterModal(true);
           }}
         />
       </Suspense>

@@ -278,9 +278,9 @@
   - [x] Synchronous composer input clearing on submission.
   - [x] Replacement of legacy native browser alerts (`window.alert`, `window.confirm`) with reusable Yellow Brutalist `BrutalToast` and `BrutalModal`.
 
-## Milestone 12: User Onboarding & 2-Tier Institutional Approval Queue (Planned Blueprint)
-- [ ] **Step 12.1: Pre-Seeded Institutional Department Architecture:**
-  - [ ] Expand database schema and seeding across 10 official KIT departments:
+## Milestone 12: User Onboarding & 2-Tier Institutional Approval Queue (Completed)
+- [x] **Step 12.1: Pre-Seeded Institutional Department Architecture:**
+  - [x] Expand database schema and seeding across 10 official KIT departments (+ ADMIN & TPO):
     1. Computer Science & Engineering (B.Tech CSE, M.Tech Data Science)
     2. Computer Science & Engineering - AI & Machine Learning (B.Tech AIML)
     3. Computer Science & Engineering - Data Science (B.Tech DS)
@@ -291,19 +291,23 @@
     8. Biotechnology (B.Tech BT)
     9. Basic Sciences & Humanities (FY B.Tech Physics, Chemistry, Mathematics)
     10. Academic Examination & Autonomous Cell (Institute Regulations)
-- [ ] **Step 12.2: Public Self-Registration Portal (`/register`):**
-  - [ ] Multi-step Yellow Brutalist registration form with role selection (`Student`, `Faculty`, `Department Admin`).
-  - [ ] Dynamic department and degree program pickers bound to active institutional records.
-  - [ ] Strict input validation: PRN (10-digit), Employee ID, institutional email (`@kitcoek.in` / `@concord.kit.edu`), and password complexity.
-  - [ ] Account created in `pending_approval` state with inactive JWT authentication guard.
-- [ ] **Step 12.3: 2-Tier Hierarchy Approval Workflow:**
-  - [ ] Tier 1 (Department Level): HOD / Department Admin approves Students and Faculty within their department (`POST /api/v1/governance/users/{id}/approve-tier1`).
-  - [ ] Tier 2 (Platform Level): Platform Admin (Registrar / Dean Academics) approves new HODs and grants cross-institutional oversight (`POST /api/v1/governance/users/{id}/approve-tier2`).
-  - [ ] Rejection and feedback reason recording with audit ledger events.
-- [ ] **Step 12.4: Admin & HOD Approval Queue UI:**
-  - [ ] Yellow Brutalist `UserApprovalQueueView.jsx` with tabbed filtering (`All`, `Students`, `Faculty`, `HODs`).
-  - [ ] One-click Approve / Reject with confirmation modal and feedback notes.
-  - [ ] Role-restricted visibility: HOD sees only their department applicants; Platform Admin sees global applicants.
+- [x] **Step 12.2: Public Self-Registration Portal (`/register`):**
+  - [x] Yellow Brutalist registration form (`RegisterView.jsx`) with role selection (`Student`, `Faculty`, `HOD`).
+  - [x] Dynamic department picker bound to active institutional records via `GET /api/v1/auth/departments`.
+  - [x] Strict input validation: PRN (Student ID), Employee ID, institutional email (`@kitcoek.in` / `@concord.kit.edu`), and password complexity.
+  - [x] Account created in `pending_tier1` or `pending_tier2` state with inactive JWT authentication guard.
+- [x] **Step 12.3: 2-Tier Hierarchy Approval Workflow:**
+  - [x] Tier 1 (Department Level): HOD / Department Admin approves Students and Faculty within their department (`POST /api/v1/governance/users/{id}/review`).
+  - [x] Tier 2 (Platform Level): Platform Admin (Registrar / Dean Academics) approves new HODs and grants cross-institutional oversight.
+  - [x] Rejection and feedback reason recording with audit ledger events.
+  - [x] BOLA tenant boundary enforcement: cross-department approval attempts return `403 Forbidden`.
+- [x] **Step 12.4: Admin & HOD Approval Queue UI:**
+  - [x] Yellow Brutalist `UserApprovalQueue.jsx` embedded in `UsersView.jsx` with real-time pending badge counter.
+  - [x] One-click Approve / Reject with confirmation modal and feedback reason notes.
+  - [x] Dashboard quick alert card in `DashboardView.jsx` directing HODs/Admins directly to pending items.
+  - [x] Role-restricted visibility: HOD sees only their department applicants; Platform Admin sees global applicants.
+- [x] **Step 12.5: Automated Test Suite:**
+  - [x] 4 comprehensive end-to-end integration tests in `backend/tests/test_user_onboarding.py` verifying registration, login blocking, HOD approval, BOLA protection, Tier 2 escalation, and rejection reasons. (Total: 101 tests).
 
 ## Milestone 13: Declarative Jenkins CI/CD Pipeline (Planned Blueprint)
 - [ ] **Step 13.1: Declarative Jenkinsfile:**

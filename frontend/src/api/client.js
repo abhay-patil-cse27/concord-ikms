@@ -51,6 +51,18 @@ export const api = {
       body: JSON.stringify({ role_code: roleCode }),
     }),
   getMe: () => apiRequest('/auth/me'),
+  getPublicDepartments: () => apiRequest('/auth/departments'),
+  registerUser: (payload) =>
+    apiRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getPendingUsers: () => apiRequest('/governance/pending-users'),
+  reviewUser: (userId, action, reason = null) =>
+    apiRequest(`/governance/users/${userId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action, reason }),
+    }),
 
   // Organizations
   getDepartments: () => apiRequest('/organizations/departments'),
