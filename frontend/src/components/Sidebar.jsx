@@ -9,7 +9,6 @@ import {
   Search,
   Bot,
   BarChart3,
-  Lock,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
@@ -31,8 +30,12 @@ export default function Sidebar({
   isMobileOpen = false,
   onCloseMobile
 }) {
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, hasRole, user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+
+  const canWriteDocs = hasPermission('documents:write');
+  const isAdmin = hasRole('platform_admin') || hasRole('superadmin');
+  const isHOD = hasRole('dept_admin') || hasRole('hod');
 
   const navItems = [
     {
@@ -55,7 +58,7 @@ export default function Sidebar({
       label: 'Users',
       tooltip: 'User Directory & Role Assignments',
       icon: Users,
-      accessible: hasPermission('users:read'),
+      accessible: hasPermission('users:read') || isAdmin || isHOD,
       badge: 'Admin',
     },
     {
@@ -63,16 +66,18 @@ export default function Sidebar({
       label: 'Audit Logs',
       tooltip: 'Cryptographic SHA-256 Security Audit Ledger',
       icon: ShieldAlert,
-      accessible: hasPermission('audit:read'),
+      accessible: hasPermission('audit:read') || isAdmin || isHOD,
       badge: 'SHA-256',
     },
     {
       id: 'documents',
-      label: 'Ingestion',
-      tooltip: 'Knowledge Ingestion & OCR Pipeline',
+      label: canWriteDocs ? 'Ingestion' : 'Documents',
+      tooltip: canWriteDocs
+        ? 'Knowledge Ingestion & OCR Pipeline'
+        : 'Institutional Circulars & Regulations',
       icon: FileText,
-      accessible: true,
-      badge: 'OCR',
+      accessible: hasPermission('documents:read'),
+      badge: canWriteDocs ? 'OCR' : 'Docs',
     },
     {
       id: 'search',
@@ -95,8 +100,8 @@ export default function Sidebar({
       label: 'Benchmarks',
       tooltip: 'System Evaluation & Benchmarks (M7/M8)',
       icon: BarChart3,
-      accessible: true,
-      badge: 'M7/M8',
+      accessible: isAdmin,
+      badge: 'Admin',
     },
   ];
 
@@ -144,41 +149,25 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Navigation Item Stack */}
+        {/* Navigation Item Stack - strictly renders only allowed views for user's level */}
         <nav className="flex flex-col gap-1.5" aria-label="Sidebar Navigation">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            const isAccessible = item.accessible;
-
-            if (!isAccessible) {
+          {navItems
+            .filter((item) => item.accessible)
+            .map((item) => {
+              const isActive = activeTab === item.id;
               return (
-                <div
+                <NavItem
                   key={item.id}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 border-2 border-transparent text-brutal-muted/50 dark:text-brutal-muted-dark/40 font-mono text-xs font-bold uppercase cursor-not-allowed select-none',
-                    (collapsed && !isMobile) && 'justify-center'
-                  )}
-                  title={`${item.label} (Access Restricted)`}
-                >
-                  <Lock size={16} className="flex-shrink-0" />
-                  {(!collapsed || isMobile) && <span className="truncate">{item.label}</span>}
-                </div>
+                  icon={item.icon}
+                  label={item.label}
+                  tooltip={item.tooltip}
+                  badge={item.badge}
+                  isActive={isActive}
+                  isCollapsed={collapsed && !isMobile}
+                  onClick={() => handleSelectTab(item.id)}
+                />
               );
-            }
-
-            return (
-              <NavItem
-                key={item.id}
-                icon={item.icon}
-                label={item.label}
-                tooltip={item.tooltip}
-                badge={item.badge}
-                isActive={isActive}
-                isCollapsed={collapsed && !isMobile}
-                onClick={() => handleSelectTab(item.id)}
-              />
-            );
-          })}
+            })}
         </nav>
       </div>
 

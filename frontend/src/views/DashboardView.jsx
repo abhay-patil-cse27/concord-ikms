@@ -18,11 +18,16 @@ import {
   HelpCircle,
   Info,
   UserCheck,
-  ArrowRight
+  ArrowRight,
+  Search,
+  Bot,
+  FileText,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import HealthCard from '../components/HealthCard';
+import UserProfileModal from '../components/auth/UserProfileModal';
 import { BrutalCard, BrutalButton, BrutalBadge, BrutalToast, BrutalModal } from '../components/brutal';
 
 /**
@@ -44,15 +49,20 @@ export default function DashboardView() {
 
   const [toast, setToast] = useState(null);
   const [showReseedConfirm, setShowReseedConfirm] = useState(false);
+  const [showIdCard, setShowIdCard] = useState(false);
 
   const showToast = (type, title, message) => {
     setToast({ type, title, message });
   };
 
+  const { hasPermission, hasRole } = useAuth();
   const role = user?.roles?.[0];
   const permissions = role?.permissions || [];
-  const isAdmin = role?.code === 'platform_admin';
-  const canReviewApprovals = permissions.includes('users:read') || isAdmin;
+  const isAdmin = hasRole('platform_admin') || hasRole('superadmin');
+  const isHOD = hasRole('dept_admin') || hasRole('hod') || user?.role_code === 'dept_admin_cse';
+  const isFaculty = hasRole('faculty') || user?.role_code === 'faculty_cse';
+  const isStudent = hasRole('student') || user?.role_code === 'student_cse' || (!isAdmin && !isHOD && !isFaculty);
+  const canReviewApprovals = isAdmin || isHOD || hasPermission('users:read');
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
 
   // Load pending approvals count on mount if authorized
@@ -476,39 +486,183 @@ export default function DashboardView() {
       {/* Live System Health */}
       <HealthCard />
 
-      {/* Grid: M1 Foundation Checklist & Effective Permissions */}
+      {/* Role-Adaptive Grid: Slices / Academic Hub & Effective Permissions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Foundation Slices Verification */}
-        <BrutalCard
-          title="Milestone 1 Foundation Slice"
-          badge="Active"
-          headerVariant="default"
-          className="p-0"
-          bodyClassName="p-4 flex flex-col gap-2.5"
-        >
-          {m1Capabilities.map((cap, idx) => (
-            <div
-              key={idx}
-              className="flex items-start justify-between gap-3 p-3 border-2 border-brutal-black/20 dark:border-brutal-yellow/20 bg-brutal-paper/50 dark:bg-brutal-dark-surface"
-            >
-              <div>
-                <div className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white">
-                  {cap.title}
+        {isStudent ? (
+          /* Student Academic Knowledge Hub */
+          <BrutalCard
+            title="Student Academic Knowledge Hub"
+            badge="Autonomous Regulations"
+            headerVariant="yellow"
+            className="p-0"
+            bodyClassName="p-5 flex flex-col justify-between gap-4"
+          >
+            <div className="space-y-3">
+              <div className="p-3 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-brutal-muted">Department:</span>
+                  <span className="font-bold text-brutal-black dark:text-brutal-white truncate max-w-[200px]">
+                    {user?.department?.name || user?.department?.code || 'Computer Science & Engineering'}
+                  </span>
                 </div>
-                <div className="font-mono text-[11px] text-brutal-muted dark:text-brutal-muted-dark mt-0.5">
-                  {cap.desc}
+                <div className="flex items-center justify-between">
+                  <span className="text-brutal-muted">Permanent Reg. No (PRN):</span>
+                  <span className="font-bold text-brutal-black dark:text-brutal-yellow">
+                    {user?.registration_number || '2024BTECS089'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-brutal-muted">Clearance Status:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    VERIFIED ENROLLED STUDENT
+                  </span>
                 </div>
               </div>
-              <BrutalBadge tone="green" size="sm">
-                {cap.status}
-              </BrutalBadge>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <a
+                  href="#/search"
+                  className="p-3 bg-brutal-white dark:bg-brutal-dark border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm hover:bg-brutal-yellow hover:text-brutal-black transition-all flex items-center gap-3 font-mono text-xs font-bold"
+                >
+                  <div className="p-2 bg-brutal-yellow text-brutal-black border border-brutal-black">
+                    <Search size={16} />
+                  </div>
+                  <div>
+                    <div>Search Regulations</div>
+                    <div className="text-[10px] text-brutal-muted font-normal">Syllabus & circulars</div>
+                  </div>
+                </a>
+
+                <a
+                  href="#/rag"
+                  className="p-3 bg-brutal-white dark:bg-brutal-dark border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm hover:bg-brutal-yellow hover:text-brutal-black transition-all flex items-center gap-3 font-mono text-xs font-bold"
+                >
+                  <div className="p-2 bg-brutal-black text-brutal-yellow border border-brutal-black">
+                    <Bot size={16} />
+                  </div>
+                  <div>
+                    <div>Ask AI Assistant</div>
+                    <div className="text-[10px] text-brutal-muted font-normal">Grounded cited answers</div>
+                  </div>
+                </a>
+              </div>
             </div>
-          ))}
-        </BrutalCard>
+
+            <div className="pt-2 border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20">
+              <button
+                type="button"
+                onClick={() => setShowIdCard(true)}
+                className="w-full py-2 px-3 bg-brutal-black text-brutal-yellow dark:bg-brutal-yellow dark:text-brutal-black font-display font-black text-xs uppercase tracking-wider border-2 border-brutal-black shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-2"
+              >
+                <CreditCard size={14} strokeWidth={2.5} />
+                <span>View Official Institutional ID Card</span>
+              </button>
+            </div>
+          </BrutalCard>
+        ) : isFaculty ? (
+          /* Faculty Academic Ingestion Hub */
+          <BrutalCard
+            title="Faculty Ingestion & Academic Hub"
+            badge="Staff Scope"
+            headerVariant="yellow"
+            className="p-0"
+            bodyClassName="p-5 flex flex-col justify-between gap-4"
+          >
+            <div className="space-y-3">
+              <div className="p-3 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-brutal-muted">Department:</span>
+                  <span className="font-bold text-brutal-black dark:text-brutal-white truncate max-w-[200px]">
+                    {user?.department?.name || user?.department?.code || 'Computer Science & Engineering'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-brutal-muted">Faculty ID:</span>
+                  <span className="font-bold text-brutal-black dark:text-brutal-yellow">
+                    {user?.registration_number || 'EMP-CSE-042'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-brutal-muted">Ingestion Authority:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    AUTHORIZED ACADEMIC CONTRIBUTOR
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <a
+                  href="#/documents"
+                  className="p-3 bg-brutal-white dark:bg-brutal-dark border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm hover:bg-brutal-yellow hover:text-brutal-black transition-all flex items-center gap-3 font-mono text-xs font-bold"
+                >
+                  <div className="p-2 bg-brutal-yellow text-brutal-black border border-brutal-black">
+                    <FileText size={16} />
+                  </div>
+                  <div>
+                    <div>Ingest Document</div>
+                    <div className="text-[10px] text-brutal-muted font-normal">Upload syllabus & notes</div>
+                  </div>
+                </a>
+
+                <a
+                  href="#/rag"
+                  className="p-3 bg-brutal-white dark:bg-brutal-dark border-2 border-brutal-black dark:border-brutal-yellow shadow-brutal-sm hover:bg-brutal-yellow hover:text-brutal-black transition-all flex items-center gap-3 font-mono text-xs font-bold"
+                >
+                  <div className="p-2 bg-brutal-black text-brutal-yellow border border-brutal-black">
+                    <Bot size={16} />
+                  </div>
+                  <div>
+                    <div>Ask Policy RAG</div>
+                    <div className="text-[10px] text-brutal-muted font-normal">Cross-reference rules</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20">
+              <button
+                type="button"
+                onClick={() => setShowIdCard(true)}
+                className="w-full py-2 px-3 bg-brutal-black text-brutal-yellow dark:bg-brutal-yellow dark:text-brutal-black font-display font-black text-xs uppercase tracking-wider border-2 border-brutal-black shadow-brutal-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-2"
+              >
+                <CreditCard size={14} strokeWidth={2.5} />
+                <span>View Official Faculty Credential</span>
+              </button>
+            </div>
+          </BrutalCard>
+        ) : (
+          /* Foundation Slices Verification (Admin & HOD) */
+          <BrutalCard
+            title="Milestone 1 Foundation Slice"
+            badge="Active"
+            headerVariant="default"
+            className="p-0"
+            bodyClassName="p-4 flex flex-col gap-2.5"
+          >
+            {m1Capabilities.map((cap, idx) => (
+              <div
+                key={idx}
+                className="flex items-start justify-between gap-3 p-3 border-2 border-brutal-black/20 dark:border-brutal-yellow/20 bg-brutal-paper/50 dark:bg-brutal-dark-surface"
+              >
+                <div>
+                  <div className="font-mono text-xs font-black uppercase text-brutal-black dark:text-brutal-white">
+                    {cap.title}
+                  </div>
+                  <div className="font-mono text-[11px] text-brutal-muted dark:text-brutal-muted-dark mt-0.5">
+                    {cap.desc}
+                  </div>
+                </div>
+                <BrutalBadge tone="green" size="sm">
+                  {cap.status}
+                </BrutalBadge>
+              </div>
+            ))}
+          </BrutalCard>
+        )}
 
         {/* Server-Enforced RBAC Permissions */}
         <BrutalCard
-          title="Effective Security Permissions"
+          title={isStudent ? "Academic Permissions & Scopes" : "Effective Security Permissions"}
           subtitle="OWASP ASVS 4.1 Enforced"
           badge="RBAC"
           headerVariant="default"
@@ -544,11 +698,17 @@ export default function DashboardView() {
 
           {permissions.length === 0 && role?.code !== 'platform_admin' && (
             <div className="p-4 text-center font-mono text-xs text-brutal-muted">
-              No custom permissions granted for this role.
+              Standard read-only academic catalog privileges.
             </div>
           )}
         </BrutalCard>
       </div>
+
+      {/* Universal User Profile Digital ID Modal */}
+      <UserProfileModal
+        isOpen={showIdCard}
+        onClose={() => setShowIdCard(false)}
+      />
 
       {/* Reusable React UI Toast Notification Banner */}
       {toast && (

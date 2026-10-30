@@ -38,26 +38,58 @@ function ViewSuspenseFallback() {
 }
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, hasPermission, hasRole } = useAuth();
   const [activeTab, setActiveTabState] = useState(getRouteFromHash);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
 
+  const isRouteAllowed = (route) => {
+    if (!user) return true;
+    const isAdmin = hasRole('platform_admin') || hasRole('superadmin');
+    const isHOD = hasRole('dept_admin') || hasRole('hod');
+
+    switch (route) {
+      case 'departments':
+        return hasPermission('departments:read');
+      case 'users':
+        return hasPermission('users:read') || isAdmin || isHOD;
+      case 'audit':
+        return hasPermission('audit:read') || isAdmin || isHOD;
+      case 'benchmarks':
+        return isAdmin;
+      default:
+        return true;
+    }
+  };
+
   // Sync state when URL hash changes (Back/Forward buttons or direct paste)
   useEffect(() => {
     const handleHashChange = () => {
       const route = getRouteFromHash();
-      setActiveTabState(route);
+      if (user && !isRouteAllowed(route)) {
+        window.location.hash = '#/dashboard';
+        setActiveTabState('dashboard');
+      } else {
+        setActiveTabState(route);
+      }
     };
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [user]);
+
+  // Redirect if current activeTab is not allowed for the logged in user
+  useEffect(() => {
+    if (user && !isRouteAllowed(activeTab)) {
+      window.location.hash = '#/dashboard';
+      setActiveTabState('dashboard');
+    }
+  }, [user, activeTab]);
 
   // Setter that updates both React state and URL hash
   const setActiveTab = (newTab) => {
-    if (VALID_ROUTES.includes(newTab)) {
+    if (VALID_ROUTES.includes(newTab) && isRouteAllowed(newTab)) {
       window.location.hash = `#/${newTab}`;
       setActiveTabState(newTab);
     }
