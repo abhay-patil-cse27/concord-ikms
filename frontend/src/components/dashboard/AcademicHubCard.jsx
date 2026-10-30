@@ -109,3 +109,4 @@ export default function AcademicHubCard({ user, roleType = 'student', onViewIdCa
     </BrutalCard>
   );
 }
+

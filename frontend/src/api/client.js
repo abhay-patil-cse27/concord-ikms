@@ -239,6 +239,7 @@ export const api = {
     }),
 
   // Dual-Mode LLM Engine (Milestone 11)
+  getLLMStatus: () => apiRequest('/system/llm-status'),
   getLLMConfig: () => apiRequest('/system/llm-config'),
   updateLLMConfig: (payload) =>
     apiRequest('/system/llm-config', {

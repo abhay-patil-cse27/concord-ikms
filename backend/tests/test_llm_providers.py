@@ -168,3 +168,118 @@ async def test_system_api_endpoints_rbac(client: AsyncClient):
         headers=admin_headers,
         json={"provider_mode": "cloud"}
     )
+
+
+@pytest.mark.asyncio
+async def test_llm_status_accessible_to_all_authenticated_users(client: AsyncClient):
+    """
+    Verifies that GET /api/v1/system/llm-status is accessible to unprivileged roles (student, faculty)
+    without revealing sensitive credentials, but requires authentication.
+    """
+    # 1. Unauthenticated request must return 401 Unauthorized
+    unauth_res = await client.get("/api/v1/system/llm-status")
+    assert unauth_res.status_code == 401
+
+    # 2. Student user receives 200 OK with clean public summary
+    student_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "student"})
+    assert student_login.status_code == 200
+    student_token = student_login.json()["access_token"]
+    student_headers = {"Authorization": f"Bearer {student_token}"}
+
+    student_res = await client.get("/api/v1/system/llm-status", headers=student_headers)
+    assert student_res.status_code == 200
+    data = student_res.json()
+    assert data["success"] is True
+    assert "status" in data
+    status_info = data["status"]
+    assert "provider_mode" in status_info
+    assert "active_model" in status_info
+    assert "display_name" in status_info
+    assert "is_local" in status_info
+    # Ensure zero sensitive credential leaks
+    assert "api_key" not in status_info
+    assert "node_url" not in status_info
+    assert "groq_api_key" not in status_info
+
+    # 3. Faculty user also receives 200 OK
+    faculty_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "faculty"})
+    assert faculty_login.status_code == 200
+    faculty_token = faculty_login.json()["access_token"]
+    faculty_headers = {"Authorization": f"Bearer {faculty_token}"}
+
+    faculty_res = await client.get("/api/v1/system/llm-status", headers=faculty_headers)
+    assert faculty_res.status_code == 200
+    assert faculty_res.json()["status"]["provider_mode"] == status_info["provider_mode"]
+
+
+@pytest.mark.asyncio
+async def test_llm_config_persistence_and_audit_logging(client: AsyncClient):
+    """
+    Verifies that when an Admin updates LLM engine config:
+    1. It persists to disk (backend/data/llm_config.json).
+    2. It updates runtime engine status dynamically for all users.
+    3. An audit ledger event (SYSTEM_LLM_CONFIG_UPDATE) is recorded.
+    """
+    from pathlib import Path
+    import json
+
+    admin_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = admin_login.json()["access_token"]
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    student_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "student"})
+    student_token = student_login.json()["access_token"]
+    student_headers = {"Authorization": f"Bearer {student_token}"}
+
+    # 1. Update config to local mode with custom model
+    update_res = await client.put(
+        "/api/v1/system/llm-config",
+        headers=admin_headers,
+        json={
+            "provider_mode": "local",
+            "local_url": "http://127.0.0.1:11434",
+            "local_model": "qwen2.5:1.5b"
+        }
+    )
+    assert update_res.status_code == 200
+    assert update_res.json()["config"]["provider_mode"] == "local"
+
+    # 2. Verify disk persistence in backend/data/llm_config.json
+    config_path = Path(__file__).resolve().parent.parent / "data" / "llm_config.json"
+    assert config_path.exists(), "llm_config.json was not created on disk"
+    persisted_data = json.loads(config_path.read_text(encoding="utf-8"))
+    assert persisted_data.get("provider_mode") == "local"
+    assert persisted_data.get("local_model") == "qwen2.5:1.5b"
+
+    # 3. Verify student immediately observes the global switch
+    student_status = await client.get("/api/v1/system/llm-status", headers=student_headers)
+    assert student_status.status_code == 200
+    status_payload = student_status.json()["status"]
+    assert status_payload["provider_mode"] == "local"
+    assert status_payload["is_local"] is True
+    assert "qwen2.5:1.5b" in status_payload["display_name"]
+
+    # 4. Verify audit ledger entry
+    audit_res = await client.get("/api/v1/audit/events", headers=admin_headers)
+    assert audit_res.status_code == 200
+    events = audit_res.json()
+    llm_audit_events = [
+        e for e in events 
+        if e.get("action") == "SYSTEM_LLM_CONFIG_UPDATE" or 
+           (isinstance(e.get("action"), dict) and e.get("action").get("value") == "SYSTEM_LLM_CONFIG_UPDATE")
+    ]
+    assert len(llm_audit_events) > 0, "SYSTEM_LLM_CONFIG_UPDATE not recorded in audit ledger"
+    latest_event = llm_audit_events[0]
+    details = latest_event.get("details") or latest_event.get("event_metadata") or latest_event.get("metadata") or {}
+    assert details.get("provider_mode") == "local"
+
+    # 5. Clean up: reset back to cloud and verify persistence updates
+    reset_res = await client.put(
+        "/api/v1/system/llm-config",
+        headers=admin_headers,
+        json={"provider_mode": "cloud"}
+    )
+    assert reset_res.status_code == 200
+    persisted_reset = json.loads(config_path.read_text(encoding="utf-8"))
+    assert persisted_reset.get("provider_mode") == "cloud"
+

@@ -391,6 +391,22 @@ sequenceDiagram
 
 ## 9. System & Dual-Mode LLM Engine (`/system`)
 
+### `GET /system/llm-status`
+- **Description:** Returns active LLM engine metadata and user-facing status. Safe for all authenticated users (Student, Faculty, HOD, Admin) without exposing backend URLs or API credentials. Enables dynamic badge reflection across the application.
+- **Authorization:** Any authenticated user.
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "status": {
+      "provider_mode": "cloud",
+      "active_model": "openai/gpt-oss-120b",
+      "display_name": "Groq Cloud (openai/gpt-oss-120b)",
+      "is_local": false
+    }
+  }
+  ```
+
 ### `GET /system/llm-config`
 - **Description:** Returns active LLM provider routing (`cloud` or `local`), node URL, model tag, and Groq configuration status.
 - **Authorization:** `platform_admin` only (`403 Forbidden` for non-admins).
@@ -409,7 +425,7 @@ sequenceDiagram
   ```
 
 ### `PUT /system/llm-config`
-- **Description:** Hot-swaps inference routing strategy, target OpenAI-compatible node URL, or model tag in-memory without server downtime.
+- **Description:** Hot-swaps inference routing strategy, target OpenAI-compatible node URL, or model tag without server downtime. Persists settings across Uvicorn process restarts to `backend/data/llm_config.json` and writes an immutable entry (`SYSTEM_LLM_CONFIG_UPDATE`) into the SHA-256 audit ledger.
 - **Authorization:** `platform_admin` only.
 - **Request Body:**
   ```json

@@ -4,11 +4,17 @@ import httpx
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.core.security import require_role
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
+from app.core.security import require_role, get_current_user
 from app.core.logging import logger
+from app.modules.identity.models import User
+from app.modules.audit.service import AuditService
+from app.modules.audit.schemas import AuditEventCreate
 from app.modules.retrieval.llm_providers import (
     get_runtime_llm_config,
-    set_runtime_llm_config
+    set_runtime_llm_config,
+    get_llm_status_summary
 )
 
 router = APIRouter(prefix="/system", tags=["System & Engine Configuration"])
@@ -25,6 +31,20 @@ class LLMNodeTestRequest(BaseModel):
     timeout_seconds: float = Field(5.0, description="Ping probe timeout")
 
 
+@router.get("/llm-status", summary="Get Active LLM Engine Status for Users")
+async def get_active_llm_status(
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Returns public/read-only status of the active LLM engine for all authenticated users.
+    Enables UI badges across all roles (Student, Faculty, HOD, Admin) without exposing secrets.
+    """
+    return {
+        "success": True,
+        "status": get_llm_status_summary()
+    }
+
+
 @router.get("/llm-config", summary="Get Effective LLM Configuration")
 async def get_llm_configuration(
     current_user = Depends(require_role("platform_admin"))
@@ -39,9 +59,10 @@ async def get_llm_configuration(
 @router.put("/llm-config", summary="Update Runtime LLM Configuration")
 async def update_llm_configuration(
     req: LLMConfigUpdateRequest,
-    current_user = Depends(require_role("platform_admin"))
+    current_user = Depends(require_role("platform_admin")),
+    db: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
-    """Hot-swaps LLM provider mode, target node URL, or model tag in-memory without downtime."""
+    """Hot-swaps LLM provider mode, target node URL, or model tag with persistence and audit logging."""
     try:
         updated_config = set_runtime_llm_config(
             provider_mode=req.provider_mode,
@@ -52,6 +73,27 @@ async def update_llm_configuration(
             f"Admin '{current_user.email}' updated LLM configuration: "
             f"mode={updated_config['provider_mode']}, url={updated_config['local_url']}, model={updated_config['local_model']}"
         )
+
+        # Audit ledger logging for AI engine routing modification (NIST AI RMF / OWASP compliance)
+        try:
+            await AuditService.log_event(
+                db=db,
+                data=AuditEventCreate(
+                    user_id=current_user.id,
+                    action="SYSTEM_LLM_CONFIG_UPDATE",
+                    resource_type="system",
+                    resource_id="llm_engine",
+                    status="success",
+                    details={
+                        "provider_mode": updated_config["provider_mode"],
+                        "active_model": updated_config["local_model"] if updated_config["provider_mode"] == "local" else updated_config["groq_model"],
+                        "local_url": updated_config["local_url"]
+                    }
+                )
+            )
+        except Exception as audit_err:
+            logger.warning(f"Could not record audit log for LLM config change: {audit_err}")
+
         return {
             "success": True,
             "message": "LLM Engine configuration updated successfully.",

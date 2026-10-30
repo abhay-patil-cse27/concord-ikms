@@ -10,9 +10,11 @@ import {
   Clock,
   ArrowRight,
   Trash2,
+  Cpu,
 } from 'lucide-react';
 import { BrutalBadge, BrutalButton } from '../brutal';
 import { cn } from '../../lib/utils';
+import { api } from '../../api/client';
 
 /**
  * NotificationDrawer
@@ -76,6 +78,34 @@ export default function NotificationDrawer({
     }
   }, [notifications, user?.id]);
 
+  // Synchronize live active AI engine status when notification drawer opens
+  useEffect(() => {
+    if (!isOpen) return;
+    api.getLLMStatus()
+      .then((res) => {
+        if (res?.status) {
+          const { is_local, display_name } = res.status;
+          setNotifications((prev) => {
+            const hasEngineNotice = prev.some((n) => n.id === 'notif-engine-active');
+            const engineNotice = {
+              id: 'notif-engine-active',
+              title: is_local ? 'Local Campus Node Active' : 'Groq Cloud Engine Active',
+              message: `Inference routing currently directed to ${display_name}.`,
+              type: 'info',
+              timestamp: 'Live',
+              read: false,
+              icon: 'Cpu',
+            };
+            if (hasEngineNotice) {
+              return prev.map((n) => (n.id === 'notif-engine-active' ? engineNotice : n));
+            }
+            return [engineNotice, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const unreadCount =
@@ -101,6 +131,8 @@ export default function NotificationDrawer({
         return <AlertTriangle size={18} className="text-amber-500" strokeWidth={2.5} />;
       case 'UserCheck':
         return <UserCheck size={18} className="text-brutal-black dark:text-brutal-yellow" strokeWidth={2.5} />;
+      case 'Cpu':
+        return <Cpu size={18} className="text-brutal-black dark:text-brutal-yellow" strokeWidth={2.5} />;
       default:
         return <Info size={18} className="text-blue-500" strokeWidth={2.5} />;
     }

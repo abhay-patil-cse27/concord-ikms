@@ -23,17 +23,25 @@ Adopted **Option 3**:
 1. **Selected Model:** `qwen2.5:1.5b` as the institutional default local model. Footprint: ~1.2 GB RAM, 20–35 tok/s on CPU, zero thermal throttling on student/faculty laptops.
 2. **Provider Strategy:** Implemented `LocalLLMProvider` adhering to `BaseLLMProvider` interface.
 3. **Zero-Redundancy Shared Engine:** Both Groq and Local providers share exact same prompt templates, evidence serialization, temperature clamping (0.05), and citation cleaning.
-4. **Runtime Hot-Swap:** Implemented `set_runtime_llm_config` and `get_runtime_llm_config` in-memory factory with REST endpoints:
-   - `GET /api/v1/system/llm-config`
-   - `PUT /api/v1/system/llm-config` (Guarded by `platform_admin`)
-   - `POST /api/v1/system/llm-test` (Health and latency diagnostic beacon)
+4. **Runtime Hot-Swap, Global Reflection & Restart Persistence:**
+   - Implemented `set_runtime_llm_config`, `get_runtime_llm_config`, and `get_llm_status_summary` dynamic engine factory.
+   - **Disk Persistence:** Every admin configuration change writes atomically to `backend/data/llm_config.json`, surviving Uvicorn worker cycles and server restarts.
+   - **Audit Ledger Logging:** Engine mode transitions log an immutable `SYSTEM_LLM_CONFIG_UPDATE` event into the SHA-256 tamper-evident ledger with actor UUID and configuration metadata.
+   - **Global Cross-User Reflection:** All active users (Student, Faculty, HOD, Admin) instantly share the switched engine for queries and see the live status badge via unprivileged `GET /api/v1/system/llm-status`.
+   - REST endpoints:
+     - `GET /api/v1/system/llm-status` (Accessible to all authenticated users; zero credential leakage)
+     - `GET /api/v1/system/llm-config` (Guarded by `platform_admin`)
+     - `PUT /api/v1/system/llm-config` (Guarded by `platform_admin`)
+     - `POST /api/v1/system/llm-test` (Health and latency diagnostic beacon)
 5. **Fail-Safe Offline Resiliency:** If local node or Groq becomes unreachable, queries gracefully degrade to `OfflineFallbackLLMProvider` deterministic extractive synthesis rather than crashing.
 
 ## Consequences
 - **Positive:**
   - Complete sovereignty: Institution can run 100% offline using Ollama or vLLM in air-gapped labs.
-  - Zero server restart needed to toggle between Cloud and Local inference.
-  - Clean separation: Test suite runs 85 backend tests without requiring a running Ollama daemon.
+  - Zero server restart needed to toggle between Cloud and Local inference; state survives server reboots.
+  - Seamless global sync: switching engine instantaneously reflects across all student and faculty chat sessions.
+  - Full auditability: Administrative engine alterations are permanently captured in the compliance ledger.
+  - Clean separation: Comprehensive test suite runs 97 backend tests without requiring a running Ollama daemon.
   - Tactical Yellow Brutalist UI controls in Admin Dashboard for live configuration.
 - **Negative / Trade-offs:**
   - Smaller quantized 1.5B models have lower linguistic creativity compared to 120B cloud models, requiring strict prompt engineering and anti-repetition parameter tuning.

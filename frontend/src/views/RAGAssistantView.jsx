@@ -51,21 +51,32 @@ export default function RAGAssistantView() {
   const silenceTimerRef = useRef(null);
   const transcriptAccumulatorRef = useRef('');
 
-  // Fetch active LLM mode to display dynamic model badge in header
+  // Fetch active LLM mode to display dynamic model badge in header across ALL users (Student, Faculty, HOD, Admin)
   useEffect(() => {
     const fetchActiveEngine = async () => {
       try {
-        const res = await api.getLLMConfig();
-        if (res?.config) {
-          const isLocal = res.config.provider_mode === 'local';
-          const modelTag = isLocal ? res.config.local_model : res.config.groq_model;
-          const engineLabel = isLocal ? `LOCAL: ${modelTag}` : `GROQ: ${modelTag}`;
+        const res = await api.getLLMStatus();
+        if (res?.status) {
+          const { is_local, active_model } = res.status;
+          const engineLabel = is_local ? `LOCAL: ${active_model}` : `GROQ: ${active_model}`;
           setActiveLLMBadge(engineLabel);
+          return;
         }
-      } catch (e) {
-        // Fallback for non-admin tokens
-        setActiveLLMBadge('DUAL-MODE LLM');
+      } catch {
+        // Fallback to admin config if available
+        try {
+          const adminRes = await api.getLLMConfig();
+          if (adminRes?.config) {
+            const isLocal = adminRes.config.provider_mode === 'local';
+            const modelTag = isLocal ? adminRes.config.local_model : adminRes.config.groq_model;
+            setActiveLLMBadge(isLocal ? `LOCAL: ${modelTag}` : `GROQ: ${modelTag}`);
+            return;
+          }
+        } catch {
+          // Default
+        }
       }
+      setActiveLLMBadge('GROQ: openai/gpt-oss-120b');
     };
     fetchActiveEngine();
   }, []);

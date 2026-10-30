@@ -3,6 +3,7 @@ import re
 import json
 import httpx
 from typing import List, Dict, Any, Optional, Tuple, AsyncIterator
+from pathlib import Path
 from app.core.config import settings
 from app.core.logging import logger
 from app.modules.retrieval.llm_base import BaseLLMProvider
@@ -693,22 +694,69 @@ class OfflineFallbackLLMProvider(BaseLLMProvider):
 # Dynamic Runtime State & Factory
 # ==============================================================================
 
-# In-memory runtime override (allows Admin toggle without restarting server process)
+_CONFIG_PATH = Path(__file__).resolve().parent.parent.parent.parent / "data" / "llm_config.json"
+
+
+def _load_persisted_config() -> Dict[str, Any]:
+    """Loads persisted configuration from disk if available."""
+    try:
+        if _CONFIG_PATH.exists():
+            data = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data
+    except Exception as e:
+        logger.warning(f"Could not load persisted LLM config: {e}")
+    return {}
+
+
+def _save_persisted_config(cfg: Dict[str, Any]) -> None:
+    """Safely saves active LLM configuration to disk for persistence across server reboots."""
+    try:
+        _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _CONFIG_PATH.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"Could not persist LLM config to disk: {e}")
+
+
+# Runtime override state initialized from disk persistence, falling back to defaults
 _RUNTIME_LLM_CONFIG: Dict[str, Any] = {
     "provider_mode": None,   # When None, defaults to settings.LLM_PROVIDER_MODE
     "local_url": None,        # When None, defaults to settings.LOCAL_LLM_URL
     "local_model": None,      # When None, defaults to settings.LOCAL_LLM_MODEL
+    **_load_persisted_config()
 }
 
 
 def get_runtime_llm_config() -> Dict[str, Any]:
     """Retrieves current effective LLM configuration."""
     return {
-        "provider_mode": _RUNTIME_LLM_CONFIG["provider_mode"] or settings.LLM_PROVIDER_MODE,
-        "local_url": _RUNTIME_LLM_CONFIG["local_url"] or settings.LOCAL_LLM_URL,
-        "local_model": _RUNTIME_LLM_CONFIG["local_model"] or settings.LOCAL_LLM_MODEL,
+        "provider_mode": _RUNTIME_LLM_CONFIG.get("provider_mode") or settings.LLM_PROVIDER_MODE,
+        "local_url": _RUNTIME_LLM_CONFIG.get("local_url") or settings.LOCAL_LLM_URL,
+        "local_model": _RUNTIME_LLM_CONFIG.get("local_model") or settings.LOCAL_LLM_MODEL,
         "groq_model": settings.GROQ_MODEL,
         "has_groq_key": bool(settings.GROQ_API_KEY),
+    }
+
+
+def get_llm_status_summary() -> Dict[str, Any]:
+    """
+    Returns public/read-only status of the active LLM engine for all authenticated users.
+    Contains zero sensitive credentials (e.g. no API keys or internal network topology).
+    """
+    cfg = get_runtime_llm_config()
+    is_local = cfg["provider_mode"] == "local"
+    active_model = cfg["local_model"] if is_local else cfg["groq_model"]
+    display_name = (
+        f"Campus Local Node ({active_model})"
+        if is_local
+        else f"Groq Cloud ({active_model})"
+    )
+
+    return {
+        "provider_mode": cfg["provider_mode"],
+        "active_model": active_model,
+        "display_name": display_name,
+        "is_local": is_local,
     }
 
 
@@ -717,7 +765,7 @@ def set_runtime_llm_config(
     local_url: Optional[str] = None,
     local_model: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Updates runtime LLM configuration hot-swapped across all active RAG services."""
+    """Updates runtime LLM configuration hot-swapped across all active RAG services and persists to disk."""
     if provider_mode is not None:
         if provider_mode not in ("cloud", "local"):
             raise ValueError("provider_mode must be 'cloud' or 'local'")
@@ -726,6 +774,13 @@ def set_runtime_llm_config(
         _RUNTIME_LLM_CONFIG["local_url"] = local_url.strip()
     if local_model is not None:
         _RUNTIME_LLM_CONFIG["local_model"] = local_model.strip()
+
+    _save_persisted_config({
+        "provider_mode": _RUNTIME_LLM_CONFIG.get("provider_mode"),
+        "local_url": _RUNTIME_LLM_CONFIG.get("local_url"),
+        "local_model": _RUNTIME_LLM_CONFIG.get("local_model"),
+    })
+
     return get_runtime_llm_config()
 
 
