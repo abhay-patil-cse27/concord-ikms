@@ -59,8 +59,9 @@ export default function RejectionModal({
         )}
 
         <div>
-          <label className="block font-mono text-xs font-black uppercase tracking-wider mb-1.5 text-brutal-black dark:text-brutal-white">
-            Reason for Rejection (Audit Logged):
+          <label className="font-mono text-xs font-bold uppercase tracking-wider text-brutal-black dark:text-brutal-white flex items-center justify-between mb-1.5">
+            <span>Reason for Rejection (Audit Logged)</span>
+            <span className="text-brutal-accent font-black">*</span>
           </label>
           <textarea
             value={reason}
@@ -68,7 +69,7 @@ export default function RejectionModal({
             placeholder="e.g. PRN not present in autonomous 2024 academic registry; please consult CSE academic office."
             rows={4}
             disabled={isProcessing}
-            className="w-full p-2.5 bg-brutal-white dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs text-brutal-black dark:text-brutal-white focus:outline-none focus:ring-2 focus:ring-brutal-yellow resize-none disabled:opacity-50"
+            className="w-full bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white font-mono text-xs p-3 border-2 border-brutal-black dark:border-brutal-yellow outline-none transition-all duration-100 focus:bg-brutal-paper dark:focus:bg-brutal-dark-surface focus:shadow-brutal focus:-translate-y-0.5 disabled:opacity-50 resize-none placeholder:text-brutal-muted dark:placeholder:text-brutal-muted-dark"
           />
           <span className="block font-mono text-[10px] text-brutal-muted dark:text-brutal-muted-dark mt-1">
             This notice will be displayed to the applicant upon next login attempt.

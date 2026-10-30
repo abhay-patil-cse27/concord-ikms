@@ -10,6 +10,7 @@ const DEFAULT_ROLES = [
 /**
  * RoleSelector
  * Reusable Yellow Brutalist role selection segmented control.
+ * Pure Yellow Brutalist styling: solid borders, shadow-brutal-sm, monospace typography.
  */
 export default function RoleSelector({
   roles = DEFAULT_ROLES,
@@ -20,8 +21,9 @@ export default function RoleSelector({
 }) {
   return (
     <div className={className}>
-      <label className="block font-mono text-[11px] font-black uppercase tracking-wider mb-2 text-brutal-black dark:text-brutal-white">
-        Institutional Persona / Role:
+      <label className="font-mono text-xs font-bold uppercase tracking-wider text-brutal-black dark:text-brutal-white flex items-center justify-between mb-1.5">
+        <span>Institutional Persona / Role</span>
+        <span className="text-brutal-accent font-black">*</span>
       </label>
       <div className="grid grid-cols-3 gap-2">
         {roles.map((r) => {
@@ -33,10 +35,10 @@ export default function RoleSelector({
               disabled={disabled}
               onClick={() => onSelectRole(r.id)}
               className={cn(
-                'py-2 px-3 border-2 font-mono text-xs font-bold uppercase transition-all',
+                'py-2.5 px-3 border-2 font-mono text-xs font-black uppercase tracking-wider transition-all duration-100',
                 isSelected
-                  ? 'bg-brutal-yellow text-brutal-black border-brutal-black shadow-[2px_2px_0px_#0A0A0A]'
-                  : 'bg-transparent text-brutal-muted hover:text-brutal-black dark:hover:text-brutal-white border-brutal-black/20 dark:border-brutal-yellow/20',
+                  ? 'bg-brutal-yellow text-brutal-black border-brutal-black dark:border-brutal-yellow shadow-brutal-sm'
+                  : 'bg-brutal-white dark:bg-brutal-dark text-brutal-muted dark:text-brutal-muted-dark hover:text-brutal-black dark:hover:text-brutal-white border-brutal-black/30 dark:border-brutal-yellow/30 hover:border-brutal-black dark:hover:border-brutal-yellow',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -48,4 +50,3 @@ export default function RoleSelector({
     </div>
   );
 }
-

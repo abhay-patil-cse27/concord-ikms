@@ -109,13 +109,13 @@ export default function RegisterView({ onBack, onGoToLogin }) {
           </BrutalButton>
           <div className="h-5 w-[2px] bg-brutal-black/20 dark:bg-brutal-yellow/20 mx-1 hidden sm:block" />
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brutal-yellow border-2 border-brutal-black flex items-center justify-center font-black text-xs text-brutal-black shadow-[1px_1px_0px_#0A0A0A]">
+            <div className="w-7 h-7 bg-brutal-yellow border-2 border-brutal-black shadow-brutal-sm flex items-center justify-center font-black text-xs text-brutal-black">
               KIT
             </div>
-            <span className="font-display font-black tracking-tight text-sm uppercase hidden sm:inline">
+            <span className="font-display font-black tracking-tight text-sm uppercase hidden sm:inline text-brutal-black dark:text-brutal-white">
               CONCORD IKMS
             </span>
-            <BrutalBadge tone="yellow" className="text-[10px]">
+            <BrutalBadge tone="yellow" size="sm">
               Institutional Onboarding
             </BrutalBadge>
           </div>
@@ -193,17 +193,18 @@ export default function RegisterView({ onBack, onGoToLogin }) {
               />
 
               <div>
-                <label className="block font-mono text-[11px] font-black uppercase tracking-wider mb-1 text-brutal-black dark:text-brutal-white">
-                  Academic Department:
+                <label className="font-mono text-xs font-bold uppercase tracking-wider text-brutal-black dark:text-brutal-white flex items-center justify-between mb-1.5">
+                  <span>Academic Department</span>
+                  <span className="text-brutal-accent font-black">*</span>
                 </label>
                 <select
                   value={departmentId}
                   onChange={(e) => setDepartmentId(e.target.value)}
                   disabled={submitting || loadingDepts}
-                  className="w-full px-3 py-2 bg-brutal-paper dark:bg-brutal-dark-surface border-2 border-brutal-black dark:border-brutal-yellow font-mono text-xs text-brutal-black dark:text-brutal-white focus:outline-none focus:ring-2 focus:ring-brutal-yellow"
+                  className="w-full bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white font-mono text-sm px-3.5 py-2.5 border-2 border-brutal-black dark:border-brutal-yellow outline-none transition-all duration-100 focus:bg-brutal-paper dark:focus:bg-brutal-dark-surface focus:shadow-brutal focus:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
+                    <option key={dept.id} value={dept.id} className="bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white font-mono text-xs">
                       {dept.name} ({dept.code})
                     </option>
                   ))}
@@ -249,9 +250,10 @@ export default function RegisterView({ onBack, onGoToLogin }) {
                 <button
                   type="button"
                   onClick={onGoToLogin}
-                  className="font-mono text-xs text-brutal-black dark:text-brutal-yellow hover:underline"
+                  className="font-mono text-xs text-brutal-black dark:text-brutal-yellow font-bold uppercase tracking-wider hover:underline inline-flex items-center gap-1.5 transition-colors"
                 >
-                  Already registered? Sign in here
+                  <span>Already registered? Sign in here</span>
+                  <ArrowRight size={12} strokeWidth={2.5} />
                 </button>
               </div>
             </form>

@@ -122,7 +122,7 @@ export default function UsersView() {
             "px-4 py-2 font-display font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-brutal-black dark:border-brutal-yellow transition-all flex items-center gap-2",
             viewMode === 'directory'
               ? "bg-brutal-yellow text-brutal-black shadow-brutal-sm"
-              : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-paper dark:hover:bg-brutal-dark-surface"
+              : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-yellow hover:text-brutal-black dark:hover:bg-brutal-yellow dark:hover:text-brutal-black"
           )}
         >
           <Users size={16} strokeWidth={2.5} />
@@ -136,7 +136,7 @@ export default function UsersView() {
             "px-4 py-2 font-display font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-brutal-black dark:border-brutal-yellow transition-all flex items-center gap-2",
             viewMode === 'queue'
               ? "bg-brutal-yellow text-brutal-black shadow-brutal-sm"
-              : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-paper dark:hover:bg-brutal-dark-surface"
+              : "bg-brutal-white dark:bg-brutal-dark text-brutal-black dark:text-brutal-white hover:bg-brutal-yellow hover:text-brutal-black dark:hover:bg-brutal-yellow dark:hover:text-brutal-black"
           )}
         >
           <UserCheck size={16} strokeWidth={2.5} />
