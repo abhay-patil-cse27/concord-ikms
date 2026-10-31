@@ -313,16 +313,31 @@
   - [x] Universal KIT Institutional Digital ID Card (`UserProfileModal.jsx`) displaying PRN/EmpID, ASVS permissions, and session fingerprint.
   - [x] Applicant Verification Dossier (`ApplicantDossierModal.jsx`) with automated regex format checks and clearance triggers.
   - [x] Global Notification Center (`NotificationDrawer.jsx`) with Header Bell icon and live pending applicant counters.
-- [x] **Step 12.6: Automated Test Suite Expansion (104 Tests Total):**
+- [x] **Step 12.6: Automated Test Suite Expansion (104 Tests):**
   - [x] Expanded `backend/tests/test_user_onboarding.py` to 7 integration tests covering emergency bypass, direct provisioning, and dual student clearance rules.
-  - [x] Total: **104 automated test scenarios passing** (95 backend + 9 frontend, 100% green).
+- [x] **Step 12.7: Personal Email Onboarding & Role-Tailored Field Masking (Option A):**
+  - [x] Extended registration and dossier pre-checks to seamlessly support personal Google/Gmail accounts (`@gmail.com`) alongside institutional `@kitcoek.in`.
+  - [x] Role-tailored `UsersTable`: Restricted status activation/deactivation to Platform Superadmins; HODs and faculty receive read-only badges.
+  - [x] Streamlined student `DocumentTable`: Hides internal chunk counters, chunk inspectors, and pipeline terminology (`PROCESSED`), serving direct download actions.
 
-## Milestone 13: Declarative Jenkins CI/CD Pipeline (Planned Blueprint)
-- [ ] **Step 13.1: Declarative Jenkinsfile:**
-  - [ ] Multi-stage pipeline: Checkout → Lint & Security Scan → Backend Pytest (85 tests) → Frontend Unit Tests (9 tests) → Vite Production Build → Docker Build & Container Vulnerability Scan → Staging Deployment.
-- [ ] **Step 13.2: Quality Gates & Test Artifact Archival:**
-  - [ ] JUnit XML test result reporting (`pytest --junitxml=reports/junit.xml`).
-  - [ ] Coverage threshold gating (minimum 85% coverage).
-  - [ ] Security audit gate (pip-audit / safety for Python, npm audit for frontend).
+## Milestone 13: Enterprise GitHub Actions CI/CD & Real-Time Broadcast Hub (Completed)
+- [x] **Step 13.1: Automated CI Quality Gate (`.github/workflows/ci.yml`):**
+  - [x] Multi-job pipeline executing on every push to `main` and `feature/**`.
+  - [x] Job 1 (`backend-tests`): Installs system `tesseract-ocr`, sets up Python 3.11 with pip caching, and runs all 101 backend pytest integration tests.
+  - [x] Job 2 (`frontend-tests`): Sets up Node 20 with npm caching, runs all 13 frontend unit tests, and validates Vite production bundle with zero errors.
+  - [x] Job 3 (`docker-gate`): Validates `docker-compose.yml` configuration and compiles backend and frontend container images.
+- [x] **Step 13.2: Clean-Environment Hardening & Fixes:**
+  - [x] Dynamic session factory in `test_database_persistence.py` resolving clean CI runner in-memory SQLite isolation.
+  - [x] Graceful blank image byte-stream handling in `ocr.py` for Tesseract-equipped Linux runners.
+- [x] **Step 13.3: Real-Time Broadcast Hub & Dual-Tier Synchronization (Option C):**
+  - [x] Implemented `BroadcastHub` (`app/core/broadcast.py`) asynchronous pub/sub broker with queue isolation and heartbeat pings.
+  - [x] Server-Sent Events (SSE) streaming endpoint `GET /api/v1/system/events` with Bearer header and query token authentication.
+  - [x] Reusable administrative alert endpoint `POST /api/v1/system/broadcast` logged to SHA-256 audit ledger.
+  - [x] Frontend `BroadcastProvider` (`BroadcastContext.jsx`) combining browser-native `BroadcastChannel` with SSE stream.
+  - [x] Instant floating Yellow Brutalist toast and dynamic `concord:llm_status_changed` event listeners updating RAG Assistant header badges live without page reloads.
+- [x] **Step 13.4: Comprehensive Automated Test Suite Expansion (114 Tests Total):**
+  - [x] Added `backend/tests/test_broadcast.py` (3 async tests) and `frontend/tests/broadcast.test.js` (4 unit tests).
+  - [x] Total: **114 automated test scenarios passing** (101 backend + 13 frontend, 100% green).
+
 
 
