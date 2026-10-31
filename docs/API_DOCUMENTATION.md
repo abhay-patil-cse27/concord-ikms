@@ -465,6 +465,51 @@ sequenceDiagram
   }
   ```
 
+### `GET /system/events`
+- **Description:** Real-time Server-Sent Events (SSE) event stream (`text/event-stream`) delivering live institutional broadcasts, dynamic LLM engine hot-swap events, administrative bulletins, and keep-alive heartbeats.
+- **Authorization:** Any authenticated user via `Authorization: Bearer <token>` or `?token=<jwt>` query parameter.
+- **Event Types Emitted:**
+  - `connected`: Initial connection receipt with active engine metadata.
+  - `llm_engine_switched`: Dispatched whenever an admin toggles Cloud (Groq) ↔ Local (Ollama) mode.
+  - `system_alert`: Urgent administrative announcements and bulletins.
+  - `system_maintenance`: Scheduled maintenance notifications.
+  - `ping`: Periodic 15-second keep-alive heartbeat.
+- **Response Format (SSE Stream):**
+  ```http
+  HTTP/1.1 200 OK
+  Content-Type: text/event-stream
+  Cache-Control: no-cache, no-transform
+  Connection: keep-alive
+
+  event: connected
+  data: {"user_id": "...", "timestamp": 1730400000.0, "message": "Connected to CONCORD IKMS real-time broadcast stream."}
+
+  event: llm_engine_switched
+  data: {"provider_mode": "local", "display_name": "Local Campus Node (Ollama)", "active_model": "qwen2.5:1.5b", "admin_email": "admin@kitcoek.in"}
+  ```
+
+### `POST /system/broadcast`
+- **Description:** Allows administrators to publish a real-time bulletin or institutional alert to all active client sessions and open browser tabs. Recorded in SHA-256 audit ledger.
+- **Authorization:** `platform_admin` only.
+- **Request Body:**
+  ```json
+  {
+    "event_type": "system_alert",
+    "title": "Semester Examination Ordinances Updated",
+    "message": "Autonomous 2024 revised grading rubric has been approved by the Academic Council.",
+    "severity": "warning"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "event_type": "system_alert",
+    "deliveries": 3,
+    "payload": { ... }
+  }
+  ```
+
 ---
 
 ## 10. Institutional Onboarding & Governance (`/governance`, `/auth`)

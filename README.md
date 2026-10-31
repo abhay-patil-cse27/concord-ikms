@@ -13,7 +13,7 @@
 | :--- | :--- | :--- |
 | **Setup & Quickstart Guide** | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | Comprehensive step-by-step developer onboarding, virtualenv setup, Ollama local LLM execution, and troubleshooting. |
 | **API Endpoints** | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Full endpoint reference (`/auth`, `/documents`, `/conversations`, `/governance`, `/search`, `/rag`, `/evaluation`, `/system`). |
-| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, user onboarding approvals, and security hardening (104 tests). |
+| **Quality & Test Architecture** | [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md) | Multi-layered testing pyramid, BOLA prevention assertions, audit privacy checks, LLM prompt guardrails, Dual-Mode LLM hot-swap, user onboarding approvals, and real-time SSE broadcasts (114 tests). |
 | **Infrastructure & Docker** | [docs/INFRASTRUCTURE_AND_UI.md](docs/INFRASTRUCTURE_AND_UI.md) | Dual-database setup (SQLite vs PostgreSQL 16), Embedded ChromaDB, MinIO, and UI design system. |
 | **Technology Stack** | [docs/Tech_Stack.md](docs/Tech_Stack.md) | Frontend, backend, AI orchestration, database trade-offs, and architecture diagrams. |
 | **Master Project Brief** | [docs/Project_Info.md](docs/Project_Info.md) | Product identity, mission, non-functional requirements, and institutional boundaries. |
@@ -303,13 +303,16 @@ IKMS/
 - **Milestone 12 (Institutional User Onboarding, 2-Tier Approval Queue, Break-Glass Bypass & Universal Identity — Completed & Verified):**
   - Multi-department coverage across 10 official KIT academic departments (+ ADMIN & TPO).
   - Public registration portal (`/register`) with PRN/Employee ID validation and `pending_tier1` / `pending_tier2` gating.
+  - Institutional + Personal Google Account support (`@gmail.com`) with automated pre-clearance validation.
   - 2-Tier Approval Hierarchy: Tier 1 (HOD approves student & faculty) + Tier 2 (Platform Admin approves HODs).
   - Break-Glass Emergency Fast-Track (`action: "bypass"`) & Direct Administrative User Provisioning (`POST /governance/users/provision-direct`).
   - Universal Institutional Digital ID Card (`UserProfileModal`), Applicant Verification Dossier (`ApplicantDossierModal`), and Global Notification Center (`NotificationDrawer`).
-  - **104 / 104 automated test scenarios passing** (95 backend + 9 frontend, 100% green).
-- **Milestone 13 (Declarative Jenkins CI/CD Pipeline — Planned Blueprint):**
-  - Multi-stage Jenkins declarative pipeline (Lint → Backend Tests → Frontend Tests → Vite Build → Docker Vulnerability Scan → Staging Deploy).
-  - Automated JUnit XML reporting and security audit gating.
+  - Role-Tailored Field Masking: Status toggle restricted to Platform Admins; students receive streamlined download catalogs without pipeline jargon.
+- **Milestone 13 (Automated CI/CD Quality Gate & Real-Time Broadcast Hub — Completed & Verified):**
+  - **Enterprise GitHub Actions CI/CD (`.github/workflows/ci.yml`):** Multi-gate pipeline automating system `tesseract-ocr` provisioning, Python 3.11 Pytest suite, Node 20 frontend unit tests, production Vite build, and Docker container verification on every push.
+  - **Real-Time Broadcast Hub (Option C):** Asynchronous pub/sub `BroadcastHub` backed by Server-Sent Events (`GET /api/v1/system/events`) and browser native `BroadcastChannel('concord_system_broadcast')` for zero-latency multi-tab sync.
+  - **Live Dynamic Hot-Swaps:** Instantaneous floating Yellow Brutalist toast and notification badges across all active user sessions whenever Platform Admins hot-swap inference engines (Cloud ↔ Local Ollama) with zero downtime.
+  - **Verified Quality Standard:** **114 / 114 automated test scenarios passing** (101 backend + 13 frontend, 100% green).
 
 
 
