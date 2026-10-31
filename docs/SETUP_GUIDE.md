@@ -158,6 +158,9 @@ CONCORD supports **two swappable inference paradigms** with zero server restarts
    - Click **TEST PROBE** (verifies reachability and checks latency).
    - Click **SAVE CONFIGURATION**.
 4. Every chat and search query now runs through your local Ollama node!
+   - **State Persistence:** Switched engine settings are saved atomically to `backend/data/llm_config.json`, surviving Uvicorn worker cycles and server reboots.
+   - **Audit Ledger Logging:** Every toggle logs an immutable `SYSTEM_LLM_CONFIG_UPDATE` event into the SHA-256 tamper-evident ledger with actor UUID and config metadata.
+   - **Global Cross-User Reflection:** The active model badge reflects live across all student, faculty, and HOD sessions via `GET /api/v1/system/llm-status`.
 
 ### Option C: Offline Synthesizer Fallback (Zero Config)
 If neither Groq nor Ollama is running, CONCORD automatically falls back to its deterministic extractive synthesizer. Responses are formulated directly from verified ChromaDB chunks with clickable citations `[1]`.
@@ -168,12 +171,12 @@ If neither Groq nor Ollama is running, CONCORD automatically falls back to its d
 
 To verify that everything is working properly on your machine:
 
-### 1. Run Backend Pytest Suite (92 Scenarios)
-From the `backend/` directory with virtual environment activated:
+### 1. Run Backend Pytest Suite (97 Scenarios)
+From the workspace root or `backend/` directory with virtual environment activated:
 ```bash
-pytest tests/ -v
+python -m pytest backend/tests/ -v
 ```
-*(All 92 tests run offline and pass with 100% green across database persistence, user onboarding approvals, dual-mode LLM engine, and security hardening).*
+*(All 97 tests run offline and pass with 100% green across database persistence, user onboarding approvals, break-glass bypass, dual-mode LLM engine, and security hardening).*
 
 ### 2. Run Frontend Isolation & Sanitization Tests (9 Scenarios)
 From the `frontend/` directory:
@@ -188,7 +191,13 @@ npm run build
 ```
 *(Verifies tree-shaking, CSS optimization, chunk code-splitting, and zero bundling errors).*
 
-> **Total Test Suite:** 101 automated test cases (92 backend + 9 frontend).
+> **Total Test Suite:** 106 automated test cases (97 backend + 9 frontend, 100% passing).
+
+### 4. Continuous Integration (GitHub Actions)
+Every commit to `main` and `feature/**` triggers the automated CI Quality Gate [`.github/workflows/ci.yml`](../.github/workflows/ci.yml):
+- **Backend Gate:** Installs system `tesseract-ocr`, sets up Python 3.11, and executes all 97 pytests.
+- **Frontend Gate:** Installs dependencies on Node 20, executes 9 unit tests, and verifies production Vite bundle.
+- **Docker Gate:** Validates `docker-compose.yml` and compiles container images.
 
 ---
 

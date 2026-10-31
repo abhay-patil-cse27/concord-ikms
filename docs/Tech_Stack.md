@@ -57,6 +57,7 @@ For CONCORD, the technology stack balances three core priorities:
 | **Data & Vector Layer** | **PostgreSQL 16 + pgvector** | Unified operational store: relational entities (users, roles, documents, audit trails) co-located with 384-d dense vector embeddings. |
 | **File Storage** | **S3-Compatible Object Store / MinIO** | Isolates binary document blobs (PDFs, DOCX, XLSX) from database tables; enables secure pre-signed retrieval. |
 | **Tool Protocol** | **Model Context Protocol (MCP)** | *(Optional / Progressive)* Standardized connector layer for external tools and enterprise systems, enforced strictly behind server-side RBAC. |
+| **DevOps & CI/CD** | **GitHub Actions + Docker Compose** | Automated quality gates (`.github/workflows/ci.yml`) validating 97 backend pytests with system OCR, 9 frontend isolation tests, production bundling, and container packaging on every commit. |
 
 ---
 
