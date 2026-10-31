@@ -106,6 +106,31 @@ export default function NotificationDrawer({
       .catch(() => {});
   }, [isOpen]);
 
+  // Real-time Option C: Instant dynamic update on broadcast event without needing drawer reload
+  useEffect(() => {
+    const handleEngineChange = (event) => {
+      const data = event.detail;
+      if (data) {
+        const isLocal = data.provider_mode === 'local';
+        const engineNotice = {
+          id: 'notif-engine-active',
+          title: isLocal ? 'Local Campus Node Active' : 'Groq Cloud Engine Active',
+          message: `Inference routing currently directed to ${data.display_name}.`,
+          type: isLocal ? 'warning' : 'info',
+          timestamp: 'Just now',
+          read: false,
+          icon: 'Cpu',
+        };
+        setNotifications((prev) => {
+          const filtered = prev.filter((n) => n.id !== 'notif-engine-active');
+          return [engineNotice, ...filtered];
+        });
+      }
+    };
+    window.addEventListener('concord:llm_status_changed', handleEngineChange);
+    return () => window.removeEventListener('concord:llm_status_changed', handleEngineChange);
+  }, []);
+
   if (!isOpen) return null;
 
   const unreadCount =

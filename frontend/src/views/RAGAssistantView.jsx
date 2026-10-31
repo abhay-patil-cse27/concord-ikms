@@ -79,6 +79,18 @@ export default function RAGAssistantView() {
       setActiveLLMBadge('GROQ: openai/gpt-oss-120b');
     };
     fetchActiveEngine();
+
+    // Option C: Real-time dynamic engine hot-swap listener
+    const handleEngineChange = (event) => {
+      const data = event.detail;
+      if (data) {
+        const isLocal = data.provider_mode === 'local';
+        const model = data.active_model || data.model || 'active';
+        setActiveLLMBadge(isLocal ? `LOCAL: ${model}` : `GROQ: ${model}`);
+      }
+    };
+    window.addEventListener('concord:llm_status_changed', handleEngineChange);
+    return () => window.removeEventListener('concord:llm_status_changed', handleEngineChange);
   }, []);
 
   // Auto-scroll to latest message

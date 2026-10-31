@@ -66,11 +66,24 @@ export default function DashboardView() {
     }
   }, [canReviewApprovals]);
 
-  // Load LLM configuration on mount if admin
+  // Load LLM configuration on mount if admin & listen for live engine hot-swaps
   useEffect(() => {
     if (isAdmin) {
       loadLLMConfig();
     }
+
+    const handleEngineChange = (event) => {
+      const data = event.detail;
+      if (data) {
+        setLlmConfig((prev) => (prev ? {
+          ...prev,
+          provider_mode: data.provider_mode,
+          local_model: data.active_model || prev?.local_model,
+        } : prev));
+      }
+    };
+    window.addEventListener('concord:llm_status_changed', handleEngineChange);
+    return () => window.removeEventListener('concord:llm_status_changed', handleEngineChange);
   }, [isAdmin]);
 
   const loadLLMConfig = async () => {

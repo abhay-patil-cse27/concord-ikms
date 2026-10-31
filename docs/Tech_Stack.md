@@ -199,5 +199,10 @@ The backend decouples business logic from specific vendors by using abstract int
 - `RerankerProvider`: FlashRank / Cross-Encoder.
 - `ObjectStorageProvider`: S3 / MinIO / Local File Storage.
 
+### E. Real-Time Broadcast & Synchronization Layer (Option C)
+- **Server-Sent Events (SSE):** `GET /api/v1/system/events` managed by `BroadcastHub` for push notifications across active clients.
+- **Browser BroadcastChannel API:** Zero-latency intra-browser multi-tab synchronization without redundant network calls.
+- **Dynamic Hot-Swaps:** Real-time reflection of LLM routing adjustments, floating system toasts, and live drawer updates across all user roles.
+
 ---
 *CONCORD IKMS · Technology Stack & Architectural Decision Reference · Mega Project 2026–27*

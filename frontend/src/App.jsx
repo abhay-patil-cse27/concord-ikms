@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
+import { BroadcastProvider } from './context/BroadcastContext';
 import AppShell from './components/layout/AppShell';
 import BrutalSkeleton from './components/brutal/BrutalSkeleton';
 
@@ -185,10 +186,12 @@ export default function App() {
   };
 
   return (
-    <AppShell activeTab={activeTab} setActiveTab={setActiveTab}>
-      <Suspense fallback={<ViewSuspenseFallback />}>
-        {renderContent()}
-      </Suspense>
-    </AppShell>
+    <BroadcastProvider>
+      <AppShell activeTab={activeTab} setActiveTab={setActiveTab}>
+        <Suspense fallback={<ViewSuspenseFallback />}>
+          {renderContent()}
+        </Suspense>
+      </AppShell>
+    </BroadcastProvider>
   );
 }

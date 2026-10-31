@@ -191,12 +191,18 @@ npm run build
 ```
 *(Verifies tree-shaking, CSS optimization, chunk code-splitting, and zero bundling errors).*
 
-> **Total Test Suite:** 107 automated test cases (98 backend + 9 frontend, 100% passing).
+> **Total Test Suite:** 114 automated test cases (101 backend + 13 frontend, 100% passing).
 
-### 4. Continuous Integration (GitHub Actions)
+### 4. Real-Time Institutional Broadcast Hub (Option C)
+CONCORD IKMS features a real-time reactive event stream (`GET /api/v1/system/events`):
+- **Server-Sent Events (SSE):** Active clients maintain an asynchronous stream backed by `BroadcastHub`.
+- **Zero-Latency Cross-Tab Sync:** Browser `BroadcastChannel` mirrors events across open tabs without network round-trips.
+- **Dynamic Hot-Swaps:** When the Platform Admin updates the LLM engine mode (`cloud` vs `local`), a floating high-visibility Yellow Brutalist toast and notification drawer bulletin dispatch immediately to all connected users, and RAG Assistant badges update without a page refresh.
+
+### 5. Continuous Integration (GitHub Actions)
 Every commit to `main` and `feature/**` triggers the automated CI Quality Gate [`.github/workflows/ci.yml`](../.github/workflows/ci.yml):
-- **Backend Gate:** Installs system `tesseract-ocr`, sets up Python 3.11, and executes all 97 pytests.
-- **Frontend Gate:** Installs dependencies on Node 20, executes 9 unit tests, and verifies production Vite bundle.
+- **Backend Gate:** Installs system `tesseract-ocr`, sets up Python 3.11, and executes all 101 pytests.
+- **Frontend Gate:** Installs dependencies on Node 20, executes 13 unit tests, and verifies production Vite bundle.
 - **Docker Gate:** Validates `docker-compose.yml` and compiles container images.
 
 ---

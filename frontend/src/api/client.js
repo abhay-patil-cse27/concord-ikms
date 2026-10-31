@@ -238,7 +238,7 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  // Dual-Mode LLM Engine (Milestone 11)
+  // Dual-Mode LLM Engine & Institutional Broadcasts (Milestone 11 & Option C)
   getLLMStatus: () => apiRequest('/system/llm-status'),
   getLLMConfig: () => apiRequest('/system/llm-config'),
   updateLLMConfig: (payload) =>
@@ -251,6 +251,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  publishBroadcast: (payload) =>
+    apiRequest('/system/broadcast', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getEventsStreamUrl: () => {
+    const token = localStorage.getItem('concord_token');
+    return `/api/v1/system/events${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  },
 };
 
 
