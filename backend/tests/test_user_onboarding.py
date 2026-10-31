@@ -341,3 +341,49 @@ async def test_student_can_be_approved_by_admin_or_hod(client: AsyncClient):
     )
     assert admin_approve.status_code == 200
     assert admin_approve.json()["approval_status"] == "approved"
+
+
+@pytest.mark.asyncio
+async def test_registration_supports_gmail_and_personal_domains(client: AsyncClient):
+    """
+    Verifies that students/faculty can register with personal email providers (@gmail.com),
+    and successfully log in manually with email and password once approved.
+    """
+    dept_res = await client.get("/api/v1/auth/departments")
+    cse_dept = next(d for d in dept_res.json() if d["code"] == "CSE")
+
+    payload = {
+        "full_name": "Aditi Patil",
+        "email": "aditi.patil@gmail.com",
+        "password": "Password@123",
+        "department_id": cse_dept["id"],
+        "role_code": "student",
+        "registration_number": "2024BTECS777"
+    }
+    reg_res = await client.post("/api/v1/auth/register", json=payload)
+    assert reg_res.status_code == 201
+    reg_data = reg_res.json()
+    assert reg_data["approval_status"] == "pending_tier1"
+    student_id = reg_data["user_id"]
+
+    # Superadmin approves the Gmail applicant
+    admin_login = await client.post("/api/v1/auth/demo-login", json={"role_code": "platform_admin"})
+    admin_token = admin_login.json()["access_token"]
+
+    approve_res = await client.post(
+        f"/api/v1/governance/users/{student_id}/review",
+        json={"action": "approve"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert approve_res.status_code == 200
+    assert approve_res.json()["approval_status"] == "approved"
+
+    # User signs in manually with their Gmail and password
+    login_res = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "aditi.patil@gmail.com", "password": "Password@123"}
+    )
+    assert login_res.status_code == 200
+    assert login_res.json()["user"]["email"] == "aditi.patil@gmail.com"
+    assert login_res.json()["access_token"] is not None
+

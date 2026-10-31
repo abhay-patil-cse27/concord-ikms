@@ -321,6 +321,7 @@ export default function DocumentsView() {
           onInspect={handleInspect}
           onReview={handleReview}
           onDelete={handleDelete}
+          isStudent={user?.roles?.some((r) => r.code === 'student')}
         />
       )}
 

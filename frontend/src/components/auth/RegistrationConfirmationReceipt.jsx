@@ -36,7 +36,7 @@ export default function RegistrationConfirmationReceipt({
           <span className="font-bold">{applicantName}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-brutal-muted dark:text-brutal-muted-dark">Institutional Email:</span>
+          <span className="text-brutal-muted dark:text-brutal-muted-dark">Registered Email:</span>
           <span className="font-bold">{email}</span>
         </div>
         <div className="flex justify-between">

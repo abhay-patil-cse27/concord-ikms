@@ -242,6 +242,7 @@ export default function UsersView() {
             <UsersTable
               users={filteredUsers}
               onToggleStatus={handleToggleStatus}
+              canManageStatus={hasRole('superadmin') || hasRole('platform_admin')}
             />
           )}
         </div>

@@ -41,6 +41,7 @@ export default function ApplicantDossierModal({
 
   // Automated Compliance Pre-Checks
   const isKitEmail = applicant.email?.endsWith('@kitcoek.in') || applicant.email?.endsWith('.kit.edu') || applicant.email?.includes('kit');
+  const isGmail = applicant.email?.endsWith('@gmail.com') || applicant.email?.endsWith('@googlemail.com');
   const hasValidRegFormat = Boolean(regNo && regNo.length >= 6);
 
   return (
@@ -158,10 +159,12 @@ export default function ApplicantDossierModal({
             </div>
 
             <div className="flex items-center gap-2 text-brutal-black dark:text-brutal-white">
-              <CheckCircle2 size={14} className={isKitEmail ? "text-brutal-success" : "text-brutal-accent"} />
+              <CheckCircle2 size={14} className={isKitEmail || isGmail ? "text-brutal-success" : "text-brutal-accent"} />
               <span>
                 {isKitEmail
                   ? 'Institutional email domain verified (@kitcoek.in)'
+                  : isGmail
+                  ? 'Personal Google Account verified format (@gmail.com)'
                   : 'External / non-standard domain used; verify candidate identity'}
               </span>
             </div>

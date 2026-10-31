@@ -65,7 +65,7 @@ graph TD
 | **Frontend Cache Isolation** | `frontend/tests/cacheIsolation.test.js` | User switching, cache namespacing (`_user_{id}`), startup legacy purge, `clearAll()`. | `node (Node.js Test)` | 5 |
 | **Frontend Speech Sanitization** | `frontend/tests/speechUtils.test.js` | Citation token removal (`[1]`), markdown formatting stripping, code block normalization, null safety. | `node (Node.js Test)` | 4 |
 
-**Total Automated Tests:** **106 automated test scenarios** (97 backend + 9 frontend, 100% passing).
+**Total Automated Tests:** **107 automated test scenarios** (98 backend + 9 frontend, 100% passing).
 
 ---
 

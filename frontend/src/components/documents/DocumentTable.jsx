@@ -28,22 +28,32 @@ export default function DocumentTable({
   onInspect,
   onReview,
   onDelete,
+  isStudent = false,
 }) {
   const getDeptCode = (deptId) => {
     const dept = departments.find((d) => d.id === deptId);
     return dept ? dept.code : 'GLOBAL';
   };
 
-  const headers = [
-    'Document Details',
-    'Scope',
-    'Status',
-    'Lifecycle',
-    'Chunks',
-    'Size',
-    'Ingested',
-    { label: 'Actions', className: 'text-right' }
-  ];
+  const headers = isStudent
+    ? [
+        'Document Details',
+        'Scope',
+        'Lifecycle',
+        'Size',
+        'Ingested',
+        { label: 'Actions', className: 'text-right' },
+      ]
+    : [
+        'Document Details',
+        'Scope',
+        'Status',
+        'Lifecycle',
+        'Chunks',
+        'Size',
+        'Ingested',
+        { label: 'Actions', className: 'text-right' },
+      ];
 
   return (
     <div className="w-full">
@@ -81,22 +91,24 @@ export default function DocumentTable({
                 </BrutalBadge>
               </td>
 
-              {/* Ingestion Pipeline Status */}
-              <td className="p-3.5 whitespace-nowrap">
-                {doc.status === 'processed' ? (
-                  <BrutalBadge tone="success" size="sm" dot>
-                    PROCESSED
-                  </BrutalBadge>
-                ) : doc.status === 'failed' ? (
-                  <BrutalBadge tone="accent" size="sm" dot>
-                    FAILED
-                  </BrutalBadge>
-                ) : (
-                  <BrutalBadge tone="yellow" size="sm" dot>
-                    PARSING
-                  </BrutalBadge>
-                )}
-              </td>
+              {/* Ingestion Pipeline Status (Staff/Admin Only) */}
+              {!isStudent && (
+                <td className="p-3.5 whitespace-nowrap">
+                  {doc.status === 'processed' ? (
+                    <BrutalBadge tone="success" size="sm" dot>
+                      PROCESSED
+                    </BrutalBadge>
+                  ) : doc.status === 'failed' ? (
+                    <BrutalBadge tone="accent" size="sm" dot>
+                      FAILED
+                    </BrutalBadge>
+                  ) : (
+                    <BrutalBadge tone="yellow" size="sm" dot>
+                      PARSING
+                    </BrutalBadge>
+                  )}
+                </td>
+              )}
 
               {/* Lifecycle & Version State */}
               <td className="p-3.5 whitespace-nowrap">
@@ -118,13 +130,15 @@ export default function DocumentTable({
                 </div>
               </td>
 
-              {/* Chunks Count */}
-              <td className="p-3.5 whitespace-nowrap">
-                <div className="inline-flex items-center gap-1.5 font-bold">
-                  <Layers size={14} className="text-brutal-muted dark:text-brutal-muted-dark" />
-                  <span>{doc.chunk_count || 0}</span>
-                </div>
-              </td>
+              {/* Chunks Count (Staff/Admin Only) */}
+              {!isStudent && (
+                <td className="p-3.5 whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1.5 font-bold">
+                    <Layers size={14} className="text-brutal-muted dark:text-brutal-muted-dark" />
+                    <span>{doc.chunk_count || 0}</span>
+                  </div>
+                </td>
+              )}
 
               {/* File Size */}
               <td className="p-3.5 whitespace-nowrap text-brutal-muted dark:text-brutal-muted-dark text-[11px]">
@@ -139,62 +153,77 @@ export default function DocumentTable({
               {/* Actions Column */}
               <td className="p-3.5 text-right whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1.5">
-                  {/* Approver Controls */}
-                  {isApprover && doc.approval_status === 'pending_approval' && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => onReview(doc.id, 'approved')}
-                        className="py-1 px-2 border-2 border-brutal-black bg-brutal-success text-brutal-white font-mono text-[10px] font-black uppercase hover:opacity-90 flex items-center gap-1 shadow-brutal-sm"
-                        title="Approve Document (Sync to Vector Index)"
-                      >
-                        <Check size={12} strokeWidth={3} />
-                        <span>Approve</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onReview(doc.id, 'rejected')}
-                        className="py-1 px-2 border-2 border-brutal-black bg-brutal-accent text-brutal-white font-mono text-[10px] font-black uppercase hover:opacity-90 flex items-center gap-1 shadow-brutal-sm"
-                        title="Reject Document"
-                      >
-                        <X size={12} strokeWidth={3} />
-                        <span>Reject</span>
-                      </button>
-                    </>
-                  )}
-
-                  {/* Chunk Inspector */}
-                  <button
-                    type="button"
-                    onClick={() => onInspect(doc.id)}
-                    className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
-                    title="Inspect Extracted Chunks"
-                    aria-label="Inspect Chunks"
-                  >
-                    <Eye size={14} />
-                  </button>
-
-                  {/* Raw File Download */}
-                  <a
-                    href={`/api/v1/documents/${doc.id}/download`}
-                    className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
-                    title="Download Raw Asset"
-                    aria-label="Download Document"
-                  >
-                    <Download size={14} />
-                  </a>
-
-                  {/* Delete Option */}
-                  {canDelete && (
-                    <button
-                      type="button"
-                      onClick={() => onDelete(doc.id, doc.title)}
-                      className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface text-brutal-accent hover:bg-brutal-accent hover:text-brutal-white transition-colors"
-                      title="Delete Document"
-                      aria-label="Delete Document"
+                  {/* Student View: Streamlined Download Action */}
+                  {isStudent ? (
+                    <a
+                      href={`/api/v1/documents/${doc.id}/download`}
+                      className="px-2.5 py-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-yellow text-brutal-black hover:bg-brutal-black hover:text-brutal-yellow transition-colors font-mono text-xs font-black uppercase flex items-center gap-1.5 shadow-brutal-sm"
+                      title="Download Academic Document"
+                      aria-label="Download Document"
                     >
-                      <Trash2 size={14} />
-                    </button>
+                      <Download size={13} strokeWidth={2.5} />
+                      <span>Download</span>
+                    </a>
+                  ) : (
+                    <>
+                      {/* Approver Controls */}
+                      {isApprover && doc.approval_status === 'pending_approval' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onReview(doc.id, 'approved')}
+                            className="py-1 px-2 border-2 border-brutal-black bg-brutal-success text-brutal-white font-mono text-[10px] font-black uppercase hover:opacity-90 flex items-center gap-1 shadow-brutal-sm"
+                            title="Approve Document (Sync to Vector Index)"
+                          >
+                            <Check size={12} strokeWidth={3} />
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onReview(doc.id, 'rejected')}
+                            className="py-1 px-2 border-2 border-brutal-black bg-brutal-accent text-brutal-white font-mono text-[10px] font-black uppercase hover:opacity-90 flex items-center gap-1 shadow-brutal-sm"
+                            title="Reject Document"
+                          >
+                            <X size={12} strokeWidth={3} />
+                            <span>Reject</span>
+                          </button>
+                        </>
+                      )}
+
+                      {/* Chunk Inspector */}
+                      <button
+                        type="button"
+                        onClick={() => onInspect(doc.id)}
+                        className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+                        title="Inspect Extracted Chunks"
+                        aria-label="Inspect Chunks"
+                      >
+                        <Eye size={14} />
+                      </button>
+
+                      {/* Raw File Download */}
+                      <a
+                        href={`/api/v1/documents/${doc.id}/download`}
+                        className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+                        title="Download Raw Asset"
+                        aria-label="Download Document"
+                      >
+                        <Download size={14} />
+                      </a>
+
+                      {/* Delete Option */}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(doc.id, doc.title)}
+                          className="p-1.5 border-2 border-brutal-black dark:border-brutal-yellow bg-brutal-paper dark:bg-brutal-dark-surface text-brutal-accent hover:bg-brutal-accent hover:text-brutal-white transition-colors"
+                          title="Delete Document"
+                          aria-label="Delete Document"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </td>

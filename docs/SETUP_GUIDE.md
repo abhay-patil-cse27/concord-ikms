@@ -191,7 +191,7 @@ npm run build
 ```
 *(Verifies tree-shaking, CSS optimization, chunk code-splitting, and zero bundling errors).*
 
-> **Total Test Suite:** 106 automated test cases (97 backend + 9 frontend, 100% passing).
+> **Total Test Suite:** 107 automated test cases (98 backend + 9 frontend, 100% passing).
 
 ### 4. Continuous Integration (GitHub Actions)
 Every commit to `main` and `feature/**` triggers the automated CI Quality Gate [`.github/workflows/ci.yml`](../.github/workflows/ci.yml):

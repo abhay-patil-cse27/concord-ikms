@@ -8,7 +8,7 @@ import { variants } from '../../motion/presets';
  * UsersTable
  * Brutal table displaying user identities, assigned roles, status chips, and registration date.
  */
-export default function UsersTable({ users, onToggleStatus }) {
+export default function UsersTable({ users, onToggleStatus, canManageStatus = false }) {
   const headers = [
     'User Identity',
     'Email Address',
@@ -67,20 +67,31 @@ export default function UsersTable({ users, onToggleStatus }) {
 
             {/* Status */}
             <td className="p-3.5 whitespace-nowrap">
-              <button
-                type="button"
-                onClick={() => onToggleStatus && onToggleStatus(u)}
-                className="cursor-pointer"
-                title="Click to toggle account status"
-              >
+              {canManageStatus ? (
+                <button
+                  type="button"
+                  onClick={() => onToggleStatus && onToggleStatus(u)}
+                  className="cursor-pointer"
+                  title="Click to toggle account status (Platform Admin clearance)"
+                >
+                  <BrutalBadge
+                    tone={u.is_active ? 'success' : 'accent'}
+                    size="sm"
+                    dot
+                  >
+                    {u.is_active ? 'ACTIVE' : 'DEACTIVATED'}
+                  </BrutalBadge>
+                </button>
+              ) : (
                 <BrutalBadge
                   tone={u.is_active ? 'success' : 'accent'}
                   size="sm"
                   dot
+                  className="cursor-default"
                 >
                   {u.is_active ? 'ACTIVE' : 'DEACTIVATED'}
                 </BrutalBadge>
-              </button>
+              )}
             </td>
 
             {/* Registered Date */}
