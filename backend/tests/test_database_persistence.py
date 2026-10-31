@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-from app.core.database import AsyncSessionLocal, engine
+from app.core.database import get_session_factory, engine
 from app.modules.identity.models import User, Role
 
 
@@ -12,7 +12,8 @@ async def test_async_session_transaction_rollback():
     DB2: Verifies that an unhandled database exception (e.g., duplicate unique constraint)
     triggers an automatic transaction rollback, leaving no dirty state or dangling locks.
     """
-    async with AsyncSessionLocal() as session:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
         # 1. Insert a baseline test user
         user1 = User(
             id="rollback-test-user-1",

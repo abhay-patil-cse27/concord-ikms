@@ -54,6 +54,9 @@ class PytesseractOCRProvider(BaseOCRProvider):
         if not self.is_available():
             return ""
 
+        if not image_bytes_list:
+            return "[Scanned Document Page — No extractable text or embedded raster graphics]"
+
         try:
             import pytesseract
             from app.modules.documents.preprocessor import ImagePreprocessor
