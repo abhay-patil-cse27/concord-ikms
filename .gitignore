@@ -61,3 +61,8 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Document & Report Artifacts (Docs as Code)
+*.docx
+*.pdf
+!scripts/report/assets/*
+
