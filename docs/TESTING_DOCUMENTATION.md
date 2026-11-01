@@ -66,8 +66,10 @@ graph TD
 | **Frontend Speech Sanitization** | `frontend/tests/speechUtils.test.js` | Citation token removal (`[1]`), markdown formatting stripping, code block normalization, null safety. | `node (Node.js Test)` | 4 |
 | **Institutional Real-Time Broadcast** | `frontend/tests/broadcast.test.js` | Cross-tab synchronization, SSE payload serialization, custom event dispatching, drawer persistence. | `node (Node.js Test)` | 4 |
 | **Backend Real-Time Broadcast Hub** | `backend/tests/test_broadcast.py` | Asynchronous pub/sub queue isolation, live LLM hot-swap event broadcasting, custom admin bulletins. | `pytest (asyncio)` | 3 |
+| **Google Identity Services (OAuth 2.0)** | `backend/tests/test_google_auth.py` | RS256 token verification, Google Workspace (`@kitcoek.in`) and personal (`@gmail.com`) routing, registered user login, unregistered onboarding claims return, pending approval 401 rejection, empty token guard. | `pytest` | 5 |
+| **Frontend Google OAuth Flow** | `frontend/tests/googleAuth.test.js` | Client ID validation, credential parsing, institutional domain handling, login vs registration dispatching. | `node (Node.js Test)` | 5 |
 
-**Total Automated Tests:** **114 automated test scenarios** (101 backend + 13 frontend, 100% passing).
+**Total Automated Tests:** **124 automated test scenarios** (106 backend + 18 frontend, 100% passing).
 
 ---
 

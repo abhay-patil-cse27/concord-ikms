@@ -111,6 +111,59 @@ class IdentityService:
         )
 
     @staticmethod
+    async def authenticate_google_user(db: AsyncSession, claims: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Authenticates a user via verified Google OAuth claims (email, name, picture, hd, sub).
+        - If user exists and is active: returns TokenResponse format with is_registered=True
+        - If user exists and is pending/rejected: raises UnauthorizedError with institutional status
+        - If user does NOT exist: returns is_registered=False with claims for registration onboarding
+        """
+        email = claims.get("email", "").lower().strip()
+        user = await IdentityService.get_user_by_email(db, email)
+
+        if not user:
+            return {
+                "is_registered": False,
+                "email": email,
+                "full_name": claims.get("name", ""),
+                "google_id": claims.get("sub", ""),
+                "picture": claims.get("picture", ""),
+                "hd": claims.get("hd", ""),
+            }
+
+        if not user.is_active:
+            if user.approval_status == "pending_tier1":
+                raise UnauthorizedError(message="Account registration is pending Department HOD approval.")
+            elif user.approval_status == "pending_tier2":
+                raise UnauthorizedError(message="Account registration is pending Platform Admin approval.")
+            elif user.approval_status == "rejected":
+                reason = f": {user.rejection_reason}" if user.rejection_reason else "."
+                raise UnauthorizedError(message=f"Registration request was rejected{reason}")
+            raise UnauthorizedError(message="Account is inactive")
+
+        roles = [r.code for r in user.roles]
+        token_data = {
+            "sub": user.id,
+            "email": user.email,
+            "roles": roles,
+            "department_id": user.primary_department_id,
+        }
+        access_token = create_access_token(token_data)
+        token_resp = TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse.model_validate(user)
+        )
+        return {
+            "is_registered": True,
+            "access_token": token_resp.access_token,
+            "token_type": token_resp.token_type,
+            "user": token_resp.user,
+            "email": email,
+            "full_name": user.full_name,
+        }
+
+    @staticmethod
     async def register_user(db: AsyncSession, data: UserRegisterRequest) -> Dict[str, Any]:
         """
         Public self-registration for students, faculty, and department admins.

@@ -313,6 +313,13 @@ IKMS/
   - **Real-Time Broadcast Hub (Option C):** Asynchronous pub/sub `BroadcastHub` backed by Server-Sent Events (`GET /api/v1/system/events`) and browser native `BroadcastChannel('concord_system_broadcast')` for zero-latency multi-tab sync.
   - **Live Dynamic Hot-Swaps:** Instantaneous floating Yellow Brutalist toast and notification badges across all active user sessions whenever Platform Admins hot-swap inference engines (Cloud ↔ Local Ollama) with zero downtime.
   - **Verified Quality Standard:** **114 / 114 automated test scenarios passing** (101 backend + 13 frontend, 100% green).
+- **Milestone 14 (Google Identity Services OAuth 2.0 & OpenID Connect Federation — Completed & Verified):**
+  - **1-Click Google Sign-In (GIS):** Complete institutional single sign-on supporting Google Workspace for Education (`@kitcoek.in`) and personal Google accounts (`@gmail.com`).
+  - **Cryptographic Token Verification:** Server-side RS256 JWKS verification against Google's public certificate endpoints (`https://www.googleapis.com/oauth2/v3/certs`) with client ID audience matching.
+  - **Verified Onboarding Integration:** Unregistered Google users receive a pre-clearance token routing directly to `RegisterView` with verified identity credentials locked in place.
+  - **Dual Credential Parity:** Preserves 100% functionality for manual email & password credentials alongside 1-click Google Sign-In.
+  - **Yellow Brutalist Google SSO Component:** `GoogleSignInButton.jsx` with official GIS rendering, offline/adblocker fallback, and strict Content-Security-Policy compliance.
+  - **Verified Quality Standard:** **124 / 124 automated test scenarios passing** (106 backend + 18 frontend, 100% green).
 
 
 

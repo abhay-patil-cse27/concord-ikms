@@ -67,6 +67,50 @@ sequenceDiagram
   }
   ```
 
+### `POST /auth/google`
+- **Description:** Google Identity Services (OAuth 2.0 / OpenID Connect) authentication endpoint. Verifies cryptographic RS256 signature against Google JWKS certificates (`https://www.googleapis.com/oauth2/v3/certs`) and matches institutional client audience.
+- **Authentication Types Supported:** Institutional Google Workspace (`@kitcoek.in`) and personal Google accounts (`@gmail.com`).
+- **Request Body:**
+  ```json
+  {
+    "credential": "<Google_ID_Token_JWT>"
+  }
+  ```
+- **Response for Active / Approved User (200 OK):**
+  ```json
+  {
+    "is_registered": true,
+    "access_token": "eyJhbGciOi...",
+    "token_type": "bearer",
+    "user": {
+      "id": "uuid",
+      "email": "student@kitcoek.in",
+      "full_name": "Rohan Deshmukh",
+      "roles": ["student"]
+    }
+  }
+  ```
+- **Response for Unregistered Google User (200 OK):**
+  ```json
+  {
+    "is_registered": false,
+    "email": "newuser@kitcoek.in",
+    "full_name": "Aarav Kulkarni",
+    "google_id": "1083928172819283",
+    "picture": "https://lh3.googleusercontent.com/...",
+    "hd": "kitcoek.in"
+  }
+  ```
+- **Response for Pending Approval User (401 Unauthorized):**
+  ```json
+  {
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Account registration is pending Department HOD approval."
+    }
+  }
+  ```
+
 ### `POST /auth/demo-login`
 - **Description:** One-click instant login for viva evaluator role switching (`platform_admin`, `dept_admin`, `faculty`, `student`).
 - **Request Body:** `{"role_code": "student"}`

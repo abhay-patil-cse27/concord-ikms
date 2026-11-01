@@ -50,6 +50,33 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const loginWithGoogle = async (credential) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.googleLogin(credential);
+      if (data.is_registered && data.access_token && data.user) {
+        uiCache.clearAll();
+        localStorage.setItem('concord_token', data.access_token);
+        uiCache.setActiveUser(data.user.id);
+        setUser(data.user);
+        return { is_registered: true, user: data.user };
+      }
+      return {
+        is_registered: false,
+        email: data.email,
+        full_name: data.full_name,
+        picture: data.picture,
+        hd: data.hd,
+      };
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const demoLogin = async (roleCode) => {
     setLoading(true);
     setError(null);
@@ -97,6 +124,7 @@ export function AuthProvider({ children }) {
         loading,
         error,
         login,
+        loginWithGoogle,
         demoLogin,
         logout,
         hasPermission,

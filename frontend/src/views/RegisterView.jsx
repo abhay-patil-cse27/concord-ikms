@@ -10,14 +10,16 @@ import { api } from '../api/client';
  * RegisterView
  * Modular Yellow Brutalist self-registration gateway for institutional members.
  */
-export default function RegisterView({ onBack, onGoToLogin }) {
+export default function RegisterView({ onBack, onGoToLogin, initialData }) {
   const [departments, setDepartments] = useState([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
 
+  const isGoogleVerified = Boolean(initialData?.email);
+
   // Form Fields
   const [roleCode, setRoleCode] = useState('student');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState(initialData?.full_name || '');
+  const [email, setEmail] = useState(initialData?.email || '');
   const [departmentId, setDepartmentId] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +29,15 @@ export default function RegisterView({ onBack, onGoToLogin }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successData, setSuccessData] = useState(null);
+
+  useEffect(() => {
+    if (initialData?.email) {
+      setEmail(initialData.email);
+    }
+    if (initialData?.full_name) {
+      setFullName(initialData.full_name);
+    }
+  }, [initialData]);
 
   useEffect(() => {
     async function loadDepts() {
@@ -156,6 +167,22 @@ export default function RegisterView({ onBack, onGoToLogin }) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isGoogleVerified && (
+                <div className="p-3 bg-brutal-yellow/20 border-2 border-brutal-black dark:border-brutal-yellow flex items-center justify-between gap-2 font-mono text-xs">
+                  <div className="flex items-center gap-2">
+                    <BrutalBadge tone="yellow" size="sm">
+                      GOOGLE VERIFIED
+                    </BrutalBadge>
+                    <span className="font-bold text-brutal-black dark:text-brutal-white truncate">
+                      {email}
+                    </span>
+                  </div>
+                  <span className="text-[10px] uppercase text-brutal-muted dark:text-brutal-muted-dark font-mono shrink-0">
+                    Identity Verified via GIS
+                  </span>
+                </div>
+              )}
+
               <RoleSelector
                 selectedRole={roleCode}
                 onSelectRole={setRoleCode}
@@ -179,7 +206,12 @@ export default function RegisterView({ onBack, onGoToLogin }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. rohan.deshmukh@kitcoek.in or rohan@gmail.com"
-                disabled={submitting}
+                disabled={submitting || isGoogleVerified}
+                hint={
+                  isGoogleVerified
+                    ? 'Verified by Google Identity Services — locked to your authenticated Google account.'
+                    : undefined
+                }
               />
 
               <BrutalInput
@@ -231,6 +263,12 @@ export default function RegisterView({ onBack, onGoToLogin }) {
                   disabled={submitting}
                 />
               </div>
+
+              {isGoogleVerified && (
+                <div className="font-mono text-[11px] text-brutal-muted dark:text-brutal-muted-dark">
+                  * Set a password so you can also log in manually by typing email and password, in addition to 1-click Google Sign-In.
+                </div>
+              )}
 
               <div className="pt-3">
                 <BrutalButton

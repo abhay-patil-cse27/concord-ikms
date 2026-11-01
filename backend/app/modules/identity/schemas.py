@@ -99,3 +99,20 @@ class UserDirectProvisionRequest(BaseModel):
     registration_number: Optional[str] = None
     provision_reason: Optional[str] = None
 
+
+class GoogleLoginRequest(BaseModel):
+    credential: str
+
+
+class GoogleAuthResponse(BaseModel):
+    is_registered: bool
+    access_token: Optional[str] = None
+    token_type: Optional[str] = "bearer"
+    user: Optional[UserResponse] = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    picture: Optional[str] = None
+    google_id: Optional[str] = None
+    hd: Optional[str] = None
+
+

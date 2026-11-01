@@ -42,6 +42,20 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
+#### Google Identity Services (OAuth 2.0 / OpenID Connect)
+CONCORD supports seamless 1-click Google Single Sign-On (SSO) for institutional Google Workspace accounts (`@kitcoek.in`) and personal Google accounts (`@gmail.com`).
+The pre-configured Google Client ID is configured in `.env`:
+```env
+GOOGLE_CLIENT_ID="25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="<your_google_client_secret>"
+```
+And in `frontend/.env.local`:
+```env
+VITE_GOOGLE_CLIENT_ID="25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com"
+```
+*(Offline automated tests automatically mock token verification via PyJWKClient bypass, requiring no network connection to Google servers during CI runs.)*
+
+#### Groq LLM API Key (Optional)
 *(Optional)* If you have a free Groq API Key from [console.groq.com](https://console.groq.com/keys), open `.env` and paste it:
 ```env
 GROQ_API_KEY="gsk_your_actual_key_here"

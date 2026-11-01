@@ -43,6 +43,7 @@ export default function App() {
   const [activeTab, setActiveTabState] = useState(getRouteFromHash);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registrationPrefill, setRegistrationPrefill] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
 
   const isRouteAllowed = (route) => {
@@ -121,11 +122,16 @@ export default function App() {
       return (
         <Suspense fallback={<ViewSuspenseFallback />}>
           <RegisterView
-            onBack={() => setShowRegisterModal(false)}
+            onBack={() => {
+              setShowRegisterModal(false);
+              setRegistrationPrefill(null);
+            }}
             onGoToLogin={() => {
               setShowRegisterModal(false);
+              setRegistrationPrefill(null);
               setShowLoginModal(true);
             }}
+            initialData={registrationPrefill}
           />
         </Suspense>
       );
@@ -139,7 +145,8 @@ export default function App() {
               setSelectedRole(null);
             }}
             preselectedRole={selectedRole}
-            onGoToRegister={() => {
+            onGoToRegister={(prefill) => {
+              setRegistrationPrefill(prefill || null);
               setShowLoginModal(false);
               setShowRegisterModal(true);
             }}

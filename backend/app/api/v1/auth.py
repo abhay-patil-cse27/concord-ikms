@@ -12,7 +12,10 @@ from app.modules.identity.schemas import (
     TokenResponse,
     UserResponse,
     UserRegisterRequest,
+    GoogleLoginRequest,
+    GoogleAuthResponse,
 )
+from app.core.google_auth import verify_google_id_token
 from app.modules.identity.service import IdentityService
 from app.modules.organizations.schemas import DepartmentResponse
 from app.modules.organizations.service import OrganizationService
@@ -41,6 +44,35 @@ async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depe
         )
     )
     return token_response
+
+
+@router.post("/google", response_model=GoogleAuthResponse, summary="Google Identity Services (OAuth 2.0) Authentication")
+async def google_auth(payload: GoogleLoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Authenticates a user using Google Identity Services (GIS) ID Token.
+    - If user exists and is approved, returns JWT session token and user profile.
+    - If user is not yet registered, returns verified identity profile (email, name)
+      allowing frontend onboarding flow to prefill institutional registration.
+    - If user registration is pending, returns 401 with clearance queue status.
+    """
+    claims = await verify_google_id_token(payload.credential)
+    auth_result = await IdentityService.authenticate_google_user(db, claims)
+
+    if auth_result.get("is_registered") and auth_result.get("user"):
+        user = auth_result["user"]
+        await AuditService.log_event(
+            db,
+            AuditEventCreate(
+                user_id=user.id,
+                action="AUTH_GOOGLE_LOGIN_SUCCESS",
+                resource_type="user",
+                resource_id=user.id,
+                details={"email": claims.get("email"), "hd": claims.get("hd")},
+                ip_address=request.client.host if request.client else None,
+                request_id=request.headers.get("x-request-id"),
+            )
+        )
+    return auth_result
 
 
 @router.post("/demo-login", response_model=TokenResponse, summary="Development Demo Fast Login")

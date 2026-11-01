@@ -44,11 +44,11 @@ flowchart LR
 ---
 
 ### Step 2: Authentication & Institutional Personas (Time: 1:15 – 2:30)
-- **What to click:** Click **"Access Knowledge Gateway"** or **"Sign In"**. In `LoginView`, observe the pre-configured persona cards. Click **"Instant Login"** on **Department Admin (HOD CSE)**.
+- **What to click:** Click **"Access Knowledge Gateway"** or **"Sign In"**. In `LoginView`, observe the pre-configured persona cards, the 1-click **"Continue with Google"** SSO button (Google Identity Services OAuth 2.0), and the standard email/password form. Click **"Instant Login"** on **Department Admin (HOD CSE)**.
 - **What to say:**
-  > *"CONCORD implements OWASP ASVS 4.1 Role-Based Access Control. We support four distinct institutional scopes: Super Admin, Department Admin (HOD), Faculty, and Enrolled Student. By logging in as HOD CSE, JWT token claims are issued with department-level isolation. Notice that in the top navigation bar, the role switcher allows us to inspect permissions across personas seamlessly. Furthermore, our onboarding identity verification recognizes KIT's official Google Workspace for Education domain (`@kitcoek.in`) alongside verified personal accounts, perfectly positioning CONCORD for seamless Google Identity single sign-on federation."*
+  > *"CONCORD implements OWASP ASVS 4.1 Role-Based Access Control and Google Identity Services (OAuth 2.0 / OpenID Connect) federation. We support institutional Google Workspace for Education accounts (`@kitcoek.in`) and personal Google accounts (`@gmail.com`) with RS256 JWKS public key cryptographic signature verification. Unregistered Google users are automatically routed to our 2-tier approval onboarding with their verified name and email locked, while approved members sign in instantly with 1 click. Alternatively, members can sign in with traditional email and password credentials. By logging in as HOD CSE, JWT token claims are issued with department-level isolation. Notice that in the top navigation bar, the role switcher allows us to inspect permissions across personas seamlessly."*
 - **What the examiner should notice:**
-  - 1-click persona authorization executing JWT bearer token issuance.
+  - 1-click Google Single Sign-On and persona authorization executing JWT bearer token issuance.
   - The interface updates dynamically, granting administrative and ingestion controls scoped strictly to the CSE department.
 
 ---

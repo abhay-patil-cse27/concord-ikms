@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, ArrowRight, ArrowLeft, AlertCircle, CheckCircle2, Lock, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrutalButton, BrutalCard, BrutalBadge, BrutalInput } from '../components/brutal';
+import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import ThemeToggle from '../components/layout/ThemeToggle';
 import { cn } from '../lib/utils';
 
@@ -109,6 +110,20 @@ export default function LoginView({ onBack, preselectedRole, onGoToRegister }) {
     setEmail(acc.email);
     setPassword(acc.password);
     setLocalError(null);
+  };
+
+  const handleGoogleSuccess = (result) => {
+    setLocalError(null);
+    if (!result.is_registered) {
+      // Unregistered user - redirect to registration view with verified claims prefilled
+      if (onGoToRegister) {
+        onGoToRegister(result);
+      }
+    }
+  };
+
+  const handleGoogleError = (errMsg) => {
+    setLocalError(errMsg);
   };
 
   return (
@@ -251,6 +266,24 @@ export default function LoginView({ onBack, preselectedRole, onGoToRegister }) {
                   <span className="font-bold">{localError || error}</span>
                 </div>
               )}
+
+              {/* Google Identity Services 1-Click SSO */}
+              <div className="flex flex-col gap-2">
+                <GoogleSignInButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Visual Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-0.5 bg-brutal-black/20 dark:bg-brutal-yellow/20" />
+                <span className="font-mono text-[10px] font-black uppercase text-brutal-muted dark:text-brutal-muted-dark tracking-widest select-none">
+                  OR CONTINUE WITH EMAIL & PASSWORD
+                </span>
+                <div className="flex-1 h-0.5 bg-brutal-black/20 dark:bg-brutal-yellow/20" />
+              </div>
 
               {/* Manual Login Form */}
               <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4">
