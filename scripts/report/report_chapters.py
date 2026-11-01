@@ -717,3 +717,4 @@ def add_appendix_b(doc):
         add_p(doc, f"CONCORD Generated Grounded Response:\n{s['ans']}", font_size=11, space_before=2, space_after=12)
 
 print("report_chapters.py initialized.")
+

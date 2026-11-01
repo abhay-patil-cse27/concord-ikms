@@ -34,3 +34,4 @@ python scripts/report/generate_docx_report.py
 ```
 The output file is saved to `C:\Users\Admin\Desktop\IKMS\CONCORD_Phase1_Project_Report_G3.docx`.
 If the file is already open in Word, the generator automatically saves the updated version to `..._new.docx` without crashing.
+

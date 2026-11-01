@@ -332,3 +332,4 @@ def add_figure_diagram(doc, caption_text, diagram_lines):
     r_cap = fp.add_run(parts[2] if len(parts) > 2 else "")
     r_cap.font.name = "Times New Roman"
     r_cap.font.size = Pt(11)
+
