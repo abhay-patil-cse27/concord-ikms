@@ -171,6 +171,8 @@ async def seed_institutional_demo_data():
                 sha256_hash=content_hash,
                 department_id=dept_id,
                 uploader_id=admin_user.id,
+                owner_id=admin_user.id,
+                visibility="department",
                 status="processed",
                 lifecycle_status=doc_meta["lifecycle_status"],
                 version=f"v{doc_meta['version_number']}.0",

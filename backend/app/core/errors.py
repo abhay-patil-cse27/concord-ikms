@@ -76,7 +76,7 @@ class ValidationError(AppException):
         super().__init__(
             message=message,
             code="VALIDATION_ERROR",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=getattr(status, 'HTTP_422_UNPROCESSABLE_CONTENT', 422),
             details=details,
         )
 
@@ -110,7 +110,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     req_id = correlation_id_ctx.get() or request.headers.get("x-request-id")
     logger.warning(f"Validation error: {exc.errors()}")
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=getattr(status, 'HTTP_422_UNPROCESSABLE_CONTENT', 422),
         content=format_error_response(
             code="VALIDATION_ERROR",
             message="Request parameter validation failed",
