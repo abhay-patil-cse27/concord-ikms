@@ -209,7 +209,10 @@ The backend decouples business logic from specific vendors by using abstract int
 - **Unified Identity Federation:** Because `@kitcoek.in` is powered by Google Workspace, both official college accounts and personal `@gmail.com` accounts resolve to Google Identity infrastructure.
 - **Dual-Layer Authentication Resilience:**
   - *Standard Mode:* High-assurance local JWT issuing with bcrypt/Argon2 password hashing and SHA-256 session fingerprints for offline/campus LAN independence.
-  - *Federation Mode:* Architecturally structured to bind Google OAuth 2.0 / Google Identity Services (GIS) directly to the verified email claim without requiring relational schema migrations.
+  - *Google Federation Mode (Live):* Google Identity Services (OAuth 2.0 / OpenID Connect) integration with cryptographic RS256 JWKS verification via `PyJWKClient` (`https://www.googleapis.com/oauth2/v3/certs`).
+  - *Automated Onboarding Bridge:* Verified Google profiles prefill and lock name/email during registration, prompting only for PRN/Employee ID & Academic Department.
+  - *Approval Queue Integration:* Enforces 2-tier approval workflow (`pending_tier1` / `pending_tier2`) across Google and manual authentication paths.
+- **Verified Test Standard:** 124 passing automated test scenarios (106 Pytest + 18 Node.js, 100% green).
 
 ---
 *CONCORD IKMS · Technology Stack & Architectural Decision Reference · Mega Project 2026–27*

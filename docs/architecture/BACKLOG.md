@@ -339,5 +339,30 @@
   - [x] Added `backend/tests/test_broadcast.py` (3 async tests) and `frontend/tests/broadcast.test.js` (4 unit tests).
   - [x] Total: **114 automated test scenarios passing** (101 backend + 13 frontend, 100% green).
 
+## Milestone 14: Google Identity Services (OAuth 2.0 / GIS) & Dual-Mode Login (Completed)
+- [x] **Step 14.1: Cryptographic Server-Side Verification (`backend/app/core/google_auth.py`):**
+  - [x] Lightweight RS256 verification against Google's public JWKS certificates (`https://www.googleapis.com/oauth2/v3/certs`) via `PyJWKClient`.
+  - [x] Audience validation matching authorized Google Client ID (`25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com`).
+  - [x] Offline mock token support (`mock-google-token:...`) for network-independent CI testing.
+  - [x] Zero extra dependencies: leverages existing `pyjwt[crypto]` and `httpx`.
+- [x] **Step 14.2: Identity Service & Gated API Route (`POST /api/v1/auth/google`):**
+  - [x] `IdentityService.authenticate_google_user`: checks existing user status against 2-tier approval queue (`pending_tier1`, `pending_tier2`, `rejected`).
+  - [x] Issues CONCORD JWT bearer session for approved members.
+  - [x] Returns verified profile data (`is_registered: false`) for unregistered Google accounts.
+  - [x] Logs `AUTH_GOOGLE_LOGIN_SUCCESS` to cryptographic audit trail.
+- [x] **Step 14.3: Yellow Brutalist Google SSO Component (`GoogleSignInButton.jsx`):**
+  - [x] Dynamic GIS button rendering with Google multi-color SVG icon.
+  - [x] Offline and adblocker fallback handling.
+  - [x] Updated `frontend/index.html` with GIS script and Content Security Policy whitelisting (`https://accounts.google.com`, `https://*.googleusercontent.com`).
+- [x] **Step 14.4: Seamless Onboarding Bridge & Dual-Mode Parity:**
+  - [x] Prefills and locks Google verified name & email in `RegisterView.jsx` with `GOOGLE VERIFIED` badge.
+  - [x] Prompts user for Academic Department, PRN/Employee ID, and optional password.
+  - [x] Preserves 100% functionality for manual email/password credentials directly on `LoginView.jsx`.
+- [x] **Step 14.5: Quality Gate & Test Suite Expansion (124 Tests Total):**
+  - [x] Added `backend/tests/test_google_auth.py` (5 integration tests) and `frontend/tests/googleAuth.test.js` (5 unit tests).
+  - [x] Total: **124 automated test scenarios passing** (106 backend + 18 frontend, 100% green).
+  - [x] Architecture Decision Record authored (`ADR-0014-google-identity-services-oauth-federation.md`).
+
+
 
 

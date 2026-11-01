@@ -89,3 +89,4 @@ async def verify_google_id_token(id_token: str) -> Dict[str, Any]:
     except (jwt.InvalidTokenError, Exception) as exc:
         logger.warning(f"Google token verification failed: {exc}")
         raise UnauthorizedError(message=f"Google authentication failed: {str(exc)}")
+

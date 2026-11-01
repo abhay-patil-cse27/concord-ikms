@@ -112,6 +112,13 @@ flowchart LR
 > 2. **Server-Side Citation Validation:** The backend inspects the generated answer, extracts citation tags, and cross-references them against the IDs of retrieved chunks. Any fabricated or ungrounded citation is stripped before reaching the client.
 > 3. **Clickable Provenance:** Every citation in the UI is rendered as an interactive chip that opens the exact chunk, page number, and SHA-256 hash in a verification modal.
 
+### Q6: How does CONCORD integrate Google Identity / Single Sign-On with the college's Google Workspace and manual logins?
+> **Defense:**
+> Kolhapur Institute of Technology operates on Google Workspace for Education (`@kitcoek.in`). CONCORD implements Google Identity Services (OAuth 2.0 / OpenID Connect) with cryptographic RS256 JWKS verification directly against Google's public JWKS certificates (`PyJWKClient` with client ID audience matching):
+> 1. **Approved Members:** Authenticate in 1 click via Google Single Sign-On.
+> 2. **Unregistered Google Users:** Google verified claims (name, email) are returned to the client, prefilling and locking their institutional self-registration dossier (`RegisterView`), prompting only for their Academic Department and PRN/Employee ID before entering the 2-tier approval queue.
+> 3. **Credential Parity:** Traditional email and password login remains 100% active directly on the login screen for campus LAN independence and users without Google accounts.
+
 ---
 
 ## 4. Key Metrics Summary for Presentation Slides
@@ -122,7 +129,7 @@ flowchart LR
 | **Mean Reciprocal Rank (MRR@5)** | 0.650 – 0.750 | **1.000** | Ground-truth institutional document consistently ranked at #1. |
 | **Cross-Tenant Security Leakage** | Common (unfiltered RAG) | **0.0% (Zero)** | Complete departmental multi-tenancy and isolation. |
 | **Query Latency (P95)** | 2500ms – 4000ms | **< 1200ms (Groq) / 62ms (Local)** | Instantaneous streaming responses suitable for campus load. |
-| **Test Suite Coverage** | Minimal / Ad-hoc | **114 Passing Tests (101 Pytest + 13 Node)** | Rigorous verification across auth, ingestion, search, database, onboarding, real-time broadcasts, and RAG. |
+| **Test Suite Coverage** | Minimal / Ad-hoc | **124 Passing Tests (106 Pytest + 18 Node)** | Rigorous verification across auth, ingestion, search, database, onboarding, real-time broadcasts, and Google OAuth 2.0. |
 
 ---
 

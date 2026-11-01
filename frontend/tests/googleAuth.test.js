@@ -86,3 +86,4 @@ assert.strictEqual(unregisteredResult.initialData.full_name, 'Aarav Kulkarni');
 console.log('✓ Test 5 Passed: Unregistered Google user routes to registration with verified claims');
 
 console.log('--- ALL GOOGLE IDENTITY SERVICES TESTS PASSED ---');
+
