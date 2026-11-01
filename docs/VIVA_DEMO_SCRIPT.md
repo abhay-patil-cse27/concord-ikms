@@ -243,10 +243,10 @@ flowchart LR
 
 ## 5. Summary of System Capabilities (True & Verified)
 
-- **Backend:** FastAPI, Python 3.11, SQLAlchemy 2.0 Async, aiosqlite, ChromaDB 0.6, FlashRank, Dual-Mode LLM (Groq Cloud API & Local Ollama Node with atomic disk persistence).
+- **Backend:** FastAPI, Python 3.11, SQLAlchemy 2.0 Async, aiosqlite, ChromaDB 0.6, FlashRank, Dual-Mode LLM (Groq Cloud API & Local Ollama Node with atomic disk persistence), Google Identity Services (GIS RS256 JWKS).
 - **Frontend:** React 18, Vite 5, Tailwind CSS 3, Framer Motion, Lucide Icons, Yellow Brutalist Component Library.
-- **Test Suite:** 114 automated test cases passing (101 backend Pytest + 13 frontend Node unit tests, 100% pass rate).
+- **Test Suite:** 124 automated test cases passing (106 backend Pytest + 18 frontend Node unit tests, 100% pass rate).
 - **Real-Time Broadcast Engine (Option C):** Real-time Server-Sent Events (SSE) `BroadcastHub` (`GET /api/v1/system/events`) and cross-tab `BroadcastChannel` instantly synchronizing LLM hot-swaps, floating toasts, and notification badges with zero downtime.
 - **CI/CD Quality Gate:** GitHub Actions (`.github/workflows/ci.yml`) automating backend tests, frontend build, and Docker container packaging on every commit.
-- **Bundle Health:** 2,279 modules built with code-splitting; all views lazy-loaded with zero bundling errors.
-- **Architectural Standards:** OWASP ASVS 4.1 RBAC, 2-Tier Institutional Onboarding & Approval Queue with Break-Glass Emergency Bypass, Universal Institutional ID Card, Dynamic Dual-Mode LLM Engine with global reflection (`GET /system/llm-status`), SHA-256 Tamper-Evident Ledger, RRF k=60, FlashRank Cross-Encoder reranking, Fuzzy Spell Normalizer.
+- **Bundle Health:** 2,281 modules built with code-splitting; all views lazy-loaded with zero bundling errors.
+- **Architectural Standards:** OWASP ASVS 4.1 RBAC, Google Identity Services OAuth 2.0 with automated onboarding bridge, 2-Tier Institutional Onboarding & Approval Queue with Break-Glass Emergency Bypass, Universal Institutional ID Card, Dynamic Dual-Mode LLM Engine with global reflection (`GET /system/llm-status`), SHA-256 Tamper-Evident Ledger, RRF k=60, FlashRank Cross-Encoder reranking, Fuzzy Spell Normalizer.
