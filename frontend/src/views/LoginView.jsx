@@ -268,7 +268,7 @@ export default function LoginView({ onBack, preselectedRole, onGoToRegister }) {
               )}
 
               {/* Google Identity Services 1-Click SSO */}
-              <div className="flex flex-col gap-2">
+              <div>
                 <GoogleSignInButton
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
@@ -277,12 +277,12 @@ export default function LoginView({ onBack, preselectedRole, onGoToRegister }) {
               </div>
 
               {/* Visual Divider */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-0.5 bg-brutal-black/20 dark:bg-brutal-yellow/20" />
-                <span className="font-mono text-[10px] font-black uppercase text-brutal-muted dark:text-brutal-muted-dark tracking-widest select-none">
-                  OR CONTINUE WITH EMAIL & PASSWORD
+              <div className="relative flex items-center my-1">
+                <div className="flex-grow border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20" />
+                <span className="flex-shrink mx-3 font-mono text-[10px] font-black uppercase text-brutal-muted dark:text-brutal-muted-dark tracking-widest select-none">
+                  OR MANUAL CREDENTIALS
                 </span>
-                <div className="flex-1 h-0.5 bg-brutal-black/20 dark:bg-brutal-yellow/20" />
+                <div className="flex-grow border-t-2 border-brutal-black/20 dark:border-brutal-yellow/20" />
               </div>
 
               {/* Manual Login Form */}

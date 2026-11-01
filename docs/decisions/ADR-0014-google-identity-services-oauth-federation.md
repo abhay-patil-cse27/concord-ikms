@@ -55,3 +55,4 @@ To provide high convenience, reduced password fatigue, and automated identity ve
   - 100% automated test coverage (124 automated scenarios passing).
 - **Negative:**
   - Production deployments require setting `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in environment variables.
+
