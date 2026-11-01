@@ -342,7 +342,7 @@
 ## Milestone 14: Google Identity Services (OAuth 2.0 / GIS) & Dual-Mode Login (Completed)
 - [x] **Step 14.1: Cryptographic Server-Side Verification (`backend/app/core/google_auth.py`):**
   - [x] Lightweight RS256 verification against Google's public JWKS certificates (`https://www.googleapis.com/oauth2/v3/certs`) via `PyJWKClient`.
-  - [x] Audience validation matching authorized Google Client ID (`25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com`).
+  - [x] Audience validation matching authorized Google Client ID via environment configuration.
   - [x] Offline mock token support (`mock-google-token:...`) for network-independent CI testing.
   - [x] Zero extra dependencies: leverages existing `pyjwt[crypto]` and `httpx`.
 - [x] **Step 14.2: Identity Service & Gated API Route (`POST /api/v1/auth/google`):**

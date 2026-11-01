@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     TESSERACT_CMD: str = ""
 
     # Google OAuth 2.0 (Google Identity Services)
-    GOOGLE_CLIENT_ID: str = "25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com"
+    GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
     @field_validator("CORS_ORIGINS", mode="before") 

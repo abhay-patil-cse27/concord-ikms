@@ -6,15 +6,14 @@ import assert from 'node:assert';
 
 console.log('--- RUNNING GOOGLE IDENTITY SERVICES (OAUTH 2.0) UNIT TESTS ---');
 
-const EXPECTED_CLIENT_ID = '25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com';
-
-// Test 1: Verify Google OAuth Client ID constant
-assert.strictEqual(
-  EXPECTED_CLIENT_ID,
-  '25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com',
-  'Google OAuth Client ID must match authorized institutional credentials'
+// Test 1: Verify Google OAuth Client ID pattern validation
+const validClientIdPattern = /^[0-9]+-[a-z0-9_]+\.apps\.googleusercontent\.com$/;
+const sampleClientId = process.env.VITE_GOOGLE_CLIENT_ID || '123456789-sample.apps.googleusercontent.com';
+assert.ok(
+  validClientIdPattern.test(sampleClientId),
+  'Google OAuth Client ID must match Google Web Client ID pattern'
 );
-console.log('✓ Test 1 Passed: Google OAuth Client ID verified');
+console.log('✓ Test 1 Passed: Google OAuth Client ID pattern validation verified');
 
 // Test 2: Token credential unpacking and domain handling
 function parseMockGoogleToken(token) {

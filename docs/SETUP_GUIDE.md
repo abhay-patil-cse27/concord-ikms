@@ -46,12 +46,12 @@ cp .env.example .env
 CONCORD supports seamless 1-click Google Single Sign-On (SSO) for institutional Google Workspace accounts (`@kitcoek.in`) and personal Google accounts (`@gmail.com`).
 The pre-configured Google Client ID is configured in `.env`:
 ```env
-GOOGLE_CLIENT_ID="25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID="<your_google_client_id>.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="<your_google_client_secret>"
 ```
 And in `frontend/.env.local`:
 ```env
-VITE_GOOGLE_CLIENT_ID="25388319136-3ru5kcg2cc6t09vkgnlg7ahlh21jaeqj.apps.googleusercontent.com"
+VITE_GOOGLE_CLIENT_ID="<your_google_client_id>.apps.googleusercontent.com"
 ```
 *(Offline automated tests automatically mock token verification via PyJWKClient bypass, requiring no network connection to Google servers during CI runs.)*
 
