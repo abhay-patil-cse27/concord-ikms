@@ -162,7 +162,7 @@ export default function ApplicantDossierModal({
               <CheckCircle2 size={14} className={isKitEmail || isGmail ? "text-brutal-success" : "text-brutal-accent"} />
               <span>
                 {isKitEmail
-                  ? 'Institutional email domain verified (@kitcoek.in)'
+                  ? 'Institutional Google Workspace domain verified (@kitcoek.in)'
                   : isGmail
                   ? 'Personal Google Account verified format (@gmail.com)'
                   : 'External / non-standard domain used; verify candidate identity'}

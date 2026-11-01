@@ -204,5 +204,12 @@ The backend decouples business logic from specific vendors by using abstract int
 - **Browser BroadcastChannel API:** Zero-latency intra-browser multi-tab synchronization without redundant network calls.
 - **Dynamic Hot-Swaps:** Real-time reflection of LLM routing adjustments, floating system toasts, and live drawer updates across all user roles.
 
+### F. Institutional Identity Federation & Google Workspace Integration
+- **Google Workspace for Education Primary Tenant:** KIT Kolhapur's official domain (`@kitcoek.in`) is an active Google Workspace tenant.
+- **Unified Identity Federation:** Because `@kitcoek.in` is powered by Google Workspace, both official college accounts and personal `@gmail.com` accounts resolve to Google Identity infrastructure.
+- **Dual-Layer Authentication Resilience:**
+  - *Standard Mode:* High-assurance local JWT issuing with bcrypt/Argon2 password hashing and SHA-256 session fingerprints for offline/campus LAN independence.
+  - *Federation Mode:* Architecturally structured to bind Google OAuth 2.0 / Google Identity Services (GIS) directly to the verified email claim without requiring relational schema migrations.
+
 ---
 *CONCORD IKMS · Technology Stack & Architectural Decision Reference · Mega Project 2026–27*

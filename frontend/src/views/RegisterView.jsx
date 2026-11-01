@@ -173,12 +173,12 @@ export default function RegisterView({ onBack, onGoToLogin }) {
               />
 
               <BrutalInput
-                label="Email Address (Institutional or Gmail)"
+                label="Email Address (Google Workspace @kitcoek.in or Gmail)"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. rohan.deshmukh@gmail.com or @kitcoek.in"
+                placeholder="e.g. rohan.deshmukh@kitcoek.in or rohan@gmail.com"
                 disabled={submitting}
               />
 

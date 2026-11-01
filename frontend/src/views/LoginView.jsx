@@ -255,12 +255,12 @@ export default function LoginView({ onBack, preselectedRole, onGoToRegister }) {
               {/* Manual Login Form */}
               <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4">
                 <BrutalInput
-                  label="Institutional Email"
+                  label="Institutional Email (Google Workspace / KIT)"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@concord.kit.edu"
+                  placeholder="name@kitcoek.in or name@concord.kit.edu"
                   disabled={loading}
                 />
 
